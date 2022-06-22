@@ -15,6 +15,10 @@ urlpatterns = [
     ),
     # Django Admin, use {% url 'admin:index' %}
     path(settings.ADMIN_URL, admin.site.urls),
+
+    # REST API
+    path("api/v1/", include("colocus.api.urls", namespace="api")),
+
     # User management
     path("users/", include("colocus.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),

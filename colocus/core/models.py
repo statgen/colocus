@@ -1,12 +1,10 @@
 """
 Core models describing key data entities
 """
-import os
-
 from django.db import models
 from model_utils.models import SoftDeletableModel, TimeStampedModel
 
-from . import constants
+from . import constants, file_util
 
 
 class AnalysisGroup(models.Model):
@@ -24,6 +22,12 @@ class AnalysisGroup(models.Model):
     )
 
     # User-provided study metadata
+    study_name = models.CharField(
+        max_length=100,
+        db_index=True,
+        help_text='Name of the parent study (like "GLGC" or "GTEx") that produced the colocalization analysis'
+    )
+
     ingest_complete = models.DateTimeField(
         auto_now_add=True,
         null=True,
@@ -54,7 +58,7 @@ class LDPairs(models.Model):
     """LD data for a particular population / dataset/ genome build."""
     analysis = models.ForeignKey(
         AnalysisGroup,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=False,
         help_text='This LD was provided for a specific analysis'
     )
@@ -70,6 +74,18 @@ class LDPairs(models.Model):
     panel = models.CharField(max_length=32, help_text='Name of LD panel used (eg 1000G)')
     population = models.CharField(max_length=32, help_text='Name of population (eg EUR)')
     genome_build = models.CharField(max_length=10, choices=constants.GENOME_BUILDS)
+
+    ld_data = models.FileField(
+        upload_to=file_util.get_ld_filename,
+        verbose_name='LD data',
+        help_text='PLINK formatted LD data (relative to at least key signal SNPs). Must be compressed with bgzip'
+    )
+
+    ld_data_tbi = models.FileField(
+        upload_to=file_util.get_ld_filename_tbi,
+        verbose_name='LD tabix index',
+        help_text='Tabix index for the LD data. Must match the bgzip file'
+    )
 
 
 class MarginalTrait(models.Model):
@@ -90,39 +106,34 @@ class MarginalTrait(models.Model):
     # JSON field consisting of {trait} for gwas ; {gene, tissue} for eQTL
     metadata = models.JSONField(help_text='Additional trait-type specific information. Eg {trait} for GWAS, or { gene, tissue } for eQTL')
 
+    ld = models.ForeignKey(
+        LDPairs,
+        on_delete=models.CASCADE,
+        null=False,
+        help_text='The LD panel/ population corresponding to this dataset'
+    )
+
     #### Files that must be present. All are generated during an ingest pipeline step.
     summary_stats = models.FileField(
-        upload_to=lambda self: os.path.join('marginal', self.uuid, 'marginal.gz'),
+        upload_to=file_util.get_marginal_summstats,
         verbose_name='Marginal summary stats',
         help_text='The marginal summary stats for this study. Must be compressed with bgzip'
     )
 
     summary_stats_tbi = models.FileField(
-        upload_to=lambda self: os.path.join('marginal', self.uuid, 'marginal.gz.tbi'),
+        upload_to=file_util.get_marginal_summstats_tbi,
         verbose_name='Tabix index for summary stats',
         help_text='Tabix index for summary stats (.tbi file). Must match bgzip file.'
     )
 
-    ld_data = models.FileField(
-        upload_to=lambda self: os.path.join('marginal', self.uuid, 'ld.gz'),
-        verbose_name='LD data',
-        help_text='PLINK formatted LD data (relative to at least key signal SNPs). Must be compressed with bgzip'
-    )
-
-    ld_data_tbi = models.FileField(
-        upload_to=lambda self: os.path.join('marginal', self.uuid, 'ld.gz.tbi'),
-        verbose_name='LD tabix index',
-        help_text='Tabix index for the LD data. Must match the bgzip file'
-    )
-
     manhattan_bins = models.FileField(
-        upload_to=lambda self: os.path.join('marginal', self.uuid, 'manhattan.json'),
+        upload_to=file_util.get_manhattan,
         verbose_name='Binned data for manhattan plots',
         help_text='Results of manhattan plot binning process'
     )
 
     qq_bins = models.FileField(
-        upload_to=lambda self: os.path.join('marginal', self.uuid, 'qq.json'),
+        upload_to=file_util.get_qq,
         verbose_name='Binned data for QQ plots',
         help_text='Results of manhattan plot binning process'
     )
@@ -161,28 +172,36 @@ class MarginalSignal(models.Model):
     One specific signal in one specific trait. This specifies the signal, as well as things like conditional
      analysis of the marginal trait in a nearby region.
     """
+    uuid = models.CharField(
+        max_length=32,
+        blank=False,
+        null=False,
+        unique=True,
+        help_text='A stable unique identifier for this entity. Should be specified on ingest'
+    )
+
     analysis = models.ForeignKey(
         AnalysisGroup,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=False,
         help_text='This signal was identified as part of a specific bulk colocalization analysis'
     )
 
     trait = models.ForeignKey(
         MarginalTrait,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=False,
         help_text='The trait in which this signal was identified'
     )
 
     cond_analysis = models.FileField(
-        upload_to=lambda self: os.path.join('signals', self.uuid, 'cond_analysis.gz'),
+        upload_to=file_util.get_signals_cond,
         verbose_name='Cond analysis results ',
         help_text='Conditional (or "all but one") analysis of marginal results (rel to lead variant of this signal)'
     )
 
     cond_analysis_tbi = models.FileField(
-        upload_to=lambda self: os.path.join('signals', self.uuid, 'cond_analysis.gz.tbi'),
+        upload_to=file_util.get_signals_cond_tbi,
         verbose_name='tbi for cond results',
         help_text='Tabix index; must match the conditional analysis file'
     )
@@ -201,7 +220,7 @@ class MarginalSignal(models.Model):
     )
 
 
-class ColocPair(models.Model):
+class ColocResult(models.Model):
     """
     Colocalization results for one specific pair of signals across two traits
     """
@@ -215,21 +234,23 @@ class ColocPair(models.Model):
 
     analysis = models.ForeignKey(
         AnalysisGroup,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=False,
         help_text='This signal was identified as part of a specific bulk colocalization analysis'
     )
 
     signal1 = models.ForeignKey(
         MarginalSignal,
-        on_delete=models.SET_NULL,
+        related_name="+",
+        on_delete=models.CASCADE,
         null=False,
         help_text='The first signal (from trait 1)'
     )
 
     signal2 = models.ForeignKey(
         MarginalSignal,
-        on_delete=models.SET_NULL,
+        related_name="+",
+        on_delete=models.CASCADE,
         null=False,
         help_text='The second signal (from trait 2)'
     )

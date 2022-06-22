@@ -324,6 +324,7 @@ tags
 
 ### Project template
 colocus/media/
+database/**
 
 .pytest_cache/
 .ipython/

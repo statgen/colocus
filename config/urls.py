@@ -17,7 +17,7 @@ urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls),
 
     # REST API
-    path("api/v1/", include("colocus.api.urls", namespace="api")),
+    # path("api/v1/", include("colocus.api.urls", namespace="api")),
 
     # User management
     path("users/", include("colocus.users.urls", namespace="users")),

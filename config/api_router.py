@@ -1,15 +1,19 @@
-from django.conf import settings
-from rest_framework.routers import DefaultRouter, SimpleRouter
+# TODO: In the future we may use DRF native functionality, for now we'll manually control the routes list.
 
-from colocus.users.api.views import UserViewSet
+# from django.conf import settings
+# from rest_framework.routers import DefaultRouter, SimpleRouter
 
-if settings.DEBUG:
-    router = DefaultRouter()
-else:
-    router = SimpleRouter()
+from colocus.api import urls as api_urls
 
-router.register("users", UserViewSet)
+# from colocus.users.api.views import UserViewSet
+#
+# if settings.DEBUG:
+#     router = DefaultRouter()
+# else:
+#     router = SimpleRouter()
+#
+# router.register("users", UserViewSet)
 
 
 app_name = "api"
-urlpatterns = router.urls
+urlpatterns = api_urls.urlpatterns  #router.urls

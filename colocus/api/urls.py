@@ -27,7 +27,7 @@ urlpatterns = [
 
     path('ld/', views.LDPairsListView.as_view(), name='ld-all'),
     path('ld/<uuid>/', views.LDPairsDetailView.as_view(), name='ld-detail'),
-    path('ld/<uuid>/region', views.LDPairsRegionView.as_view(), name='ld-region'),
+    path('ld/<uuid>/region/', views.LDPairsRegionView.as_view(), name='ld-region'),
 
     # path("v1/", view=user_redirect_view, name="redirect"),
     # path("~update/", view=user_update_view, name="update"),

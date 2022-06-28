@@ -10,9 +10,21 @@ class AnalyisGroup(drf_serializers.ModelSerializer):
 
 
 class LDPairsSerializer(drf_serializers.ModelSerializer):
+    # TODO: It would be nice to include hyperlinks for related fields; DRF fields behavior gets weird
     class Meta:
         model = models.LDPairs
         fields = ('uuid', 'panel', 'population', 'genome_build')
+
+
+class LDRegionSerializer(drf_serializers.Serializer):
+    """Serialize parsed data from a PLINK formatted LD file, with known columns"""
+    chromosome1 = drf_serializers.CharField(source='chrom_a', read_only=True)
+    position1 = drf_serializers.IntegerField(source='bp_a', read_only=True)
+    variant1 = drf_serializers.CharField(source='snp_a', read_only=True)
+    chromosome2 = drf_serializers.CharField(source='chrom_b', read_only=True)
+    position2 = drf_serializers.IntegerField(source='bp_b', read_only=True)
+    variant2 = drf_serializers.CharField(source='snp_b', read_only=True)
+    correlation = drf_serializers.FloatField(source='r2', read_only=True)
 
 
 class MarginalTraitSerializer(drf_serializers.ModelSerializer):

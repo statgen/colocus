@@ -300,5 +300,8 @@ SPECTACULAR_SETTINGS = {
         {"url": "https://colocus.sph.umich.edu", "description": "Production server"},
     ],
 }
-# Your stuff...
-# ------------------------------------------------------------------------------
+
+
+# The maximum region size (bp) for a single Locuszoom plot. This is used to prevent ginormous API calls. Value is set
+#   for JS in LocalZoom, separately.
+LZ_MAX_REGION_SIZE = 2_000_000

@@ -20,7 +20,7 @@ urlpatterns = [
 
     path('signals/', views.MarginalSignalListView.as_view(), name='signals-all'),
     path('signals/<uuid>/', views.MarginalSignalDetailView.as_view(), name='signals-detail'),
-    path('signals/<uuid>/summ_stats/', views.MarginalSignalSummStatsView.as_view(), name='signals-summstats'),
+    path('signals/<uuid>/region/', views.MarginalSignalSummRegionView.as_view(), name='signals-summstats'),
 
     path('coloc/', views.ColocResultListView.as_view(), name='coloc-all'),
     path('coloc/<uuid>/', views.ColocResultDetailView.as_view(), name='coloc-detail'),

@@ -17,7 +17,7 @@ def parse_plink(line: str):
     Parse PLINK format LD
 
     NOTE: PLINK files vary. They should be harmonized into a consistent set of columns during ingest.
-    This parser assumes the following columns:
+    This parser assumes the following columns (plus any on the right after that):
     CHR_A	BP_A	SNP_A	CHR_B	BP_B	SNP_B	R2
     """
     fields = line.strip().split('\t')

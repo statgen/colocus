@@ -104,8 +104,8 @@ def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: p
     signal.analysis = analysis
     signal.trait = trait
 
-    _save_file_to_file(signal.cond_analysis, signal_dir / 'cond_analysis.gz')
-    _save_file_to_file(signal.cond_analysis_tbi, signal_dir / 'cond_analysis.gz.tbi')
+    _save_file_to_file(signal.cond_analysis, signal_dir / 'cond_analysis.harmonized.gz')
+    _save_file_to_file(signal.cond_analysis_tbi, signal_dir / 'cond_analysis.harmonized.gz.tbi')
 
     signal.save()
     return signal
@@ -133,9 +133,9 @@ def load_one_marginal(analysis: AnalysisGroup, trait_dir: pathlib.Path) -> Margi
     marginal.analysis = analysis
 
     # FIXME: Can this handle a local path? How does upload_to work in this case? need to work out create / save logic
-    _save_file_to_file(marginal.summary_stats, trait_dir / 'summ_stats.gz')
+    _save_file_to_file(marginal.summary_stats, trait_dir / 'summ_stats.harmonized.gz')
 
-    _save_file_to_file(marginal.summary_stats_tbi, trait_dir / 'summ_stats.gz.tbi')
+    _save_file_to_file(marginal.summary_stats_tbi, trait_dir / 'summ_stats.harmonized.gz.tbi')
     # FIXME: Generate these files and add back to pipeline
     # _save_file_to_file(marginal.manhattan_bins, trait_dir / 'manhattan.json')
     # _save_file_to_file(marginal.qq_bins, trait_dir / 'qq.json')

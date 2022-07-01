@@ -18,6 +18,9 @@ urlpatterns = [
     # /ld/ = LISTVIEW
     #     /<uid>/ ?chr-start-end - retrieve LD for a given view, translate to LZ api fields. Uses panel ID from marg trait page
 
+    path('studies/', views.AnalysisGroupListView.as_view(), name='studies-all'),
+    path('studies/<uuid>/', views.AnalysisGroupDetailView.as_view(), name='studies-detail'),
+
     path('signals/', views.MarginalSignalListView.as_view(), name='signals-all'),
     path('signals/<uuid>/', views.MarginalSignalDetailView.as_view(), name='signals-detail'),
     path('signals/<uuid>/region/', views.MarginalSignalSummRegionView.as_view(), name='signals-summstats'),

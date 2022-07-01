@@ -57,6 +57,18 @@ class TabixRegionView(generics.RetrieveAPIView):
 
 # Metadata endpoints
 # -----------------------
+class AnalysisGroupListView(generics.ListAPIView):
+    ordering = ('study_date',)
+    queryset = models.AnalysisGroup.objects.all()
+    serializer_class = serializers.AnalyisGroupSerializer
+
+
+class AnalysisGroupDetailView(generics.RetrieveAPIView):
+    lookup_field = 'uuid'
+    queryset = models.AnalysisGroup.objects.all()
+    serializer_class = serializers.AnalyisGroupSerializer
+
+
 class ColocResultListView(generics.ListAPIView):
     ordering = ('coloc_h4',)
     queryset = models.ColocResult.objects.select_related('analysis', 'signal1', 'signal2')

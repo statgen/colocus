@@ -4,7 +4,7 @@ from rest_framework import serializers as drf_serializers
 from colocus.core import models
 
 
-class AnalyisGroup(drf_serializers.ModelSerializer):
+class AnalyisGroupSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.AnalysisGroup
         fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid')
@@ -47,6 +47,10 @@ class MarginalSignalSerializer(drf_serializers.ModelSerializer):
 
 
 class MergedSignalRegionSerializer(drf_serializers.Serializer):
+    """
+    A generic serializer for when we want to fetch two merged signals in a single request, like trait1-trait2
+        (locuscompare plot) or marginal signal + conditional analysis results.
+    """
     chromosome = drf_serializers.CharField(source='chrom', read_only=True)
     position = drf_serializers.IntegerField(source='pos', read_only=True)
     ref_allele = drf_serializers.CharField(source='ref', read_only=True)
@@ -86,7 +90,7 @@ class MergedSignalRegionSerializer(drf_serializers.Serializer):
 
 
 class ColocResultSerializer(drf_serializers.ModelSerializer):
-    analysis = AnalyisGroup(read_only=True)
+    analysis = AnalyisGroupSerializer(read_only=True)
     signal1 = MarginalSignalSerializer(read_only=True)
     signal2 = MarginalSignalSerializer(read_only=True)
 

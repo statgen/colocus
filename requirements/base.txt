@@ -13,6 +13,7 @@ django-environ==0.8.1  # https://github.com/joke2k/django-environ
 django-model-utils==4.2.0  # https://github.com/jazzband/django-model-utils
 django-allauth==0.51.0  # https://github.com/pennersr/django-allauth
 django-crispy-forms==1.14.0  # https://github.com/django-crispy-forms/django-crispy-forms
+django-filter==22.1  # https://pypi.org/project/django-filter/
 crispy-bootstrap5==0.6  # https://github.com/django-crispy-forms/crispy-bootstrap5
 django-redis==5.2.0  # https://github.com/jazzband/django-redis
 # Django REST Framework
@@ -27,5 +28,5 @@ drf-spectacular==0.22.1  # https://github.com/tfranzel/drf-spectacular
 PyYAML==6.0
 boltons~=20.2.1
 scipy~=1.5.3
-zorp[perf,lookups]==0.3.7
+zorp[perf,lookups]==0.3.8
 genelocator==1.1.2

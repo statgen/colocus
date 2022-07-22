@@ -10,7 +10,7 @@ from zorp.sniffers import guess_gwas_standard
 
 from colocus.core import models
 
-from . import parsers, serializers, util
+from . import filters, parsers, serializers, util
 
 
 # Base classes shared among views
@@ -74,6 +74,9 @@ class ColocResultListView(generics.ListAPIView):
     queryset = models.ColocResult.objects.select_related('analysis', 'signal1', 'signal2')
 
     serializer_class = serializers.ColocResultSerializer
+    filterset_class = filters.ColocResultFilter
+
+    ordering_fields = ['coloc_h4', 'signal1__lead_variant_pos']
 
 
 class ColocResultDetailView(generics.RetrieveAPIView):
@@ -170,7 +173,7 @@ class LDPairsRegionView(TabixRegionView):
 
         variant = params.get('variant', None)
         if not variant:
-            raise drf_exceptions.ParseError('Must specify reference variant as "chr:pos_ref/alt"')
+            raise drf_exceptions.ParseError('Must specify reference variant as ""variant=chr:pos_ref/alt"')
         return chrom, start, end, variant
 
     def get_object(self):

@@ -4,12 +4,12 @@ Filters
 https://django-filter.readthedocs.io/en/stable/ref/filterset.html#fields
 """
 
-import django_filters
+from django_filters.rest_framework import FilterSet
 
 from colocus.core import models
 
 
-class ColocResultFilter(django_filters.FilterSet):
+class ColocResultFilter(FilterSet):
     """
     Default filtering behavior for coloc results.
 
@@ -22,11 +22,13 @@ class ColocResultFilter(django_filters.FilterSet):
     class Meta:
         model = models.ColocResult
         fields = {
-            'analysis': ['exact'],
+            # 'analysis__uuid': ['exact'],  # TODO move this one to a URL segment
             'signal1__trait__uuid': ['exact'],
             'signal2__trait__uuid': ['exact'],
+            'signal1__lead_variant_chrom': ['exact'],
             'signal1__lead_variant_pos': ['exact', 'gte', 'gt', 'lte', 'lt'],
             'signal1__lead_variant_nearest_gene': ['exact'],
+            'signal2__lead_variant_chrom': ['exact'],
             'signal2__lead_variant_pos': ['exact', 'gte', 'gt', 'lte', 'lt'],
             'signal2__lead_variant_nearest_gene': ['exact'],
         }

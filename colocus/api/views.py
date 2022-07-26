@@ -15,6 +15,14 @@ from . import filters, parsers, serializers, util
 
 # Base classes shared among views
 # --------------------------------
+class OneStudyMixin:
+    """Most URLs in this app are scoped to one particular study. Restrict the queryset accordingly"""
+    def filter_queryset(self, queryset):
+        """"""
+        queryset = super(OneStudyMixin, self).filter_queryset(queryset)
+        return queryset.filter(analysis__uuid=self.kwargs['analysis_uuid'])
+
+
 class TabixRegionView(generics.RetrieveAPIView):
     def get_serializer(self, *args, **kwargs):
         """Unique scenario: a single model that returns a list of records"""
@@ -75,7 +83,6 @@ class ColocResultListView(generics.ListAPIView):
 
     serializer_class = serializers.ColocResultSerializer
     filterset_class = filters.ColocResultFilter
-
     ordering_fields = ['coloc_h4', 'signal1__lead_variant_pos']
 
 

@@ -1,7 +1,31 @@
 import math
+
+from rest_framework.reverse import reverse
 from rest_framework import serializers as drf_serializers
 
 from colocus.core import models
+
+
+class StudyHyperlinkRelatedField(drf_serializers.HyperlinkedRelatedField):
+    """
+    For URLs with two lookup fields (study uuid and pk), we need a custom relationship field serializer.
+        (the default hyperlinked serializer doesn't handle nested relationships well)
+
+    See: https://www.django-rest-framework.org/api-guide/relations/#custom-hyperlinked-fields
+    """
+    def get_url(self, obj, view_name, request, format):
+        url_kwargs = {
+            'analysis_uuid': obj.analysis.uuid,
+            'uuid': obj.uuid
+        }
+        return reverse(view_name, kwargs=url_kwargs, request=request, format=format)
+
+    def get_object(self, view_name, view_args, view_kwargs):
+        lookup_kwargs = {
+           'analysis_uuid': view_kwargs['analysis_uuid'],
+           'uuid': self.lookup_field,
+        }
+        return self.get_queryset().get(**lookup_kwargs)
 
 
 class AnalyisGroupSerializer(drf_serializers.ModelSerializer):
@@ -29,7 +53,7 @@ class LDRegionSerializer(drf_serializers.Serializer):
 
 
 class MarginalTraitSerializer(drf_serializers.ModelSerializer):
-    ld = drf_serializers.HyperlinkedRelatedField(read_only=True, view_name='api:ld-region', lookup_field='uuid')
+    ld = StudyHyperlinkRelatedField(read_only=True, view_name='api:ld-region', lookup_field='uuid')
 
     class Meta:
         model = models.MarginalTrait

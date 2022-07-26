@@ -18,19 +18,24 @@ urlpatterns = [
     # /ld/ = LISTVIEW
     #     /<uid>/ ?chr-start-end - retrieve LD for a given view, translate to LZ api fields. Uses panel ID from marg trait page
 
+
+    # List of studies / datasets
     path('studies/', views.AnalysisGroupListView.as_view(), name='studies-all'),
     path('studies/<uuid>/', views.AnalysisGroupDetailView.as_view(), name='studies-detail'),
 
-    path('signals/', views.MarginalSignalListView.as_view(), name='signals-all'),
-    path('signals/<uuid>/', views.MarginalSignalDetailView.as_view(), name='signals-detail'),
-    path('signals/<uuid>/region/', views.MarginalSignalSummRegionView.as_view(), name='signals-summstats'),
+    # List of unique signals (individual, LD-distinct peaks, usually within a particular locus. Provides both marg and cond analysis results)
+    path('studies/<analysis_uuid>/signals/', views.MarginalSignalListView.as_view(), name='signals-all'),
+    path('studies/<analysis_uuid>/signals/<uuid>/', views.MarginalSignalDetailView.as_view(), name='signals-detail'),
+    path('studies/<analysis_uuid>/signals/<uuid>/region/', views.MarginalSignalSummRegionView.as_view(), name='signals-summstats'),
 
-    path('coloc/', views.ColocResultListView.as_view(), name='coloc-all'),
-    path('coloc/<uuid>/', views.ColocResultDetailView.as_view(), name='coloc-detail'),
+    # Colocalization analysis: estimated probability of two results supporting the same peak for a given trait + signal pair
+    path('studies/<analysis_uuid>/coloc/', views.ColocResultListView.as_view(), name='coloc-all'),
+    path('studies/<analysis_uuid>/coloc/<uuid>/', views.ColocResultDetailView.as_view(), name='coloc-detail'),
 
-    path('ld/', views.LDPairsListView.as_view(), name='ld-all'),
-    path('ld/<uuid>/', views.LDPairsDetailView.as_view(), name='ld-detail'),
-    path('ld/<uuid>/region/', views.LDPairsRegionView.as_view(), name='ld-region'),
+    # LD data and metadata for a given dataset
+    path('studies/<analysis_uuid>/ld/', views.LDPairsListView.as_view(), name='ld-all'),
+    path('studies/<analysis_uuid>/ld/<uuid>/', views.LDPairsDetailView.as_view(), name='ld-detail'),
+    path('studies/<analysis_uuid>/ld/<uuid>/region/', views.LDPairsRegionView.as_view(), name='ld-region'),
 
     # path("v1/", view=user_redirect_view, name="redirect"),
     # path("~update/", view=user_update_view, name="update"),

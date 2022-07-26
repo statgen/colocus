@@ -13,6 +13,15 @@ Moved to [settings](http://cookiecutter-django.readthedocs.io/en/latest/settings
 
 ## Basic Commands
 
+### Database setup
+The database can be created by applying relevant migrations, and then loading a pre-packaged dataset (not provided in this repo, though subsets of data may be provided in the future).
+
+```bash
+$ source .venv/bin/activate
+$ python manage.py migrate
+$ python scripts/load_dataset.py
+```
+
 ### Setting Up Your Users
 
 -   To create a **normal user account**, just go to Sign Up and fill out the form. Once you submit it, you'll see a "Verify Your E-mail Address" page. Go to your console to see a simulated email verification message. Copy the link into your browser. Now the user's email should be verified and ready to go.

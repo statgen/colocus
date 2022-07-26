@@ -10,9 +10,8 @@ from . import constants, file_util
 class AnalysisGroup(models.Model):
     """
     A group of colocalization analyses, like a paper that performs the same pipeline on a thousand distinct signals
-    across many gwas-eqtl pairs
+    across many gwas-eqtl pairs. Externally in URLs, we often refer to this as a "study"
     """
-    # TODO In future add unique constraints: make the IDfield a uuid or such to prevent collisions across projects.
     uuid = models.CharField(
         max_length=32,
         blank=False,
@@ -87,6 +86,11 @@ class LDPairs(models.Model):
         help_text='Tabix index for the LD data. Must match the bgzip file'
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['analysis', 'uuid'], name='LD-in-study identifier')
+        ]
+
 
 class MarginalTrait(models.Model):
     """
@@ -98,6 +102,13 @@ class MarginalTrait(models.Model):
         null=False,
         unique=True,
         help_text='A stable unique identifier for this entity. Should be specified on ingest'
+    )
+
+    analysis = models.ForeignKey(
+        AnalysisGroup,
+        on_delete=models.CASCADE,
+        null=False,
+        help_text='This trait was provided with a specific group of analyses'
     )
 
     #### Basic properties that define the dataset
@@ -166,6 +177,11 @@ class MarginalTrait(models.Model):
         help_text='URL for where the data was downloaded from. Used to track provenance.'
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['analysis', 'uuid'], name='Trait-in-study identifier')
+        ]
+
 
 class MarginalSignal(models.Model):
     """
@@ -219,6 +235,11 @@ class MarginalSignal(models.Model):
         help_text='Human-friendly name of the closest gene. Used for display purposes.'
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['analysis', 'uuid'], name='Signal-in-study identifier')
+        ]
+
 
 class ColocResult(models.Model):
     """
@@ -264,3 +285,8 @@ class ColocResult(models.Model):
         verbose_name='H4',
         help_text='Probability that both traits are associated, with same causal variant'
     )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['analysis', 'uuid'], name='Coloc-in-study identifier')
+        ]

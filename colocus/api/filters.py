@@ -23,8 +23,8 @@ class ColocResultFilter(FilterSet):
         model = models.ColocResult
         fields = {
             # 'analysis__uuid': ['exact'],  # TODO move this one to a URL segment
-            'signal1__trait__uuid': ['exact'],
-            'signal2__trait__uuid': ['exact'],
+            'signal1__trait__uuid': ['exact', 'in'],
+            'signal2__trait__uuid': ['exact', 'in'],
             'signal1__lead_variant_chrom': ['exact'],
             'signal1__lead_variant_pos': ['exact', 'gte', 'gt', 'lte', 'lt'],
             'signal1__lead_variant_nearest_gene': ['exact'],

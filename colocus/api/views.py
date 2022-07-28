@@ -78,12 +78,12 @@ class AnalysisGroupDetailView(generics.RetrieveAPIView):
 
 
 class ColocResultListView(generics.ListAPIView):
-    ordering = ('coloc_h4',)
+    ordering = ('-coloc_h4',)
     queryset = models.ColocResult.objects.select_related('analysis', 'signal1', 'signal2')
 
     serializer_class = serializers.ColocResultSerializer
     filterset_class = filters.ColocResultFilter
-    ordering_fields = ['coloc_h4', 'signal1__lead_variant_pos']
+    ordering_fields = ['coloc_h4', 'signal1__lead_variant_pos', 'signal1__lead_variant_pos', 'signal1__trait__metadata__trait', 'signal2__trait__metadata__trait']
 
 
 class ColocResultDetailView(generics.RetrieveAPIView):

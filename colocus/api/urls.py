@@ -1,6 +1,6 @@
 from django.urls import path
 
-from colocus.api import views
+from colocus.api import internal_views, views
 # .views import (
 #     user_detail_view,
 #     user_redirect_view,
@@ -17,7 +17,6 @@ urlpatterns = [
     #     /<uid> = metadata: what are the two signals + h3/h4 for this item? Used for region plot page
     # /ld/ = LISTVIEW
     #     /<uid>/ ?chr-start-end - retrieve LD for a given view, translate to LZ api fields. Uses panel ID from marg trait page
-
 
     # List of studies / datasets
     path('studies/', views.AnalysisGroupListView.as_view(), name='studies-all'),
@@ -36,6 +35,9 @@ urlpatterns = [
     path('studies/<analysis_uuid>/ld/', views.LDPairsListView.as_view(), name='ld-all'),
     path('studies/<analysis_uuid>/ld/<uuid>/', views.LDPairsDetailView.as_view(), name='ld-detail'),
     path('studies/<analysis_uuid>/ld/<uuid>/region/', views.LDPairsRegionView.as_view(), name='ld-region'),
+
+    # "Private" endpoints only used by internal views. These may change and carry no external contract of stability.
+    path('internal/studies/<analysis__uuid>/search_metadata/', internal_views.search_page_metadata, name='search-metadata')
 
     # path("v1/", view=user_redirect_view, name="redirect"),
     # path("~update/", view=user_update_view, name="update"),

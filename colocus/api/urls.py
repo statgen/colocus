@@ -37,7 +37,9 @@ urlpatterns = [
     path('studies/<analysis_uuid>/ld/<uuid>/region/', views.LDPairsRegionView.as_view(), name='ld-region'),
 
     # "Private" endpoints only used by internal views. These may change and carry no external contract of stability.
-    path('internal/studies/<analysis__uuid>/search_metadata/', internal_views.search_page_metadata, name='search-metadata')
+    path('internal/studies/<analysis__uuid>/search_metadata/', internal_views.search_page_metadata, name='search-metadata'),
+    path('internal/studies/<analysis_uuid>/traits/<uuid>/manhattan/', internal_views.trait_manhattan, name='trait-manhattan'),
+    path('internal/studies/<analysis_uuid>/traits/<uuid>/qq/', internal_views.trait_qq, name='trait-qq'),
 
     # path("v1/", view=user_redirect_view, name="redirect"),
     # path("~update/", view=user_update_view, name="update"),

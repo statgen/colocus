@@ -92,6 +92,19 @@ class ColocResultDetailView(generics.RetrieveAPIView):
     serializer_class = serializers.ColocResultSerializer
 
 
+class LDPairsListView(generics.ListAPIView):
+    ordering = ('panel', 'population')
+    queryset = models.LDPairs.objects.all()
+
+    serializer_class = serializers.LDPairsSerializer
+
+
+class LDPairsDetailView(generics.RetrieveAPIView):
+    lookup_field = 'uuid'
+    queryset = models.LDPairs.objects.all()
+    serializer_class = serializers.LDPairsSerializer
+
+
 class MarginalSignalListView(generics.ListAPIView):
     ordering = ('lead_variant_neg_log_p',)
     queryset = models.MarginalSignal.objects.select_related('trait')
@@ -105,17 +118,17 @@ class MarginalSignalDetailView(generics.RetrieveAPIView):
     serializer_class = serializers.MarginalSignalSerializer
 
 
-class LDPairsListView(generics.ListAPIView):
-    ordering = ('panel', 'population')
-    queryset = models.LDPairs.objects.all()
+class MarginalTraitListView(generics.ListAPIView):
+    ordering = ('study_name',)
+    queryset = models.MarginalTrait.objects.select_related('analysis')
 
-    serializer_class = serializers.LDPairsSerializer
+    serializer_class = serializers.MarginalTraitSerializer
 
 
-class LDPairsDetailView(generics.RetrieveAPIView):
+class MarginalTraitDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
-    queryset = models.LDPairs.objects.all()
-    serializer_class = serializers.LDPairsSerializer
+    queryset = models.MarginalTrait.objects.select_related('analysis')
+    serializer_class = serializers.MarginalTraitSerializer
 
 
 # Tabix-based "region view" endpoints

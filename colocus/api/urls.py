@@ -22,6 +22,10 @@ urlpatterns = [
     path('studies/', views.AnalysisGroupListView.as_view(), name='studies-all'),
     path('studies/<uuid>/', views.AnalysisGroupDetailView.as_view(), name='studies-detail'),
 
+    # Marginal trait data (used to render "trait detail view" pages). Some trait info is embedded into the coloc result view without a separate API call.
+    path('studies/<analysis_uuid>/traits/', views.MarginalTraitListView.as_view(), name='traits-all'),
+    path('studies/<analysis_uuid>/traits/<uuid>/', views.MarginalTraitDetailView.as_view(), name='traits-detail'),
+
     # List of unique signals (individual, LD-distinct peaks, usually within a particular locus. Provides both marg and cond analysis results)
     path('studies/<analysis_uuid>/signals/', views.MarginalSignalListView.as_view(), name='signals-all'),
     path('studies/<analysis_uuid>/signals/<uuid>/', views.MarginalSignalDetailView.as_view(), name='signals-detail'),

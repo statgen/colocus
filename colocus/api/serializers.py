@@ -53,6 +53,26 @@ class LDRegionSerializer(drf_serializers.Serializer):
 
 
 class MarginalTraitSerializer(drf_serializers.ModelSerializer):
+    """
+    Full set of marginal trait fields for standalone endpoints. Analysis info is embedded into the response because
+        the primary use case for this serializer/endpoint is to render pages with all the info we want about this trait.
+    """
+    analysis = AnalyisGroupSerializer(read_only=True)
+    ld = StudyHyperlinkRelatedField(read_only=True, view_name='api:ld-region', lookup_field='uuid')
+
+    class Meta:
+        model = models.MarginalTrait
+        fields = (
+            'uuid', 'analysis',
+            'trait_type', 'genome_build', 'metadata', 'ld',
+            'study_name', 'pmid', 'authors', 'external_link',
+        )
+
+
+class MarginalTraitSerializerBrief(drf_serializers.ModelSerializer):
+    """
+    Serialize a selection of marginal trait fields. Suitable for embedding concise information in another response
+    """
     ld = StudyHyperlinkRelatedField(read_only=True, view_name='api:ld-region', lookup_field='uuid')
 
     class Meta:
@@ -63,7 +83,7 @@ class MarginalTraitSerializer(drf_serializers.ModelSerializer):
 class MarginalSignalSerializer(drf_serializers.ModelSerializer):
     # TODO: Add link fields to traits
     # Embed the related data into this response to avoid a separate query
-    trait = MarginalTraitSerializer(read_only=True)
+    trait = MarginalTraitSerializerBrief(read_only=True)
 
     class Meta:
         model = models.MarginalSignal

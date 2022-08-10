@@ -52,6 +52,11 @@ class AnalysisGroup(models.Model):
                             help_text='Identify a publication describing this colocalization analysis',
                             verbose_name='PMID')
 
+    #### Computed properties used by serializers
+    @property
+    def trait_count(self):
+        return self.marginaltrait_set.count()
+
 
 class LDPairs(models.Model):
     """LD data for a particular population / dataset/ genome build."""

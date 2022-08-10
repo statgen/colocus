@@ -31,7 +31,7 @@ class StudyHyperlinkRelatedField(drf_serializers.HyperlinkedRelatedField):
 class AnalyisGroupSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.AnalysisGroup
-        fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid')
+        fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid', 'trait_count')
 
 
 class LDPairsSerializer(drf_serializers.ModelSerializer):

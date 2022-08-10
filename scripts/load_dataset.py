@@ -69,7 +69,7 @@ def load_ld(analysis, ld_dir: pathlib.Path) -> LDPairs:
 
     try:
         # Don't use get_or_create because additional non-null fields exist
-        ld = LDPairs.objects.get(uuid=metadata['uuid'])
+        ld = LDPairs.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['uuid'])
         for k, v in metadata.items():
             setattr(ld, k, v)
     except LDPairs.DoesNotExist:
@@ -94,7 +94,7 @@ def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: p
 
     try:
         # Don't use get_or_create because additional non-null fields exist
-        signal = MarginalSignal.objects.get(uuid=metadata['uuid'])
+        signal = MarginalSignal.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['uuid'])
     except MarginalSignal.DoesNotExist:
         signal = MarginalSignal(**metadata)
 
@@ -120,7 +120,7 @@ def load_one_marginal(analysis: AnalysisGroup, trait_dir: pathlib.Path) -> Margi
         metadata = yaml.safe_load(f)
 
     try:
-        marginal = MarginalTrait.objects.get(uuid=metadata['uuid'])
+        marginal = MarginalTrait.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['uuid'])
     except MarginalTrait.DoesNotExist:
         marginal = MarginalTrait()
 
@@ -165,7 +165,7 @@ def load_one_colocalization(analysis: AnalysisGroup, signal_dir: pathlib.Path) -
         metadata = yaml.safe_load(f)
 
     try:
-        coloc = ColocResult.objects.get(uuid=metadata['uuid'])
+        coloc = ColocResult.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['uuid'])
     except ColocResult.DoesNotExist:
         coloc = ColocResult()
 
@@ -175,8 +175,8 @@ def load_one_colocalization(analysis: AnalysisGroup, signal_dir: pathlib.Path) -
 
     coloc.analysis = analysis
     # An external validation step should have already verified that signal1 and signal2 exist
-    coloc.signal1 = MarginalSignal.objects.get(uuid=metadata['signal1'])
-    coloc.signal2 = MarginalSignal.objects.get(uuid=metadata['signal2'])
+    coloc.signal1 = MarginalSignal.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['signal1'])
+    coloc.signal2 = MarginalSignal.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['signal2'])
 
     coloc.save()
     return coloc

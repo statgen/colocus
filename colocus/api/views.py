@@ -65,13 +65,13 @@ class TabixRegionView(generics.RetrieveAPIView):
 
 # Metadata endpoints
 # -----------------------
-class AnalysisGroupListView(OneStudyMixin, generics.ListAPIView):
+class AnalysisGroupListView(generics.ListAPIView):
     ordering = ('study_date',)
     queryset = models.AnalysisGroup.objects.all()
     serializer_class = serializers.AnalyisGroupSerializer
 
 
-class AnalysisGroupDetailView(OneStudyMixin, generics.RetrieveAPIView):
+class AnalysisGroupDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
     queryset = models.AnalysisGroup.objects.all()
     serializer_class = serializers.AnalyisGroupSerializer

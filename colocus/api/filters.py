@@ -27,8 +27,9 @@ class ColocResultFilter(FilterSet):
             'signal2__trait__uuid': ['exact', 'in'],
             'signal1__lead_variant_chrom': ['exact'],
             'signal1__lead_variant_pos': ['exact', 'gte', 'gt', 'lte', 'lt'],
-            'signal1__lead_variant_nearest_gene': ['exact'],
+            'signal1__lead_variant_nearest_gene': ['exact', 'in'],
             'signal2__lead_variant_chrom': ['exact'],
             'signal2__lead_variant_pos': ['exact', 'gte', 'gt', 'lte', 'lt'],
             'signal2__lead_variant_nearest_gene': ['exact'],
+            'coloc_h4': ['gte']  # "query just the significant results"
         }

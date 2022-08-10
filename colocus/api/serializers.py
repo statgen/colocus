@@ -65,7 +65,7 @@ class MarginalTraitSerializer(drf_serializers.ModelSerializer):
         fields = (
             'uuid', 'analysis',
             'trait_type', 'genome_build', 'metadata', 'ld',
-            'study_name', 'pmid', 'authors', 'external_link',
+            'study_name', 'label', 'pmid', 'authors', 'external_link',
         )
 
 
@@ -77,7 +77,7 @@ class MarginalTraitSerializerBrief(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.MarginalTrait
-        fields = ('uuid', 'trait_type', 'genome_build', 'metadata', 'ld')
+        fields = ('uuid', 'label', 'trait_type', 'genome_build', 'metadata', 'ld')
 
 
 class MarginalSignalSerializer(drf_serializers.ModelSerializer):

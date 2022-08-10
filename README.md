@@ -3,7 +3,6 @@
 Visualize and explore colocalization studies
 
 [![Built with Cookiecutter Django](https://img.shields.io/badge/built%20with-Cookiecutter%20Django-ff69b4.svg?logo=cookiecutter)](https://github.com/cookiecutter/cookiecutter-django/)
-[![Black code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
 License: MIT
 
@@ -17,10 +16,16 @@ Moved to [settings](http://cookiecutter-django.readthedocs.io/en/latest/settings
 The database can be created by applying relevant migrations, and then loading a pre-packaged dataset (not provided in this repo, though subsets of data may be provided in the future).
 
 ```bash
+$ python3 -m venv .venv/  # first time, only
+$ pip3 install -r requirements/local.txt
 $ source .venv/bin/activate
 $ python manage.py migrate
-$ python scripts/load_dataset.py
+$ python scripts/load_dataset.py  # first draft hardcoded to one machine because hackety hack, y'all
 ```
+
+**Items below are provided by a template and may not be accurate/ necessary. User features may be stripped out as we finalize app functions.**
+
+
 
 ### Setting Up Your Users
 

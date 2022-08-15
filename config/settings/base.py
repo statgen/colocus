@@ -70,9 +70,6 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
-    "allauth",
-    "allauth.account",
-    "allauth.socialaccount",
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
@@ -97,7 +94,6 @@ MIGRATION_MODULES = {"sites": "colocus.contrib.sites.migrations"}
 # https://docs.djangoproject.com/en/dev/ref/settings/#authentication-backends
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-user-model
 AUTH_USER_MODEL = "users.User"
@@ -106,7 +102,7 @@ LOGIN_REDIRECT_URL = "users:redirect"
 # https://docs.djangoproject.com/en/dev/ref/settings/#login-url
 LOGIN_URL = "account_login"
 
-# PASSWORDS
+# PASSWORDS- just in case we require them or start using the admin site
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#password-hashers
 PASSWORD_HASHERS = [
@@ -156,8 +152,9 @@ STATICFILES_FINDERS = [
 
 # MEDIA
 # ------------------------------------------------------------------------------
+# This contains ingested datasets managed by FileFields. In production this should be a mounted EFS volume
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-root
-MEDIA_ROOT = str(APPS_DIR / "media")
+MEDIA_ROOT = env.str("DJANGO_MEDIA_ROOT", default=str(APPS_DIR / "media"))
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-url
 MEDIA_URL = "/media/"
 
@@ -183,7 +180,6 @@ TEMPLATES = [
                 "django.template.context_processors.static",
                 "django.template.context_processors.tz",
                 "django.contrib.messages.context_processors.messages",
-                "colocus.users.context_processors.allauth_settings",
             ],
         },
     }
@@ -255,44 +251,22 @@ LOGGING = {
     "root": {"level": "INFO", "handlers": ["console"]},
 }
 
-
-# django-allauth
-# ------------------------------------------------------------------------------
-ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
-# https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_AUTHENTICATION_METHOD = "username"
-# https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_EMAIL_REQUIRED = True
-# https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-# https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_ADAPTER = "colocus.users.adapters.AccountAdapter"
-# https://django-allauth.readthedocs.io/en/latest/forms.html
-ACCOUNT_FORMS = {"signup": "colocus.users.forms.UserSignupForm"}
-# https://django-allauth.readthedocs.io/en/latest/configuration.html
-SOCIALACCOUNT_ADAPTER = "colocus.users.adapters.SocialAccountAdapter"
-# https://django-allauth.readthedocs.io/en/latest/forms.html
-SOCIALACCOUNT_FORMS = {"signup": "colocus.users.forms.UserSocialSignupForm"}
-
 # django-rest-framework
 # -------------------------------------------------------------------------------
 # django-rest-framework - https://www.django-rest-framework.org/api-guide/settings/
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
-    ),
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.OrderingFilter',
     ],
-    # "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     # Since the result set is stable, a basic pagination class is sufficient
     'DEFAULT_PAGINATION_CLASS': 'colocus.utils.paginators.ResizablePageNumberPagination',
     'PAGE_SIZE': 50
 }
 
+# This site is a public API / dataset browser. Allowing all origins is ok and simplifies things. TODO revisit, if we add auth
+#   In the future we may add back authentication, but not there yet.
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
 CORS_URLS_REGEX = r"^/api/.*$"
 CORS_ALLOW_ALL_ORIGINS = True
@@ -302,9 +276,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 # See more configuration options at https://drf-spectacular.readthedocs.io/en/latest/settings.html#settings
 SPECTACULAR_SETTINGS = {
     "TITLE": "colocus API",
-    "DESCRIPTION": "Documentation of API endpoints of colocus",
+    "DESCRIPTION": "API documentation for colocus",
     "VERSION": "1.0.0",
-    "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
     "SERVERS": [
         {"url": "http://127.0.0.1:8000", "description": "Local Development server"},
         {"url": "https://colocus.sph.umich.edu", "description": "Production server"},
@@ -312,6 +285,6 @@ SPECTACULAR_SETTINGS = {
 }
 
 
-# The maximum region size (bp) for a single Locuszoom plot. This is used to prevent ginormous API calls. Value is set
-#   for JS in LocalZoom, separately.
+# The maximum region size (bp) for a single Locuszoom plot. This is used to prevent ginormous API calls.
+#   The JS frontend must also set this value separately.
 LZ_MAX_REGION_SIZE = 2_000_000

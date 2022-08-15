@@ -18,10 +18,6 @@ urlpatterns = [
 
     # REST API
     # path("api/v1/", include("colocus.api.urls", namespace="api")),
-
-    # User management
-    path("users/", include("colocus.users.urls", namespace="users")),
-    path("accounts/", include("allauth.urls")),
     # Your stuff: custom urls includes go here
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.DEBUG:
@@ -33,7 +29,6 @@ urlpatterns += [
     # API base url
     path("api/", include("config.api_router")),
     # DRF auth token
-    path("auth-token/", obtain_auth_token),
     path("api/schema/", SpectacularAPIView.as_view(), name="api-schema"),
     path(
         "api/docs/",

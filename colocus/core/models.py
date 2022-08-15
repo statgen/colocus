@@ -4,6 +4,8 @@ Core models describing key data entities
 from django.db import models
 from model_utils.models import SoftDeletableModel, TimeStampedModel
 
+from colocus.utils.storages import OverwriteStorage
+
 from . import constants, file_util
 
 
@@ -82,13 +84,15 @@ class LDPairs(models.Model):
     ld_data = models.FileField(
         upload_to=file_util.get_ld_filename,
         verbose_name='LD data',
-        help_text='PLINK formatted LD data (relative to at least key signal SNPs). Must be compressed with bgzip'
+        help_text='PLINK formatted LD data (relative to at least key signal SNPs). Must be compressed with bgzip',
+        storage=OverwriteStorage(),
     )
 
     ld_data_tbi = models.FileField(
         upload_to=file_util.get_ld_filename_tbi,
         verbose_name='LD tabix index',
-        help_text='Tabix index for the LD data. Must match the bgzip file'
+        help_text='Tabix index for the LD data. Must match the bgzip file',
+        storage=OverwriteStorage(),
     )
 
     class Meta:
@@ -133,25 +137,29 @@ class MarginalTrait(models.Model):
     summary_stats = models.FileField(
         upload_to=file_util.get_marginal_summstats,
         verbose_name='Marginal summary stats',
-        help_text='The marginal summary stats for this study. Must be compressed with bgzip'
+        help_text='The marginal summary stats for this study. Must be compressed with bgzip',
+        storage=OverwriteStorage(),
     )
 
     summary_stats_tbi = models.FileField(
         upload_to=file_util.get_marginal_summstats_tbi,
         verbose_name='Tabix index for summary stats',
-        help_text='Tabix index for summary stats (.tbi file). Must match bgzip file.'
+        help_text='Tabix index for summary stats (.tbi file). Must match bgzip file.',
+        storage=OverwriteStorage(),
     )
 
     manhattan_bins = models.FileField(
         upload_to=file_util.get_manhattan,
         verbose_name='Binned data for manhattan plots',
-        help_text='Results of manhattan plot binning process'
+        help_text='Results of manhattan plot binning process',
+        storage=OverwriteStorage(),
     )
 
     qq_bins = models.FileField(
         upload_to=file_util.get_qq,
         verbose_name='Binned data for QQ plots',
-        help_text='Results of manhattan plot binning process'
+        help_text='Results of manhattan plot binning process',
+        storage=OverwriteStorage(),
     )
 
     #### Things used for search and provenance
@@ -218,13 +226,15 @@ class MarginalSignal(models.Model):
     cond_analysis = models.FileField(
         upload_to=file_util.get_signals_cond,
         verbose_name='Cond analysis results ',
-        help_text='Conditional (or "all but one") analysis of marginal results (rel to lead variant of this signal)'
+        help_text='Conditional (or "all but one") analysis of marginal results (rel to lead variant of this signal)',
+        storage=OverwriteStorage(),
     )
 
     cond_analysis_tbi = models.FileField(
         upload_to=file_util.get_signals_cond_tbi,
         verbose_name='tbi for cond results',
-        help_text='Tabix index; must match the conditional analysis file'
+        help_text='Tabix index; must match the conditional analysis file',
+        storage=OverwriteStorage(),
     )
 
     #### Human readable description of lead variant. Explicit cp are required to support search by region

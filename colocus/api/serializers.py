@@ -31,6 +31,17 @@ class StudyHyperlinkRelatedField(drf_serializers.HyperlinkedRelatedField):
 class AnalyisGroupSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.AnalysisGroup
+        fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid')
+
+
+class AnalyisGroupDetailSerializer(drf_serializers.ModelSerializer):
+    """
+    A specialized serializer for when the only thing we are displaying is analysis group.
+        This allows more expensive queries (like trait_count`) than the "general purpose" `AnalysisGroupSerializer`,
+        which is intended to be embedded inside other things.
+    """
+    class Meta:
+        model = models.AnalysisGroup
         fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid', 'trait_count')
 
 

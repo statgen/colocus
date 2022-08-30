@@ -100,6 +100,10 @@ class LDPairs(models.Model):
             models.UniqueConstraint(fields=['analysis', 'uuid'], name='LD-in-study identifier')
         ]
 
+        indexes = [
+            models.Index(fields=['analysis', 'uuid'], name='LD-in-study index'),
+        ]
+
 
 class MarginalTrait(models.Model):
     """
@@ -194,6 +198,9 @@ class MarginalTrait(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['analysis', 'uuid'], name='Trait-in-study identifier')
         ]
+        indexes = [
+            models.Index(fields=['analysis', 'uuid'], name='Trait-in-study index'),
+        ]
 
 
 class MarginalSignal(models.Model):
@@ -255,6 +262,10 @@ class MarginalSignal(models.Model):
             models.UniqueConstraint(fields=['analysis', 'uuid'], name='Signal-in-study identifier')
         ]
 
+        indexes = [
+            models.Index(fields=['analysis', 'uuid'], name='Signal-in-study index'),
+        ]
+
 
 class ColocResult(models.Model):
     """
@@ -304,4 +315,8 @@ class ColocResult(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['analysis', 'uuid'], name='Coloc-in-study identifier')
+        ]
+
+        indexes = [
+            models.Index(fields=['analysis', 'uuid'], name='Coloc-in-study index'),
         ]

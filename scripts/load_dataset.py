@@ -12,6 +12,7 @@ from datetime import datetime
 import os
 from pathlib import Path
 import sys
+import typing as ty
 
 import django
 import pathlib
@@ -84,7 +85,7 @@ def load_ld(analysis, ld_dir: pathlib.Path) -> LDPairs:
     return ld
 
 
-def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: pathlib.Path) -> MarginalSignal:
+def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: pathlib.Path) -> ty.Optional[MarginalSignal]:
     meta_path = signal_dir / 'metadata.yml'
     if not meta_path.exists():
         raise Exception(f'Signal must specify metadata as {meta_path}')
@@ -92,11 +93,25 @@ def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: p
     with open(meta_path, 'r') as f:
         metadata = yaml.safe_load(f)
 
+    if 'error' in metadata:
+        # FIXME: some Ryan metadata files contain errors instead of data. If that happens, skip ingesting this signal.
+        #  Eventually those bad yml files will cease to exist and this can be removed.
+        return
+
+    # FIXME: Temp pop keys not in official schema
+    for k in ['original_file', 'lead_variant_assoc_gene', 'original_lead_variant_marker']:
+        if k in metadata:
+            metadata.pop(k)
+
     try:
         # Don't use get_or_create because additional non-null fields exist
         signal = MarginalSignal.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['uuid'])
     except MarginalSignal.DoesNotExist:
         signal = MarginalSignal(**metadata)
+    except Exception as e:
+        print(meta_path)
+        print(metadata)
+        raise e
 
     for k, v in metadata.items():
         setattr(signal, k, v)
@@ -135,8 +150,15 @@ def load_one_marginal(analysis: AnalysisGroup, trait_dir: pathlib.Path) -> Margi
     # FIXME: Can this handle a local path? How does upload_to work in this case? need to work out create / save logic
     _save_file_to_file(marginal.summary_stats, trait_dir / 'summ_stats.harmonized.gz')
 
-    _save_file_to_file(marginal.manhattan_bins, trait_dir / 'manhattan.json')
-    _save_file_to_file(marginal.qq_bins, trait_dir / 'qq.json')
+    manhattan_path = trait_dir / 'manhattan.json'
+    qq_path = trait_dir / 'qq.json'
+
+    # Only GWAS traits (not eQTLs!) have a manhattan plot file. Don't require it for QTLs.
+    if manhattan_path.exists():
+        _save_file_to_file(marginal.manhattan_bins, manhattan_path)
+
+    if qq_path.exists():
+        _save_file_to_file(marginal.qq_bins, qq_path)
 
     _save_file_to_file(marginal.summary_stats_tbi, trait_dir / 'summ_stats.harmonized.gz.tbi')
     # FIXME: Generate these files and add back to pipeline
@@ -223,5 +245,6 @@ if __name__ == '__main__':
     # args = parse_args()
     # input = args.input
 
-    input = "/Users/abought/dev/locuszoom/coloc-samples/packaged"
+    # input = "/Users/abought/dev/locuszoom/coloc-samples/packaged"
+    input = "/Users/abought/dev/locuszoom/coloc-samples/brotman-full/processed"
     main(input)

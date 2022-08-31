@@ -85,7 +85,11 @@ class ColocResultListView(OneStudyMixin, generics.ListAPIView):
 
     serializer_class = serializers.ColocResultSerializer
     filterset_class = filters.ColocResultFilter
-    ordering_fields = ['coloc_h4', 'signal1__lead_variant_pos', 'signal1__lead_variant_pos', 'signal1__trait__metadata__trait', 'signal2__trait__metadata__trait']
+    ordering_fields = (
+        'coloc_h4',
+        'signal1__lead_variant_neg_log_p', 'signal1__lead_variant_pos', 'signal1__trait__metadata__trait',
+        'signal2__lead_variant_neg_log_p',  'signal2__lead_variant_pos', 'signal2__trait__metadata__gene', 'signal2__trait__metadata__tissue',
+    )
 
 
 class ColocResultDetailView(OneStudyMixin, generics.RetrieveAPIView):

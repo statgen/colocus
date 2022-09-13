@@ -85,6 +85,15 @@ def load_ld(analysis, ld_dir: pathlib.Path) -> LDPairs:
     return ld
 
 
+def init_model(model, attrs: dict):
+    """
+    Load a model with the specified attribute values, ignoring any dict fields not present in the model
+
+    Allows YML files to specify additional info useful to the build process, without breaking the DB loader script
+    """
+    return model(**{k: v for k, v in attrs.items() if k in [f.name for f in model._meta.get_fields()]})
+
+
 def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: pathlib.Path) -> ty.Optional[MarginalSignal]:
     meta_path = signal_dir / 'metadata.yml'
     if not meta_path.exists():
@@ -98,20 +107,11 @@ def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: p
         #  Eventually those bad yml files will cease to exist and this can be removed.
         return
 
-    # FIXME: Temp pop keys not in official schema
-    for k in ['original_file', 'lead_variant_assoc_gene', 'original_lead_variant_marker']:
-        if k in metadata:
-            metadata.pop(k)
-
     try:
         # Don't use get_or_create because additional non-null fields exist
         signal = MarginalSignal.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['uuid'])
     except MarginalSignal.DoesNotExist:
-        signal = MarginalSignal(**metadata)
-    except Exception as e:
-        print(meta_path)
-        print(metadata)
-        raise e
+        signal = init_model(MarginalSignal, metadata)
 
     for k, v in metadata.items():
         setattr(signal, k, v)
@@ -147,7 +147,6 @@ def load_one_marginal(analysis: AnalysisGroup, trait_dir: pathlib.Path) -> Margi
 
     marginal.analysis = analysis
 
-    # FIXME: Can this handle a local path? How does upload_to work in this case? need to work out create / save logic
     _save_file_to_file(marginal.summary_stats, trait_dir / 'summ_stats.harmonized.gz')
 
     manhattan_path = trait_dir / 'manhattan.json'
@@ -161,9 +160,6 @@ def load_one_marginal(analysis: AnalysisGroup, trait_dir: pathlib.Path) -> Margi
         _save_file_to_file(marginal.qq_bins, qq_path)
 
     _save_file_to_file(marginal.summary_stats_tbi, trait_dir / 'summ_stats.harmonized.gz.tbi')
-    # FIXME: Generate these files and add back to pipeline
-    # _save_file_to_file(marginal.manhattan_bins, trait_dir / 'manhattan.json')
-    # _save_file_to_file(marginal.qq_bins, trait_dir / 'qq.json')
 
     marginal.save()
 
@@ -178,7 +174,7 @@ def load_one_marginal(analysis: AnalysisGroup, trait_dir: pathlib.Path) -> Margi
 
 
 def load_one_colocalization(analysis: AnalysisGroup, signal_dir: pathlib.Path) -> ColocResult:
-    """Load colocalization results (one signal pair)"""
+    """Load colocalization results (H3 + H4 for one signal pair)"""
     meta_path = signal_dir / 'metadata.yml'
     if not meta_path.exists():
         raise Exception(f'Marginal trait must specify metadata as {meta_path}')

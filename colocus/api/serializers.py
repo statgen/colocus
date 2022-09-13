@@ -84,10 +84,18 @@ class MarginalSignalSerializer(drf_serializers.ModelSerializer):
     # TODO: Add link fields to traits
     # Embed the related data into this response to avoid a separate query
     trait = MarginalTraitSerializerBrief(read_only=True)
+    lead_variant_neg_log_p = drf_serializers.SerializerMethodField(method_name='get_neg_log_pvalue', read_only=True)
 
     class Meta:
         model = models.MarginalSignal
         fields = ('uuid', 'trait', 'lead_variant_chrom', 'lead_variant_pos', 'lead_variant_marker', 'lead_variant_neg_log_p', 'lead_variant_nearest_gene')
+
+    def get_neg_log_pvalue(self, row):
+        value = row.lead_variant_neg_log_p
+        if value is not None and math.isinf(value):
+            return 'Infinity'
+        else:
+            return value
 
 
 class MergedSignalRegionSerializer(drf_serializers.Serializer):

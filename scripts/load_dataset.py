@@ -119,8 +119,8 @@ def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: p
     signal.analysis = analysis
     signal.trait = trait
 
-    _save_file_to_file(signal.cond_analysis, signal_dir / 'cond_analysis.harmonized.gz')
-    _save_file_to_file(signal.cond_analysis_tbi, signal_dir / 'cond_analysis.harmonized.gz.tbi')
+    _save_file_to_file(signal.cond_analysis, signal_dir / 'results.harmonized.gz')
+    _save_file_to_file(signal.cond_analysis_tbi, signal_dir / 'results.harmonized.gz.tbi')
 
     signal.save()
     return signal

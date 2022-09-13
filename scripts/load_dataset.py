@@ -83,6 +83,8 @@ def load_ld(analysis, ld_dir: pathlib.Path) -> LDPairs:
     ld.save()
     return ld
 
+def init_model(model, arg_dict):
+  return model(**{k: v for k, v in arg_dict.items() if k in [f.name for f in model._meta.get_fields()]})
 
 def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: pathlib.Path) -> MarginalSignal:
     meta_path = signal_dir / 'metadata.yml'
@@ -96,7 +98,7 @@ def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: p
         # Don't use get_or_create because additional non-null fields exist
         signal = MarginalSignal.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['uuid'])
     except MarginalSignal.DoesNotExist:
-        signal = MarginalSignal(**metadata)
+        signal = init_model(MarginalSignal, metadata)
 
     for k, v in metadata.items():
         setattr(signal, k, v)

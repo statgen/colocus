@@ -21,7 +21,7 @@ def parse_plink(line: str):
     CHR_A	BP_A	SNP_A	CHR_B	BP_B	SNP_B	R2
     """
     fields = line.strip().split('\t')
-    chr_a, bp_a, snp_a, chr_b, bp_b, snp_b, r2 = fields
+    chr_a, bp_a, snp_a, chr_b, bp_b, snp_b, r2 = fields[0:7]
     bp_a = int(bp_a)
     bp_b = int(bp_b)
     r2 = float(r2)

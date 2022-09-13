@@ -17,8 +17,9 @@ The database can be created by applying relevant migrations, and then loading a 
 
 ```bash
 $ python3 -m venv .venv/  # first time, only
-$ pip3 install -r requirements/local.txt
 $ source .venv/bin/activate
+$ pip3 install -r requirements/local.txt
+$ mkdir database
 $ python manage.py migrate
 $ python scripts/load_dataset.py  # first draft hardcoded to one machine because hackety hack, y'all
 ```

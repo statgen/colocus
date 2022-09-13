@@ -27,7 +27,7 @@ from colocus.core.models import AnalysisGroup, ColocResult, LDPairs, MarginalSig
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Load a packaged coloc dataset into the database. Assumes validation was performed elsewhere, eg for uuid integrity")
-    parser.add_argument('input', nargs='+', help='The top level folder of the packaged dataset with a predefined structure.')
+    parser.add_argument('input', help='The top level folder of the packaged dataset with a predefined structure.')
     return parser.parse_args()
 
 def _save_file_to_file(field, local_filename: pathlib.Path):
@@ -220,8 +220,6 @@ def main(package_root: str):
 
 
 if __name__ == '__main__':
-    # args = parse_args()
-    # input = args.input
-
-    input = "/Users/abought/dev/locuszoom/coloc-samples/packaged"
+    args = parse_args()
+    input = args.input
     main(input)

@@ -1,7 +1,0 @@
-# PostgreSQL
-# ------------------------------------------------------------------------------
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-POSTGRES_DB=colocus
-POSTGRES_USER=OpvmUGqVETCpykecDvALIpsNGQVWEtXV
-POSTGRES_PASSWORD=8Kcpp9Z6JO6gpnoxn7AffktO5SB6eqHrflyFgVwfLm8dBx0hAPvDtHANj97ypLpB

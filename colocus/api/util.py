@@ -1,4 +1,5 @@
 import dataclasses
+import math
 import typing as ty
 
 from zorp.parsers import BasicVariant
@@ -30,7 +31,6 @@ class MergedVariant:
         ref_alt = '_{}/{}'.format(self.ref, self.alt) \
             if (self.ref and self.alt) else ''
         return '{}:{}{}'.format(self.chrom, self.pos, ref_alt)
-
 
 
 def merge_variants_in_region(a: ty.Iterator[BasicVariant], b: ty.List[BasicVariant]):
@@ -105,3 +105,16 @@ def merge_variants_in_region(a: ty.Iterator[BasicVariant], b: ty.List[BasicVaria
 
     flush()
     return joined
+
+
+def serialize_neg_log_pvalue(value: float) -> ty.Union[float, str, None]:
+    """
+    Many GWAS programs suffer from underflow and may represent small p=0/-logp=inf
+
+    The JSON standard can't handle "Infinity", but the string 'Infinity' can be type-coerced by JS, eg +value
+    Therefore we serialize this as a special case so it can be used in the frontend
+    """
+    if value is not None and math.isinf(value):
+        return 'Infinity'
+    else:
+        return value

@@ -1,9 +1,9 @@
-import math
-
 from rest_framework.reverse import reverse
 from rest_framework import serializers as drf_serializers
 
 from colocus.core import models
+
+from .util import serialize_neg_log_pvalue
 
 
 class StudyHyperlinkRelatedField(drf_serializers.HyperlinkedRelatedField):
@@ -29,6 +29,17 @@ class StudyHyperlinkRelatedField(drf_serializers.HyperlinkedRelatedField):
 
 
 class AnalyisGroupSerializer(drf_serializers.ModelSerializer):
+    class Meta:
+        model = models.AnalysisGroup
+        fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid')
+
+
+class AnalyisGroupDetailSerializer(drf_serializers.ModelSerializer):
+    """
+    A specialized serializer for when the only thing we are displaying is analysis group.
+        This allows more expensive queries (like trait_count`) than the "general purpose" `AnalysisGroupSerializer`,
+        which is intended to be embedded inside other things.
+    """
     class Meta:
         model = models.AnalysisGroup
         fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid', 'trait_count')
@@ -85,6 +96,11 @@ class MarginalSignalSerializer(drf_serializers.ModelSerializer):
     # Embed the related data into this response to avoid a separate query
     trait = MarginalTraitSerializerBrief(read_only=True)
 
+    lead_variant_neg_log_p = drf_serializers.SerializerMethodField(method_name='get_lead_variant_neg_log_p', read_only=True)
+
+    def get_lead_variant_neg_log_p(self, obj):
+        return serialize_neg_log_pvalue(obj.lead_variant_neg_log_p)
+
     class Meta:
         model = models.MarginalSignal
         fields = ('uuid', 'trait', 'lead_variant_chrom', 'lead_variant_pos', 'lead_variant_marker', 'lead_variant_neg_log_p', 'lead_variant_nearest_gene')
@@ -112,25 +128,10 @@ class MergedSignalRegionSerializer(drf_serializers.Serializer):
     t2_alt_allele_freq = drf_serializers.FloatField(read_only=True)
 
     def get_t1_neg_log_pvalue(self, row):
-        """
-        Many GWAS programs suffer from underflow and may represent small p=0/-logp=inf
-
-        The JSON standard can't handle "Infinity", but the string 'Infinity' can be type-coerced by JS, eg +value
-        Therefore we serialize this as a special case so it can be used in the frontend
-        """
-        value = row.t1_neg_log_pvalue
-        if value is not None and math.isinf(value):
-            return 'Infinity'
-        else:
-            return value
+        return serialize_neg_log_pvalue(row.t1_neg_log_pvalue)
 
     def get_t2_neg_log_pvalue(self, row):
-        """See t1 above"""
-        value = row.t2_neg_log_pvalue
-        if value is not None and math.isinf(value):
-            return 'Infinity'
-        else:
-            return value
+        return serialize_neg_log_pvalue(row.t2_neg_log_pvalue)
 
 
 class ColocResultSerializer(drf_serializers.ModelSerializer):

@@ -68,22 +68,28 @@ class TabixRegionView(generics.RetrieveAPIView):
 class AnalysisGroupListView(generics.ListAPIView):
     ordering = ('study_date',)
     queryset = models.AnalysisGroup.objects.all()
-    serializer_class = serializers.AnalyisGroupSerializer
+    serializer_class = serializers.AnalyisGroupDetailSerializer
 
 
 class AnalysisGroupDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
     queryset = models.AnalysisGroup.objects.all()
-    serializer_class = serializers.AnalyisGroupSerializer
+    serializer_class = serializers.AnalyisGroupDetailSerializer
 
 
 class ColocResultListView(OneStudyMixin, generics.ListAPIView):
     ordering = ('-coloc_h4',)
-    queryset = models.ColocResult.objects.select_related('analysis', 'signal1', 'signal2')
+    queryset = models.ColocResult.objects\
+        .select_related('signal1', 'signal2', 'analysis', 'signal1__trait', 'signal2__trait')\
+        .prefetch_related('signal1__trait__ld', 'signal2__trait__ld')
 
     serializer_class = serializers.ColocResultSerializer
     filterset_class = filters.ColocResultFilter
-    ordering_fields = ['coloc_h4', 'signal1__lead_variant_pos', 'signal1__lead_variant_pos', 'signal1__trait__metadata__trait', 'signal2__trait__metadata__trait']
+    ordering_fields = (
+        'coloc_h4',
+        'signal1__lead_variant_neg_log_p', 'signal1__lead_variant_pos', 'signal1__trait__metadata__trait',
+        'signal2__lead_variant_neg_log_p',  'signal2__lead_variant_pos', 'signal2__trait__metadata__gene', 'signal2__trait__metadata__tissue',
+    )
 
 
 class ColocResultDetailView(OneStudyMixin, generics.RetrieveAPIView):
@@ -107,7 +113,7 @@ class LDPairsDetailView(OneStudyMixin, generics.RetrieveAPIView):
 
 class MarginalSignalListView(OneStudyMixin, generics.ListAPIView):
     ordering = ('lead_variant_neg_log_p',)
-    queryset = models.MarginalSignal.objects.select_related('trait')
+    queryset = models.MarginalSignal.objects.select_related('trait').prefetch_related('trait__ld')
 
     serializer_class = serializers.MarginalSignalSerializer
 
@@ -120,7 +126,7 @@ class MarginalSignalDetailView(OneStudyMixin, generics.RetrieveAPIView):
 
 class MarginalTraitListView(OneStudyMixin, generics.ListAPIView):
     ordering = ('study_name',)
-    queryset = models.MarginalTrait.objects.select_related('analysis')
+    queryset = models.MarginalTrait.objects.select_related('analysis').prefetch_related('ld')
 
     serializer_class = serializers.MarginalTraitSerializer
 

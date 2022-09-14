@@ -12,6 +12,7 @@ from datetime import datetime
 import os
 from pathlib import Path
 import sys
+import typing as ty
 
 import django
 import pathlib
@@ -27,7 +28,7 @@ from colocus.core.models import AnalysisGroup, ColocResult, LDPairs, MarginalSig
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Load a packaged coloc dataset into the database. Assumes validation was performed elsewhere, eg for uuid integrity")
-    parser.add_argument('input', nargs='+', help='The top level folder of the packaged dataset with a predefined structure.')
+    parser.add_argument('input', help='The top level folder of the packaged dataset with a predefined structure.')
     return parser.parse_args()
 
 def _save_file_to_file(field, local_filename: pathlib.Path):
@@ -84,7 +85,16 @@ def load_ld(analysis, ld_dir: pathlib.Path) -> LDPairs:
     return ld
 
 
-def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: pathlib.Path) -> MarginalSignal:
+def init_model(model, attrs: dict):
+    """
+    Load a model with the specified attribute values, ignoring any dict fields not present in the model
+
+    Allows YML files to specify additional info useful to the build process, without breaking the DB loader script
+    """
+    return model(**{k: v for k, v in attrs.items() if k in [f.name for f in model._meta.get_fields()]})
+
+
+def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: pathlib.Path) -> ty.Optional[MarginalSignal]:
     meta_path = signal_dir / 'metadata.yml'
     if not meta_path.exists():
         raise Exception(f'Signal must specify metadata as {meta_path}')
@@ -92,11 +102,16 @@ def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: p
     with open(meta_path, 'r') as f:
         metadata = yaml.safe_load(f)
 
+    if 'error' in metadata:
+        # FIXME: some Ryan metadata files contain errors instead of data. If that happens, skip ingesting this signal.
+        #  Eventually those bad yml files will cease to exist and this can be removed.
+        return
+
     try:
         # Don't use get_or_create because additional non-null fields exist
         signal = MarginalSignal.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['uuid'])
     except MarginalSignal.DoesNotExist:
-        signal = MarginalSignal(**metadata)
+        signal = init_model(MarginalSignal, metadata)
 
     for k, v in metadata.items():
         setattr(signal, k, v)
@@ -104,8 +119,8 @@ def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: p
     signal.analysis = analysis
     signal.trait = trait
 
-    _save_file_to_file(signal.cond_analysis, signal_dir / 'cond_analysis.harmonized.gz')
-    _save_file_to_file(signal.cond_analysis_tbi, signal_dir / 'cond_analysis.harmonized.gz.tbi')
+    _save_file_to_file(signal.cond_analysis, signal_dir / 'results.harmonized.gz')
+    _save_file_to_file(signal.cond_analysis_tbi, signal_dir / 'results.harmonized.gz.tbi')
 
     signal.save()
     return signal
@@ -132,16 +147,19 @@ def load_one_marginal(analysis: AnalysisGroup, trait_dir: pathlib.Path) -> Margi
 
     marginal.analysis = analysis
 
-    # FIXME: Can this handle a local path? How does upload_to work in this case? need to work out create / save logic
     _save_file_to_file(marginal.summary_stats, trait_dir / 'summ_stats.harmonized.gz')
 
-    _save_file_to_file(marginal.manhattan_bins, trait_dir / 'manhattan.json')
-    _save_file_to_file(marginal.qq_bins, trait_dir / 'qq.json')
+    manhattan_path = trait_dir / 'manhattan.json'
+    qq_path = trait_dir / 'qq.json'
+
+    # Only GWAS traits (not eQTLs!) have a manhattan plot file. Don't require it for QTLs.
+    if manhattan_path.exists():
+        _save_file_to_file(marginal.manhattan_bins, manhattan_path)
+
+    if qq_path.exists():
+        _save_file_to_file(marginal.qq_bins, qq_path)
 
     _save_file_to_file(marginal.summary_stats_tbi, trait_dir / 'summ_stats.harmonized.gz.tbi')
-    # FIXME: Generate these files and add back to pipeline
-    # _save_file_to_file(marginal.manhattan_bins, trait_dir / 'manhattan.json')
-    # _save_file_to_file(marginal.qq_bins, trait_dir / 'qq.json')
 
     marginal.save()
 
@@ -156,7 +174,7 @@ def load_one_marginal(analysis: AnalysisGroup, trait_dir: pathlib.Path) -> Margi
 
 
 def load_one_colocalization(analysis: AnalysisGroup, signal_dir: pathlib.Path) -> ColocResult:
-    """Load colocalization results (one signal pair)"""
+    """Load colocalization results (H3 + H4 for one signal pair)"""
     meta_path = signal_dir / 'metadata.yml'
     if not meta_path.exists():
         raise Exception(f'Marginal trait must specify metadata as {meta_path}')
@@ -220,8 +238,6 @@ def main(package_root: str):
 
 
 if __name__ == '__main__':
-    # args = parse_args()
-    # input = args.input
-
-    input = "/Users/abought/dev/locuszoom/coloc-samples/packaged"
-    main(input)
+    args = parse_args()
+    source_dir = args.input
+    main(source_dir)

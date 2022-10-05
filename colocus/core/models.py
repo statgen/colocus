@@ -256,6 +256,16 @@ class MarginalSignal(models.Model):
         max_length=50,
         help_text='Human-friendly name of the closest gene. Used for display purposes.'
     )
+    lead_variant_assoc_gene = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text='Gene associated with lead variant (HGNC symbol).'
+    )
+    lead_variant_assoc_gene_ensg = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text='Gene associated with lead variant (Ensembl ENSG ID).'
+    )
 
     class Meta:
         constraints = [

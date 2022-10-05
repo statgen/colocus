@@ -103,7 +103,8 @@ class MarginalSignalSerializer(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.MarginalSignal
-        fields = ('uuid', 'trait', 'lead_variant_chrom', 'lead_variant_pos', 'lead_variant_marker', 'lead_variant_neg_log_p', 'lead_variant_nearest_gene')
+        fields = ('uuid', 'trait', 'lead_variant_chrom', 'lead_variant_pos', 'lead_variant_marker', 'lead_variant_neg_log_p',
+                 'lead_variant_nearest_gene', 'lead_variant_assoc_gene', 'lead_variant_assoc_gene_ensg')
 
 
 class MergedSignalRegionSerializer(drf_serializers.Serializer):

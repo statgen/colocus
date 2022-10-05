@@ -82,9 +82,17 @@ def merge_variants_in_region(a: ty.Iterator[BasicVariant], b: ty.List[BasicVaria
         a_multi = {}
         b_multi = {}
 
+    last_pos = None
     while True:
         try:
             cmp = a_i.pos - b_i.pos
+
+            if last_pos:
+                i_pos = (a_i.pos, b_i.pos)
+                if i_pos != last_pos:
+                    flush()
+            last_pos = (a_i.pos, b_i.pos)
+
             if cmp < 0:
                 a_i = next(a)
                 flush()

@@ -245,7 +245,7 @@ class MarginalSignal(models.Model):
     )
 
     #### Human readable description of lead variant. Explicit cp are required to support search by region
-    lead_variant_chrom = models.CharField(max_length=5, blank=False, null=False)
+    lead_variant_chrom = models.CharField(max_length=5, blank=False, null=False, db_collation="uint")
     lead_variant_pos = models.PositiveIntegerField()
     lead_variant_marker = models.CharField(
         max_length=5, blank=False, null=False,

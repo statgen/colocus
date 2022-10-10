@@ -26,6 +26,6 @@ drf-spectacular==0.22.1  # https://github.com/tfranzel/drf-spectacular
 # ------------------------------------------------------------------------------
 PyYAML==6.0
 boltons~=20.2.1
-scipy~=1.5.3
+scipy~=1.9.2
 zorp[perf,lookups]==0.3.8
 genelocator==1.1.2

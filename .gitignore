@@ -5,7 +5,10 @@ __pycache__/
 *$py.class
 
 # C extensions
-#*.so
+*.so
+*.dylib
+!sqlite3/uint/uint.so
+!sqlite3/uint/uint.dylib
 
 # Distribution / packaging
 .Python

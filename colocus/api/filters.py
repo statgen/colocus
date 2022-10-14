@@ -4,8 +4,8 @@ Filters
 https://django-filter.readthedocs.io/en/stable/ref/filterset.html#fields
 """
 
-from django_filters.rest_framework import FilterSet
-
+from django_filters.rest_framework import FilterSet, CharFilter
+from django.db.models import Q
 from colocus.core import models
 
 
@@ -19,6 +19,17 @@ class ColocResultFilter(FilterSet):
       We allow filters to be applied for either signal 1 (usually a GWAS) or signal 2 (some sort of QTL), because
         people might have a particular interest in the line of biological evidence
     """
+
+    # Create an `all_genes` filter that searches all available gene fields
+    all_genes = CharFilter(method='_or')
+
+    def _or(self, queryset, name, value):
+        query = Q(signal1__lead_variant_nearest_gene=value)
+        query |= Q(signal2__lead_variant_assoc_gene=value)
+        query |= Q(signal2__lead_variant_nearest_gene=value)
+
+        return queryset.filter(query)
+
     class Meta:
         model = models.ColocResult
         fields = {

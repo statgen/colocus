@@ -250,8 +250,18 @@ class MarginalSignal(models.Model):
     lead_variant_marker = models.CharField(
         max_length=5, blank=False, null=False,
         help_text='Specifier of the form chrom:pos_ref/alt. Used for display only')
+    lead_variant_ref = models.TextField(
+        blank=False, null=False,
+        help_text='Reference allele of lead variant')
+    lead_variant_alt = models.TextField(
+        blank=False, null=False,
+        help_text='Alternate allele of lead variant. This must also be the effect allele.')
     lead_variant_neg_log_p = models.FloatField(
         help_text="Marginal -log10p value for lead variant. Used for display purposes.")
+    lead_variant_effect = models.FloatField(
+        help_text='Effect size of lead variant')
+    lead_variant_se = models.FloatField(
+        help_text='Standard error of the effect size of the lead variant')
     lead_variant_nearest_gene = models.CharField(
         max_length=50,
         help_text='Human-friendly name of the closest gene. Used for display purposes.'

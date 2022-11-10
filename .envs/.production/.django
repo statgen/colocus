@@ -7,7 +7,7 @@ DJANGO_ADMIN_URL=QXlJEpgNpjKl0Vz12HUM7UEKJYqAxV7H/
 DJANGO_ALLOWED_HOSTS=.colocus.sph.umich.edu,.colocus.locuszoom.org
 
 # Storage location for ingested data. These should be set to a mounted EFS volume in production.
-DJANGO_MEDIA_ROOT=
+DJANGO_MEDIA_ROOT=colocus/media
 DATABASE_URL="sqlite:///database/local.sqlite3"
 
 # Security

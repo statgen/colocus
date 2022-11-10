@@ -154,8 +154,11 @@ class MarginalSignalSummRegionView(OneStudyMixin, TabixRegionView):
         marg_fn = os.path.join(settings.MEDIA_ROOT, signal.trait.summary_stats.name)
         cond_fn = os.path.join(settings.MEDIA_ROOT, signal.cond_analysis.name)
 
-        if not os.path.isfile(marg_fn) or not os.path.isfile(cond_fn):
-            raise drf_exceptions.NotFound
+        if not os.path.isfile(marg_fn):
+            raise drf_exceptions.NotFound(f"Could not find marginal analysis file for uuid {signal.uuid}")
+
+        if not os.path.isfile(cond_fn):
+            raise drf_exceptions.NotFound(f"Could not find conditional analysis file for uuid {signal.uuid}")
 
         marg_reader = guess_gwas_standard(marg_fn)\
             .add_filter('neg_log_pvalue')

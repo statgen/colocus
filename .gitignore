@@ -6,6 +6,9 @@ __pycache__/
 
 # C extensions
 *.so
+*.dylib
+!sqlite3/uint/uint.so
+!sqlite3/uint/uint.dylib
 
 # Distribution / packaging
 .Python

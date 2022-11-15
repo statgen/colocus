@@ -39,71 +39,38 @@ def merge_variants_in_region(a: ty.Iterator[BasicVariant], b: ty.List[BasicVaria
 
     ASSUMES:
      - always same chromosome (only pos/ref/alt may differ)
-     - inner join (excludes any variant not in both)
+     - left join (includes all variants from a; variants from b that are in a are also included)
     """
-    a = iter(a)
-    b = iter(b)
-    # Simplifying assumption: these are iterators over tabix region data
-    #   (always the same chromosome, only pos / ref/ alt may differ)
-
-    try:
-        a_i = next(a)
-        b_i = next(b)
-    except StopIteration:
-        # If one iterator is empty, then so is the inner join, because there is nothing to align
-        return []
-
-    a_multi = {}
-    b_multi = {}
+    variants = {}
     joined = []
 
+    def vkey(v):
+        return f"{v.chrom}_{v.pos}_{v.ref}_{v.alt}"
 
-    def flush():
-        """
-        Two aligned files might have multiple allele forms at same position, and not always be sorted
-        Whenever we move past a position, merge all the forms of a variant from that spot
-        """
-        nonlocal a_multi
-        nonlocal b_multi
-        for k, a_i in a_multi.items():
-            if k in b_multi:
-                # merge the two variants
-                b_i = b_multi[k]
-                joined.append(
-                    MergedVariant(
-                        a_i.chrom, a_i.pos, a_i.ref, a_i.alt,
-                        a_i.neg_log_pvalue, a_i.beta, a_i.stderr_beta, a_i.alt_allele_freq,
-                        b_i.neg_log_pvalue, b_i.beta, b_i.stderr_beta, b_i.alt_allele_freq,
-                    )
-                )
+    for v in a:
+        variants[vkey(v)] = {"marg": v}
 
-        # After we've joined what variants can be joined, clear the lists of variants at this position
-        # Eg, this is done when moving on to another position
-        a_multi = {}
-        b_multi = {}
+    for v in b:
+        vk = vkey(v)
+        if vk in variants:
+            variants[vk]["cond"] = v
 
-    while True:
-        try:
-            cmp = a_i.pos - b_i.pos
-            if cmp < 0:
-                a_i = next(a)
-                flush()
-                continue
-            elif cmp > 0:
-                b_i = next(b)
-                flush()
-                continue
-            else:
-                a_multi[f'{a_i.ref}_{a_i.alt}'] = a_i
-                b_multi[f'{b_i.ref}_{b_i.alt}'] = b_i
-                a_i = next(a)
-                b_i = next(b)
-        except StopIteration:
-            # If any attempt to advance iterators fails, then we've found all the records that can be merged
-            flush()
-            return joined
+    for vid, v in variants.items():
+        a_i = v["marg"]
 
-    flush()
+        if "cond" in v:
+            b_i = v["cond"]
+        else:
+            b_i = BasicVariant(a_i.chrom, a_i.pos, a_i.rsid, a_i.ref, a_i.alt, None, None, None, None)
+
+        joined.append(
+            MergedVariant(
+                a_i.chrom, a_i.pos, a_i.ref, a_i.alt,
+                a_i.neg_log_pvalue, a_i.beta, a_i.stderr_beta, a_i.alt_allele_freq,
+                b_i.neg_log_pvalue, b_i.beta, b_i.stderr_beta, b_i.alt_allele_freq,
+            )
+        )
+
     return joined
 
 

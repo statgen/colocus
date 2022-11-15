@@ -2,4 +2,4 @@
 # ------------------------------------------------------------------------------
 USE_DOCKER=yes
 IPYTHONDIR=/app/.ipython
-DATABASE_URL="sqlite:///database/backend.sqlite"
+DATABASE_URL="sqlite:///database/local.sqlite3"

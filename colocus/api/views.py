@@ -87,8 +87,9 @@ class ColocResultListView(OneStudyMixin, generics.ListAPIView):
     filterset_class = filters.ColocResultFilter
     ordering_fields = (
         'coloc_h4',
-        'signal1__lead_variant_neg_log_p', 'signal1__lead_variant_pos', 'signal1__trait__metadata__trait',
-        'signal2__lead_variant_neg_log_p',  'signal2__lead_variant_pos', 'signal2__trait__metadata__gene', 'signal2__trait__metadata__tissue',
+        'signal1__lead_variant_neg_log_p', 'signal1__lead_variant_chrom', 'signal1__lead_variant_pos', 'signal1__trait__metadata__trait',
+        'signal2__lead_variant_neg_log_p', 'signal2__lead_variant_chrom', 'signal2__lead_variant_pos', 'signal2__trait__metadata__gene',
+        'signal2__trait__metadata__tissue', 'signal1__lead_variant_nearest_gene', 'signal2__lead_variant_assoc_gene'
     )
 
 
@@ -153,8 +154,11 @@ class MarginalSignalSummRegionView(OneStudyMixin, TabixRegionView):
         marg_fn = os.path.join(settings.MEDIA_ROOT, signal.trait.summary_stats.name)
         cond_fn = os.path.join(settings.MEDIA_ROOT, signal.cond_analysis.name)
 
-        if not os.path.isfile(marg_fn) or not os.path.isfile(cond_fn):
-            raise drf_exceptions.NotFound
+        if not os.path.isfile(marg_fn):
+            raise drf_exceptions.NotFound(f"Could not find marginal analysis file for uuid {signal.uuid}")
+
+        if not os.path.isfile(cond_fn):
+            raise drf_exceptions.NotFound(f"Could not find conditional analysis file for uuid {signal.uuid}")
 
         marg_reader = guess_gwas_standard(marg_fn)\
             .add_filter('neg_log_pvalue')

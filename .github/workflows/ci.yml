@@ -45,6 +45,9 @@ jobs:
           cache-dependency-path: |
             requirements/base.txt
             requirements/local.txt
+        run: |
+          pip install -r requirements/base.txt
+          pip install -r requirements/local.txt
 
       - name: Run pytest
         run: pytest

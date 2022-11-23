@@ -45,6 +45,8 @@ jobs:
           cache-dependency-path: |
             requirements/base.txt
             requirements/local.txt
+
+      - name: Install dependencies
         run: |
           pip install -r requirements/base.txt
           pip install -r requirements/local.txt

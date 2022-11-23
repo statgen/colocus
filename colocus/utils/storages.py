@@ -1,7 +1,7 @@
 from django.core.files.storage import get_storage_class
 
 
-class OverwriteStorage(get_storage_class()):
+class OverwriteStorage(get_storage_class()):  # type: ignore
     """
     By default, django saves new `FileField` files by appending a unique ID after the provided filename.
         (if a file is replaced, a new copy is saved; the file is not overwritten)

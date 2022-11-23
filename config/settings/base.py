@@ -41,7 +41,7 @@ LOCALE_PATHS = [str(ROOT_DIR / "locale")]
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 db_path = ROOT_DIR / "database/local.sqlite3"
-DATABASES = {"default":  env.db("DATABASE_URL", default=f"sqlite:///{db_path}")}   # env.db("DATABASE_URL")}
+DATABASES = {"default": env.db("DATABASE_URL", default=f"sqlite:///{db_path}")}   # env.db("DATABASE_URL")}
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 # https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-DEFAULT_AUTO_FIELD
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -265,7 +265,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 50
 }
 
-# This site is a public API / dataset browser. Allowing all origins is ok and simplifies things. TODO revisit, if we add auth
+# This site is a public API / dataset browser. Allowing all origins is ok and simplifies things.
+# TODO revisit, if we add auth
 #   In the future we may add back authentication, but not there yet.
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
 CORS_URLS_REGEX = r"^/api/.*$"

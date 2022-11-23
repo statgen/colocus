@@ -2,11 +2,12 @@
 Core models describing key data entities
 """
 from django.db import models
-from model_utils.models import SoftDeletableModel, TimeStampedModel
 
 from colocus.utils.storages import OverwriteStorage
 
 from . import constants, file_util
+
+# from model_utils.models import SoftDeletableModel, TimeStampedModel
 
 
 class AnalysisGroup(models.Model):
@@ -128,7 +129,8 @@ class MarginalTrait(models.Model):
     trait_type = models.CharField(max_length=10, choices=constants.TRAIT_TYPES)
     genome_build = models.CharField(max_length=10, choices=constants.GENOME_BUILDS)
     # JSON field consisting of {trait} for gwas ; {gene, tissue} for eQTL
-    metadata = models.JSONField(help_text='Additional trait-type specific information. Eg {trait} for GWAS, or { gene, tissue } for eQTL')
+    metadata = models.JSONField(help_text='Additional trait-type specific information. Eg {trait} for GWAS, '
+                                          'or { gene, tissue } for eQTL')
 
     ld = models.ForeignKey(
         LDPairs,

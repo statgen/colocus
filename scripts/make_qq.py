@@ -18,9 +18,8 @@ import typing as ty
 import boltons.iterutils
 import boltons.mathutils
 import scipy.stats
-from zorp.parsers import BasicVariant
 from zorp import sniffers
-
+from zorp.parsers import BasicVariant
 
 NUM_BINS = 400
 NUM_MAF_RANGES = 4
@@ -229,9 +228,12 @@ def generate_qq(in_filename: str, out_filename) -> bool:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Summarize a GWAS file and produce a JSON output file suitable for drawing QQ plots")
-    parser.add_argument('input', help='A gwas file (assumed to be bgzipped and in the harmonized format used by my.locuszoom.org)')
-    parser.add_argument('--output', dest='output', help='The output filename for the json file, defaults to `<input_folder>/qq.json`')
+    parser = argparse.ArgumentParser(description="Summarize a GWAS file and produce a JSON output file suitable "
+                                                 "for drawing QQ plots")
+    parser.add_argument('input', help='A gwas file (assumed to be bgzipped and in the harmonized format used '
+                                      'by my.locuszoom.org)')
+    parser.add_argument('--output', dest='output', help='The output filename for the json file, '
+                                                        'defaults to `<input_folder>/qq.json`')
     return parser.parse_args()
 
 

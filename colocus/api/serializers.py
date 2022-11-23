@@ -1,5 +1,5 @@
-from rest_framework.reverse import reverse
 from rest_framework import serializers as drf_serializers
+from rest_framework.reverse import reverse
 
 from colocus.core import models
 
@@ -22,8 +22,8 @@ class StudyHyperlinkRelatedField(drf_serializers.HyperlinkedRelatedField):
 
     def get_object(self, view_name, view_args, view_kwargs):
         lookup_kwargs = {
-           'analysis_uuid': view_kwargs['analysis_uuid'],
-           'uuid': self.lookup_field,
+            'analysis_uuid': view_kwargs['analysis_uuid'],
+            'uuid': self.lookup_field,
         }
         return self.get_queryset().get(**lookup_kwargs)
 
@@ -96,15 +96,26 @@ class MarginalSignalSerializer(drf_serializers.ModelSerializer):
     # Embed the related data into this response to avoid a separate query
     trait = MarginalTraitSerializerBrief(read_only=True)
 
-    lead_variant_neg_log_p = drf_serializers.SerializerMethodField(method_name='get_lead_variant_neg_log_p', read_only=True)
+    lead_variant_neg_log_p = drf_serializers.SerializerMethodField(method_name='get_lead_variant_neg_log_p',
+                                                                   read_only=True)
 
     def get_lead_variant_neg_log_p(self, obj):
         return serialize_neg_log_pvalue(obj.lead_variant_neg_log_p)
 
     class Meta:
         model = models.MarginalSignal
-        fields = ('uuid', 'trait', 'lead_variant_chrom', 'lead_variant_pos', 'lead_variant_marker', 'lead_variant_neg_log_p',
-                 'lead_variant_effect', 'lead_variant_nearest_gene', 'lead_variant_assoc_gene', 'lead_variant_assoc_gene_ensg')
+        fields = (
+            'uuid',
+            'trait',
+            'lead_variant_chrom',
+            'lead_variant_pos',
+            'lead_variant_marker',
+            'lead_variant_neg_log_p',
+            'lead_variant_effect',
+            'lead_variant_nearest_gene',
+            'lead_variant_assoc_gene',
+            'lead_variant_assoc_gene_ensg'
+        )
 
 
 class MergedSignalRegionSerializer(drf_serializers.Serializer):

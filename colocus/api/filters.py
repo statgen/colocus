@@ -4,8 +4,9 @@ Filters
 https://django-filter.readthedocs.io/en/stable/ref/filterset.html#fields
 """
 
-from django_filters.rest_framework import FilterSet, CharFilter
 from django.db.models import Q
+from django_filters.rest_framework import CharFilter, FilterSet
+
 from colocus.core import models
 
 

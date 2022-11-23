@@ -4,6 +4,7 @@ import typing as ty
 
 from zorp.parsers import BasicVariant
 
+
 @dataclasses.dataclass
 class MergedVariant:
     """The merged results of data for two aligned iterators, like marginal / conditional or trait1 / trait2"""
@@ -33,7 +34,7 @@ class MergedVariant:
         return '{}:{}{}'.format(self.chrom, self.pos, ref_alt)
 
 
-def merge_variants_in_region(a: ty.Iterator[BasicVariant], b: ty.List[BasicVariant]):
+def merge_variants_in_region(a: ty.List[BasicVariant], b: ty.List[BasicVariant]):
     """
     Merge two iterators of the same variant (like marg + cond, or trait1 / trait2, etc)
 

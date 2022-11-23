@@ -1,10 +1,11 @@
-from django.apps import AppConfig
-from pathlib import Path
 import sys
+from pathlib import Path
 
+from django.apps import AppConfig
 from django.db.backends.signals import connection_created
 
 ROOT_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
+
 
 def load_uint(connection, **kwargs):
     if connection.vendor != 'sqlite':
@@ -20,6 +21,7 @@ def load_uint(connection, **kwargs):
         raise NotImplementedError(f"Unsupported platform: {sys.platform}")
 
     connection.connection.load_extension(str(ext_path))
+
 
 class CoreConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'

@@ -12,12 +12,10 @@ import logging
 import math
 import os
 
-from genelocator import get_genelocator
 import genelocator.exception as gene_exc
-
-from zorp.parsers import BasicVariant
+from genelocator import get_genelocator
 from zorp import sniffers
-
+from zorp.parsers import BasicVariant
 
 logger = logging.getLogger(__name__)
 
@@ -272,15 +270,18 @@ def generate_manhattan(build: str, in_filename: str, out_filename: str) -> bool:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Summarize a GWAS file and produce a JSON output file suitable for drawing manhattan plots")
-    parser.add_argument('input', help='A gwas file (assumed to be bgzipped and in the harmonized format used by my.locuszoom.org)')
+    parser = argparse.ArgumentParser(description="Summarize a GWAS file and produce a JSON output file suitable for "
+                                                 "drawing manhattan plots")
+    parser.add_argument('input', help='A gwas file (assumed to be bgzipped and in the harmonized format used by '
+                                      'my.locuszoom.org)')
     parser.add_argument(
         '--build',
         required=True,
         choices=('GRCh37', 'GRCh38'),
         help='The genome build for this dataset'
     )
-    parser.add_argument('--output', dest='output', help='The output filename for the json file, defaults to `<input_folder>/manhattan.json`')
+    parser.add_argument('--output', dest='output', help='The output filename for the json file, defaults to '
+                                                        '`<input_folder>/manhattan.json`')
     return parser.parse_args()
 
 

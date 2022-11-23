@@ -8,14 +8,14 @@ This checks:
 3.
 """
 import argparse
-from datetime import datetime
 import os
-from pathlib import Path
+import pathlib
 import sys
 import typing as ty
+from datetime import datetime
+from pathlib import Path
 
 import django
-import pathlib
 import yaml
 
 # Must configure standalone django usage before importing models
@@ -23,16 +23,25 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
 sys.path.append(str(Path(__file__).parent.parent.resolve()))
 django.setup()
 
-from colocus.core.models import AnalysisGroup, ColocResult, LDPairs, MarginalSignal, MarginalTrait
+from colocus.core.models import (  # noqa E402
+    AnalysisGroup,
+    ColocResult,
+    LDPairs,
+    MarginalSignal,
+    MarginalTrait,
+)
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Load a packaged coloc dataset into the database. Assumes validation was performed elsewhere, eg for uuid integrity")
+    parser = argparse.ArgumentParser(description="Load a packaged coloc dataset into the database. Assumes validation "
+                                                 "was performed elsewhere, eg for uuid integrity")
     parser.add_argument('input', help='The top level folder of the packaged dataset with a predefined structure.')
     return parser.parse_args()
 
+
 def _save_file_to_file(field, local_filename: pathlib.Path):
-    # NOTE: Django will automatically try to prevent overwriting files with same name, which might not be intended behavior given how controlled our scheme is
+    # NOTE: Django will automatically try to prevent overwriting files with same name, which might not be intended
+    # behavior given how controlled our scheme is
     base_name = local_filename.name  # Most fields control save name, but provide one for clarity
     with open(local_filename, 'rb') as f:
         field.save(base_name, f)
@@ -94,7 +103,12 @@ def init_model(model, attrs: dict):
     return model(**{k: v for k, v in attrs.items() if k in [f.name for f in model._meta.get_fields()]})
 
 
-def load_one_signal(analysis: AnalysisGroup, trait: MarginalTrait, signal_dir: pathlib.Path) -> ty.Optional[MarginalSignal]:
+def load_one_signal(
+    analysis: AnalysisGroup,
+    trait: MarginalTrait,
+    signal_dir: pathlib.Path
+) -> ty.Optional[MarginalSignal]:
+
     meta_path = signal_dir / 'metadata.yml'
     if not meta_path.exists():
         raise Exception(f'Signal must specify metadata as {meta_path}')

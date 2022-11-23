@@ -1,7 +1,6 @@
 from zorp.parsers import BasicVariant
 
-from colocus.api.util import merge_variants_in_region, MergedVariant
-
+from colocus.api.util import MergedVariant, merge_variants_in_region
 
 a = [
     # BasicVariant(chrom, pos, rsid, ref, alt, neg_log_pvalue, beta, stderr_beta, alt_allele_freq)
@@ -13,9 +12,9 @@ a = [
 
 b = [
     # Different length than a
-    BasicVariant('12', 5, None, 'A', 'G', 21, 1, 2, 2),   # multiallelic at position- sorted in different order than a
+    BasicVariant('12', 5, None, 'A', 'G', 21, 1, 2, 2),  # multiallelic at position- sorted in different order than a
     BasicVariant('12', 5, None, 'A', 'C', 22, 1, 2, 2),
-    BasicVariant('12', 9, None, 'A', 'C', 23, 1, 2, 2), # not in a (thus we need to advance both a and b at different times)
+    BasicVariant('12', 9, None, 'A', 'C', 23, 1, 2, 2),  # not in a (need to advance both a and b at different times)
 ]
 
 

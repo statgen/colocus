@@ -1,12 +1,12 @@
 import os
 import typing as ty
+from typing import Union
 
 from django.conf import settings
-from rest_framework import generics
 from rest_framework import exceptions as drf_exceptions
+from rest_framework import generics
 from zorp.readers import TabixReader
 from zorp.sniffers import guess_gwas_standard
-
 
 from colocus.core import models
 
@@ -19,8 +19,8 @@ class OneStudyMixin:
     """Most URLs in this app are scoped to one particular study. Restrict the queryset accordingly"""
     def filter_queryset(self, queryset):
         """"""
-        queryset = super(OneStudyMixin, self).filter_queryset(queryset)
-        return queryset.filter(analysis__uuid=self.kwargs['analysis_uuid'])
+        queryset = super(OneStudyMixin, self).filter_queryset(queryset)        # type: ignore
+        return queryset.filter(analysis__uuid=self.kwargs['analysis_uuid'])    # type: ignore
 
 
 class TabixRegionView(generics.RetrieveAPIView):
@@ -38,9 +38,9 @@ class TabixRegionView(generics.RetrieveAPIView):
         """
         params = self.request.query_params
 
-        chrom = params.get('chrom', None)
-        start = params.get('start', None)
-        end = params.get('end', None)
+        chrom: Union[str, None] = params.get('chrom', None)
+        start: Union[str, int, None] = params.get('start', None)
+        end: Union[str, int, None] = params.get('end', None)
 
         if not (chrom and start and end):
             raise drf_exceptions.ParseError('Must specify "chrom", "start", and "end" as query parameters')
@@ -87,9 +87,17 @@ class ColocResultListView(OneStudyMixin, generics.ListAPIView):
     filterset_class = filters.ColocResultFilter
     ordering_fields = (
         'coloc_h4',
-        'signal1__lead_variant_neg_log_p', 'signal1__lead_variant_chrom', 'signal1__lead_variant_pos', 'signal1__trait__metadata__trait',
-        'signal2__lead_variant_neg_log_p', 'signal2__lead_variant_chrom', 'signal2__lead_variant_pos', 'signal2__trait__metadata__gene',
-        'signal2__trait__metadata__tissue', 'signal1__lead_variant_nearest_gene', 'signal2__lead_variant_assoc_gene'
+        'signal1__lead_variant_neg_log_p',
+        'signal1__lead_variant_chrom',
+        'signal1__lead_variant_pos',
+        'signal1__trait__metadata__trait',
+        'signal2__lead_variant_neg_log_p',
+        'signal2__lead_variant_chrom',
+        'signal2__lead_variant_pos',
+        'signal2__trait__metadata__gene',
+        'signal2__trait__metadata__tissue',
+        'signal1__lead_variant_nearest_gene',
+        'signal2__lead_variant_assoc_gene'
     )
 
 
@@ -193,7 +201,7 @@ class LDPairsRegionView(TabixRegionView):
     queryset = models.LDPairs.objects.all()
     serializer_class = serializers.LDRegionSerializer
 
-    def _query_params(self) -> ty.Tuple[str, int, int, str]:
+    def _query_params_variant(self) -> ty.Tuple[str, int, int, str]:
         """
         All region params, plus:
         - variant should be chr:pos_ref/alt (though we don't validate this b/c not a public API)
@@ -208,12 +216,13 @@ class LDPairsRegionView(TabixRegionView):
 
     def get_object(self):
         panel = super(LDPairsRegionView, self).get_object()  # External-facing GWAS id given as slug in url
-        chrom, start, end, variant = self._query_params()
+        chrom, start, end, variant = self._query_params_variant()
 
         filename = os.path.join(settings.MEDIA_ROOT, panel.ld_data.name)
 
         if not os.path.isfile(filename):
-            # FIXME: If LD panel is re-ingested, deduplication behavior may cause the index to have a hash appended that doesn't match the gz file
+            # FIXME: If LD panel is re-ingested, deduplication behavior may cause the index to have a hash appended
+            #   that doesn't match the gz file
             raise drf_exceptions.NotFound
 
         # LD files might specify more than one reference variant.

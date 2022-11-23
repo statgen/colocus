@@ -1,6 +1,7 @@
 import dataclasses
 import math
 import typing as ty
+from typing import Union
 
 from zorp.parsers import BasicVariant
 
@@ -15,16 +16,16 @@ class MergedVariant:
     alt: str
 
     # Dataset / trait 1
-    t1_neg_log_pvalue: float
-    t1_beta: float
-    t1_stderr_beta: float
-    t1_alt_allele_freq: float
+    t1_neg_log_pvalue: Union[float, None]
+    t1_beta: Union[float, None]
+    t1_stderr_beta: Union[float, None]
+    t1_alt_allele_freq: Union[float, None]
 
     # Dataset / trait 2
-    t2_neg_log_pvalue: float
-    t2_beta: float
-    t2_stderr_beta: float
-    t2_alt_allele_freq: float
+    t2_neg_log_pvalue: Union[float, None]
+    t2_beta: Union[float, None]
+    t2_stderr_beta: Union[float, None]
+    t2_alt_allele_freq: Union[float, None]
 
     @property
     def marker(self) -> str:

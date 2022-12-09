@@ -44,5 +44,7 @@ class ColocResultFilter(FilterSet):
             'signal2__lead_variant_pos': ['exact', 'gte', 'gt', 'lte', 'lt'],
             'signal2__lead_variant_nearest_gene': ['exact'],
             'signal2__lead_variant_assoc_gene': ['exact', 'in'],
+            'signal1__lead_variant_neg_log_p': ['gte'],
+            'signal2__lead_variant_neg_log_p': ['gte'],
             'coloc_h4': ['gte']  # "query just the significant results"
         }

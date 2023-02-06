@@ -324,6 +324,12 @@ class ColocResult(models.Model):
         help_text='The second signal (from trait 2)'
     )
 
+    cross_signal = models.JSONField(
+        null=True,
+        help_text="Contains information about each signal and its lead variant's effect in the other signal's "
+                  "summary statistics"
+    )
+
     # How standard are these names? Is there a more descriptive term?
     coloc_h3 = models.FloatField(
         verbose_name='H3',

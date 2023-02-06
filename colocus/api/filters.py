@@ -22,12 +22,67 @@ class ColocResultFilter(FilterSet):
     """
 
     # Create an `all_genes` filter that searches all available gene fields
-    all_genes = CharFilter(method='_or')
+    genes = CharFilter(method='gene_or')
 
-    def _or(self, queryset, name, value):
+    def gene_or(self, queryset, name, value):
         query = Q(signal1__lead_variant_nearest_gene=value)
         query |= Q(signal2__lead_variant_assoc_gene=value)
+        query |= Q(signal2__lead_variant_assoc_gene=value)
         query |= Q(signal2__lead_variant_nearest_gene=value)
+
+        return queryset.filter(query)
+
+    phenotypes = CharFilter(method='phenotype_or')
+
+    def phenotype_or(self, queryset, name, value):
+        if "," in value:
+            value = value.split(",")
+        else:
+            value = [value]
+
+        query = Q(signal1__trait__metadata__trait__in=value)
+        query |= Q(signal2__trait__metadata__trait__in=value)
+
+        return queryset.filter(query)
+
+    tissues = CharFilter(method='tissue_or')
+
+    def tissue_or(self, queryset, name, value):
+        if "," in value:
+            value = value.split(",")
+        else:
+            value = [value]
+
+        query = Q(signal1__trait__metadata__tissue__in=value)
+        query |= Q(signal2__trait__metadata__tissue__in=value)
+
+        return queryset.filter(query)
+
+    trait_uuid = CharFilter(method='trait_uuid_or')
+
+    def trait_uuid_or(self, queryset, name, value):
+        if "," in value:
+            value = value.split(",")
+
+            query = Q(signal1__trait__uuid__in=value)
+            query |= Q(signal2__trait__uuid__in=value)
+        else:
+            query = Q(signal1__trait__uuid=value)
+            query |= Q(signal2__trait__uuid=value)
+
+        return queryset.filter(query)
+
+    signals = CharFilter(method='signal_or')
+
+    def signal_or(self, queryset, name, value):
+        if "," in value:
+            value = value.split(",")
+
+            query = Q(signal1__uuid__in=value)
+            query |= Q(signal2__uuid__in=value)
+        else:
+            query = Q(signal1__uuid=value)
+            query |= Q(signal2__uuid=value)
 
         return queryset.filter(query)
 

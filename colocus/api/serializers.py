@@ -153,4 +153,4 @@ class ColocResultSerializer(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.ColocResult
-        fields = ('uuid', 'analysis', 'signal1', 'signal2', 'coloc_h3', 'coloc_h4', 'cross_signal')
+        fields = ('uuid', 'analysis', 'signal1', 'signal2', 'coloc_h3', 'coloc_h4', 'cross_signal', 'r2')

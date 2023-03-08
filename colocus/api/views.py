@@ -87,6 +87,7 @@ class ColocResultListView(OneStudyMixin, generics.ListAPIView):
     filterset_class = filters.ColocResultFilter
     ordering_fields = (
         'coloc_h4',
+        'r2',
         'signal1__lead_variant_neg_log_p',
         'signal1__lead_variant_chrom',
         'signal1__lead_variant_pos',

@@ -340,6 +340,11 @@ class ColocResult(models.Model):
         help_text='Probability that both traits are associated, with same causal variant'
     )
 
+    r2 = models.FloatField(
+        null=True,
+        help_text='R2 between the two signals\' lead variants'
+    )
+
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['analysis', 'uuid'], name='Coloc-in-study identifier')

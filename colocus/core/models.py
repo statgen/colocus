@@ -345,6 +345,12 @@ class ColocResult(models.Model):
         help_text='R2 between the two signals\' lead variants'
     )
 
+    n_coloc_between_traits = models.PositiveIntegerField(
+        null=True,
+        help_text='Number of colocalizations in total between the two traits for this gene or locus in the overall '
+                  'dataset'
+    )
+
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['analysis', 'uuid'], name='Coloc-in-study identifier')

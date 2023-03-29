@@ -88,6 +88,8 @@ class ColocResultListView(OneStudyMixin, generics.ListAPIView):
     ordering_fields = (
         'coloc_h4',
         'r2',
+        'cross_signal__effect',
+        'n_coloc_between_traits',
         'signal1__lead_variant_neg_log_p',
         'signal1__lead_variant_chrom',
         'signal1__lead_variant_pos',

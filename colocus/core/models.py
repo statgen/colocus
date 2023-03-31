@@ -262,6 +262,8 @@ class MarginalSignal(models.Model):
         help_text="Marginal -log10p value for lead variant. Used for display purposes.")
     lead_variant_effect = models.FloatField(
         help_text='Effect size of lead variant')
+    lead_variant_effect_marg = models.FloatField(
+        help_text='Effect size of lead variant, in the marginal analysis')
     lead_variant_se = models.FloatField(
         help_text='Standard error of the effect size of the lead variant')
     lead_variant_nearest_gene = models.CharField(

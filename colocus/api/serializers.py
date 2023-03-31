@@ -112,6 +112,7 @@ class MarginalSignalSerializer(drf_serializers.ModelSerializer):
             'lead_variant_marker',
             'lead_variant_neg_log_p',
             'lead_variant_effect',
+            'lead_variant_effect_marg',
             'lead_variant_nearest_gene',
             'lead_variant_assoc_gene',
             'lead_variant_assoc_gene_ensg'

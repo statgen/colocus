@@ -98,6 +98,7 @@ class ColocResultListView(OneStudyMixin, generics.ListAPIView):
         'signal2__lead_variant_chrom',
         'signal2__lead_variant_pos',
         'signal2__trait__metadata__gene',
+        'signal2__trait__metadata__gene_ensg',
         'signal2__trait__metadata__tissue',
         'signal1__lead_variant_nearest_gene',
         'signal2__lead_variant_assoc_gene'

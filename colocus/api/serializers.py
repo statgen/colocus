@@ -28,7 +28,7 @@ class StudyHyperlinkRelatedField(drf_serializers.HyperlinkedRelatedField):
         return self.get_queryset().get(**lookup_kwargs)
 
 
-class AnalyisGroupSerializer(drf_serializers.ModelSerializer):
+class AnalysisGroupSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.AnalysisGroup
         fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid')
@@ -68,7 +68,7 @@ class MarginalTraitSerializer(drf_serializers.ModelSerializer):
     Full set of marginal trait fields for standalone endpoints. Analysis info is embedded into the response because
         the primary use case for this serializer/endpoint is to render pages with all the info we want about this trait.
     """
-    analysis = AnalyisGroupSerializer(read_only=True)
+    analysis = AnalysisGroupSerializer(read_only=True)
     ld = StudyHyperlinkRelatedField(read_only=True, view_name='api:ld-region', lookup_field='uuid')
 
     class Meta:
@@ -148,7 +148,7 @@ class MergedSignalRegionSerializer(drf_serializers.Serializer):
 
 
 class ColocResultSerializer(drf_serializers.ModelSerializer):
-    analysis = AnalyisGroupSerializer(read_only=True)
+    analysis = AnalysisGroupSerializer(read_only=True)
     signal1 = MarginalSignalSerializer(read_only=True)
     signal2 = MarginalSignalSerializer(read_only=True)
 

@@ -13,6 +13,7 @@ class StudyHyperlinkRelatedField(drf_serializers.HyperlinkedRelatedField):
 
     See: https://www.django-rest-framework.org/api-guide/relations/#custom-hyperlinked-fields
     """
+
     def get_url(self, obj, view_name, request, format):
         url_kwargs = {
             'analysis_uuid': obj.analysis.uuid,
@@ -40,6 +41,7 @@ class AnalyisGroupDetailSerializer(drf_serializers.ModelSerializer):
         This allows more expensive queries (like trait_count`) than the "general purpose" `AnalysisGroupSerializer`,
         which is intended to be embedded inside other things.
     """
+
     class Meta:
         model = models.AnalysisGroup
         fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid', 'trait_count')
@@ -154,4 +156,5 @@ class ColocResultSerializer(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.ColocResult
-        fields = ('uuid', 'analysis', 'signal1', 'signal2', 'coloc_h3', 'coloc_h4', 'cross_signal', 'r2', 'n_coloc_between_traits', 'marg_cond_flip')
+        fields = ('uuid', 'analysis', 'signal1', 'signal2', 'coloc_h3', 'coloc_h4', 'cross_signal',
+                  'r2', 'n_coloc_between_traits', 'marg_cond_flip')

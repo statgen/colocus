@@ -5,8 +5,8 @@ from django.db import models
 
 from colocus.utils.storages import OverwriteStorage
 
-from . import constants, file_util
 from ..api.util import sign
+from . import constants, file_util
 
 # from model_utils.models import SoftDeletableModel, TimeStampedModel
 

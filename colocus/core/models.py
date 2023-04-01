@@ -6,6 +6,7 @@ from django.db import models
 from colocus.utils.storages import OverwriteStorage
 
 from . import constants, file_util
+from ..api.util import sign
 
 # from model_utils.models import SoftDeletableModel, TimeStampedModel
 
@@ -352,6 +353,11 @@ class ColocResult(models.Model):
         help_text='Number of colocalizations in total between the two traits for this gene or locus in the overall '
                   'dataset'
     )
+
+    @property
+    def marg_cond_flip(self):
+        return (sign(self.signal1.lead_variant_effect) != sign(self.signal1.lead_variant_effect_marg)) or \
+               (sign(self.signal2.lead_variant_effect) != sign(self.signal2.lead_variant_effect_marg))
 
     class Meta:
         constraints = [

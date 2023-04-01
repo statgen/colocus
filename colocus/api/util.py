@@ -87,3 +87,12 @@ def serialize_neg_log_pvalue(value: float) -> ty.Union[float, str, None]:
         return 'Infinity'
     else:
         return value
+
+
+def sign(x):
+    if x > 0:
+        return 1
+    elif x < 0:
+        return -1
+    else:
+        return 0

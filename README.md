@@ -139,11 +139,11 @@ See the [cookie-cutter-django settings documentation](http://cookiecutter-django
 
 ### Marginal and conditional analyses
 
-Colocus requires two types of input summary statistics/results. These can come from a GWAS study of one or more 
+Colocus requires two types of input summary statistics/results. These can come from a GWAS study of one or more
 traits, or an eQTL study.
 
-1. The marginal analysis for one or more traits. This is the analysis performed where each variant is tested 
-   for association with the trait without adjusting for any other variant (only study-specific covariates, if any). 
+1. The marginal analysis for one or more traits. This is the analysis performed where each variant is tested
+   for association with the trait without adjusting for any other variant (only study-specific covariates, if any).
 2. Conditional analysis, per locus, per "signal". At each locus, the number of independent signals must be identified,
    either through iterative conditional analysis or a fine-mapping approach
    like [SuSiE](https://stephenslab.github.io/susieR/). Each signal is represented by its lead variant. For each lead
@@ -151,8 +151,8 @@ traits, or an eQTL study.
    including them in the regression model. Software such as [APEX](https://github.com/lin-lab/apex) is capable of doing
    this automatically.
 
-Both analyses end up with roughly the same type of output, though the conditional analysis is done per signal. The 
-association results are tab-delimited files with the usual columns: 
+Both analyses end up with roughly the same type of output, though the conditional analysis is done per signal. The
+association results are tab-delimited files with the usual columns:
 
 * Variant ID / chrom / pos / reference (ref) allele / alternate (alt) allele
 * Association p-value (ideally -log10 p-value)
@@ -160,7 +160,7 @@ association results are tab-delimited files with the usual columns:
 * Standard error of effect size
 * Alternate allele frequency
 
-Layout on disk looks like the following: 
+Layout on disk looks like the following:
 
 ```bash
 marginal
@@ -175,7 +175,7 @@ marginal
 │   └── summ_stats.harmonized.gz.tbi
 ```
 
-Each trait has its own directory, which should be named with a unique identifier. An example `metadata.yml` file 
+Each trait has its own directory, which should be named with a unique identifier. An example `metadata.yml` file
 for a GWAS result contains:
 
 ```yaml
@@ -201,7 +201,7 @@ uuid: ENSG00000273398_eqtl_adipose
 trait_type: eQTL
 study_name: Adipose eQTLs
 authors: Authors et al
-label: Adipose eQTL meta-analysis 
+label: Adipose eQTL meta-analysis
 description: Provided by collaborators <link>
 pmid: 'pmid if published'
 external_link: ''
@@ -213,8 +213,8 @@ metadata:
   tissue: adipose                                               # tissue in which this eQTL study was performed
 ```
 
-The file `summ_stats.harmonized.gz` contains the marginal association results for the trait. It looks like the 
-following: 
+The file `summ_stats.harmonized.gz` contains the marginal association results for the trait. It looks like the
+following:
 
 ```
 #chrom  pos     rsid  ref  alt  neg_log_pvalue  beta    stderr_beta  alt_allele_freq
@@ -224,9 +224,9 @@ following:
 
 The file must be [bgzipped](http://www.htslib.org/doc/bgzip.html) and [tabix](http://www.htslib.org/doc/tabix.html) indexed.
 
-Underneath each trait is a `signals` directory, which contains one subdirectory per signal. Each signal subdirectory 
-should be named with a unique identifier or uuid. This uuid **must be unique across all signals for all traits**. 
-The `metadata.yml` file for a signal looks like the following: 
+Underneath each trait is a `signals` directory, which contains one subdirectory per signal. Each signal subdirectory
+should be named with a unique identifier or uuid. This uuid **must be unique across all signals for all traits**.
+The `metadata.yml` file for a signal looks like the following:
 
 ```yaml
 uuid: '99'
@@ -243,8 +243,8 @@ lead_variant_neg_log_p: 4.05
 lead_variant_se: 0.0075
 ```
 
-In each signal directory is the conditional association results file `results.harmonized.gz` for that signal. It is 
-identical in format to the `summ_stats.harmonized.gz` file. 
+In each signal directory is the conditional association results file `results.harmonized.gz` for that signal. It is
+identical in format to the `summ_stats.harmonized.gz` file.
 
 ### Linkage disequilibrium (LD)
 

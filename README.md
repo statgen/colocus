@@ -20,11 +20,11 @@ $ python scripts/load_dataset.py <path/to/dataset> # see below for datasets
 
 <details>
   <summary><b>Datasets for CSG users</b></summary>
-  
+
   There is an existing dataset on our cluster at
   `/net/dumbo/home/welchr/projects/amp-cmd/colocus-pipeline-brotman/data/processed/`. The required files are
   approximately 13GB in total. You can quickly sync the required files to your development environment with:
-  
+
   ```bash
   rsync -avimHP \
     user@dumbo.sph.umich.edu:~/projects/amp-cmd/colocus-pipeline-brotman/ \
@@ -36,9 +36,9 @@ $ python scripts/load_dataset.py <path/to/dataset> # see below for datasets
     --exclude '.snakemake' \
     --exclude 'logs'
   ```
-  
+
   Then give the path to the `data/processed` directory as the argument to `load_dataset.py`:
-  
+
   ```bash
   $ python scripts/load_dataset.py /path/on/your/machine/colocus-pipeline-brotman/data/processed/
   ```
@@ -107,8 +107,8 @@ for general information on how to deploy either with docker or local install on 
 
 ### CSG
 
-We have our own deployment and terraform instructions for CSG. There is currently only one site deployed, for an 
-[adipose eQTL meta-analysis study](https://github.com/statgen/colocus-gcp-adipose). 
+We have our own deployment and terraform instructions for CSG. There is currently only one site deployed, for an
+[adipose eQTL meta-analysis study](https://github.com/statgen/colocus-gcp-adipose).
 
 ## Settings
 

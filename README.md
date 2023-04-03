@@ -21,7 +21,7 @@ $ source .venv/bin/activate
 $ pip3 install -r requirements/local.txt
 $ mkdir database
 $ python manage.py migrate
-$ python scripts/load_dataset.py  # first draft hardcoded to one machine because hackety hack, y'all
+$ python scripts/load_dataset.py <path/to/dataset>
 ```
 
 **Items below are provided by a template and may not be accurate/ necessary. User features may be stripped out as we finalize app functions.**

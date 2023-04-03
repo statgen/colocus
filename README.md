@@ -27,7 +27,7 @@ $ python scripts/load_dataset.py <path/to/dataset> # see below for datasets
 
   ```bash
   rsync -avimHP \
-    user@dumbo.sph.umich.edu:~/projects/amp-cmd/colocus-pipeline-brotman/ \
+    user@dumbo.sph.umich.edu:/home/welchr/projects/amp-cmd/colocus-pipeline-brotman/ \
     /path/on/your/machine/colocus-pipeline-brotman/ \
     --exclude 'data/processed/ld/ukbb_grch37_all/variants' \
     --exclude 'data/original-copy' \

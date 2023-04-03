@@ -13,7 +13,9 @@ Moved to [settings](http://cookiecutter-django.readthedocs.io/en/latest/settings
 ## Basic Commands
 
 ### Database setup
-The database can be created by applying relevant migrations, and then loading a pre-packaged dataset (not provided in this repo, though subsets of data may be provided in the future).
+
+The database can be created by applying relevant migrations, and then loading a pre-packaged dataset (not provided in
+this repo, though subsets of data may be provided in the future).
 
 ```bash
 $ python3 -m venv .venv/  # first time, only
@@ -24,17 +26,18 @@ $ python manage.py migrate
 $ python scripts/load_dataset.py <path/to/dataset>
 ```
 
-**Items below are provided by a template and may not be accurate/ necessary. User features may be stripped out as we finalize app functions.**
-
-
+**Items below are provided by a template and may not be accurate/ necessary. User features may be stripped out as we
+finalize app functions.**
 
 ### Setting Up Your Users
 
--   To create a **normal user account**, just go to Sign Up and fill out the form. Once you submit it, you'll see a "Verify Your E-mail Address" page. Go to your console to see a simulated email verification message. Copy the link into your browser. Now the user's email should be verified and ready to go.
+- To create a **normal user account**, just go to Sign Up and fill out the form. Once you submit it, you'll see a "
+  Verify Your E-mail Address" page. Go to your console to see a simulated email verification message. Copy the link into
+  your browser. Now the user's email should be verified and ready to go.
 
--   To create a **superuser account**, use this command:
+- To create a **superuser account**, use this command:
 
-        $ python manage.py createsuperuser
+      $ python manage.py createsuperuser
 
 ### Type checks
 
@@ -60,7 +63,8 @@ Moved to [Live reloading and SASS compilation](https://cookiecutter-django.readt
 
 ### Sentry
 
-Sentry is an error logging aggregator service. You can sign up for a free account at <https://sentry.io/signup/?code=cookiecutter> or download and host it yourself.
+Sentry is an error logging aggregator service. You can sign up for a free account
+at <https://sentry.io/signup/?code=cookiecutter> or download and host it yourself.
 The system is set up with reasonable defaults, including 404 logging and integration with the WSGI application.
 
 You must set the DSN url in production.
@@ -72,7 +76,6 @@ The following details how to deploy this application.
 ### Docker
 
 See detailed [cookiecutter-django Docker documentation](http://cookiecutter-django.readthedocs.io/en/latest/deployment-with-docker.html).
-
 
 ## Development
 

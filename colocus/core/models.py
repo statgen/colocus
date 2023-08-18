@@ -281,6 +281,12 @@ class MarginalSignal(models.Model):
         blank=True,
         help_text='Gene associated with lead variant (Ensembl ENSG ID).'
     )
+    cond_minp_variant = models.TextField(
+        null=True,
+        help_text="Variant with the smallest p-value after conditional analysis. Often the lead_variant* fields above"
+                  "pertain to the variant that was reported in a GWAS publication, but that does not necessarily mean"
+                  "that variant will also be the most significant in the conditional analysis."
+    )
 
     class Meta:
         constraints = [

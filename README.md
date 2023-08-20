@@ -295,4 +295,56 @@ tabix indexed.
 
 ### Colocalization
 
-TBD
+Colocalization results are stored on disk in the following format:
+
+```
+coloc/
+├── <coloc-uuid>
+    └── metadata.yml
+```
+
+Each colocalization result for a pair of signals is stored in a separate directory and given its own unique uuid. 
+These ids must be unique across all colocalization results for all traits.
+
+The `metadata.yml` file has the following information:
+
+```yaml
+uuid: 4293814906                          # unique identifier for this colocalization result
+
+signal1: 3258419243                       # uuid of the first signal
+signal2: 3508799139                       # uuid of the second signal
+
+study1: 2hGlu_MAGIC_2021_hg19             # first signal's study uuid
+study2: brotman_eqtl                      # second signal's study uuid
+
+trait1_variant: 2_27730940_T_C            # lead variant for the first signal
+trait2_variant: 2_27734972_G_A            # lead variant for the second signal
+
+coloc_h3: 0.25
+coloc_h4: 0.75                            # posterior probability of colocalization
+
+cross_signal:                             # cross signal information; each subfield 'effect', 'se', etc.
+  effect:                                 # is a list of lists (a matrix), where:
+  - - -0.0486                             #   row 1 is the first trait's variant,
+    - -0.0594                             #   row 2 is the second trait's variant,
+  - - -0.0338                             #   col 1 is the first trait's data (effect in marginal summary statistics)
+    - -0.0636                             #   col 2 is the second trait's data (effect in marginal summary statistics)
+  log_pval:
+  - - 11.2
+    - 6.44
+  - - 5.93
+    - 7.54
+  se:
+  - - 0.0078
+    - 0.0116
+  - - 0.0077
+    - 0.0114
+
+n_coloc_between_traits: 1                 # number of total colocalizations found between the two traits; this is used
+                                          # in the web UI
+
+qtl_gene: ENSG00000163795                 # if trait 2 comes from an eQTL study, this is the gene's ENSG ID
+qtl_symb: ZNF513                          # if trait 2 comes from an eQTL study, this is the gene's symbol
+
+r2: 0.778088                              # this is the LD between the two lead variants
+```

@@ -248,7 +248,50 @@ identical in format to the `summ_stats.harmonized.gz` file.
 
 ### Linkage disequilibrium (LD)
 
-TBD
+Each lead variant for all signals must have LD calculated between it and all other variants in the region (up to any
+distance cutoff, but typically 1 Mb).
+
+Ideally, LD would be calculated either in the original samples used for the GWAS/eQTL study, or in a large reference
+panel (one that matches the original population as closely as possible, and ideally the same one that was used when
+performing fine-mapping if a reference panel was used in that analysis).
+
+LD information is stored on disk in the following format:
+
+```
+ld/
+└── <ld-panel-uuid>
+    ├── ld.gz
+    ├── ld.gz.tbi
+    ├── metadata.yml
+```
+
+The `ld-panel-uuid` is a unique identifier for the LD panel used to calculate LD. Within each directory, there is a
+`metadata.yml` file that provides information about the panel. As an example:
+
+```yaml
+uuid: 'ukbb_grch37_all'
+panel: 'UKBB'
+population: 'ALL'
+genome_build: 'GRCh37'
+```
+
+The `ld.gz` file contains the calculated LD information, concatenated together and bgzipped. It is a tab-delimited
+file with the following format:
+
+```
+1       1242707 1:1242707_A/G   1       742813  1:742813_C/T    0.000561357
+1       1242707 1:1242707_A/G   1       742825  1:742825_A/G    0.000542286
+1       1242707 1:1242707_A/G   1       742832  1:742832_C/A    0.000123633
+```
+
+Columns 1, 2, 3 pertain to the lead variant. They are the chromosome, position, and variant ID respectively.
+
+Columns 4, 5, 6 pertain to the "other" variants in the region. They are also the chromosome, position, and variant ID.
+
+The final column is the LD (r2) value between the lead variant and the other variant.
+
+This file should be sorted by chromosome and position for the lead variants (columns 1-3), and then bgzipped and
+tabix indexed.
 
 ### Colocalization
 

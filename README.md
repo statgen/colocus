@@ -303,7 +303,7 @@ coloc/
     └── metadata.yml
 ```
 
-Each colocalization result for a pair of signals is stored in a separate directory and given its own unique uuid. 
+Each colocalization result for a pair of signals is stored in a separate directory and given its own unique uuid.
 These ids must be unique across all colocalization results for all traits.
 
 The `metadata.yml` file has the following information:

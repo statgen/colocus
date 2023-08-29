@@ -31,6 +31,13 @@ class AnalysisGroup(models.Model):
         help_text='Name of the parent study (like "GLGC" or "GTEx") that produced the colocalization analysis'
     )
 
+    label = models.TextField(
+        help_text='A human-readable description of the dataset, like "GIANT BMI meta-analysis"',
+        null=True,
+        blank=True,
+        unique=False
+    )
+
     ingest_complete = models.DateTimeField(
         auto_now_add=True,
         null=True,

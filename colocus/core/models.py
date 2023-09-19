@@ -31,6 +31,13 @@ class AnalysisGroup(models.Model):
         help_text='Name of the parent study (like "GLGC" or "GTEx") that produced the colocalization analysis'
     )
 
+    label = models.TextField(
+        help_text='A human-readable description of the dataset, like "GIANT BMI meta-analysis"',
+        null=True,
+        blank=True,
+        unique=False
+    )
+
     ingest_complete = models.DateTimeField(
         auto_now_add=True,
         null=True,
@@ -280,6 +287,12 @@ class MarginalSignal(models.Model):
         max_length=50,
         blank=True,
         help_text='Gene associated with lead variant (Ensembl ENSG ID).'
+    )
+    cond_minp_variant = models.TextField(
+        null=True,
+        help_text="Variant with the smallest p-value after conditional analysis. Often the lead_variant* fields above"
+                  "pertain to the variant that was reported in a GWAS publication, but that does not necessarily mean"
+                  "that variant will also be the most significant in the conditional analysis."
     )
 
     class Meta:

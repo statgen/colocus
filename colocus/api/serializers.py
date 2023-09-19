@@ -32,7 +32,7 @@ class StudyHyperlinkRelatedField(drf_serializers.HyperlinkedRelatedField):
 class AnalysisGroupSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.AnalysisGroup
-        fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid')
+        fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid', 'label')
 
 
 class AnalyisGroupDetailSerializer(drf_serializers.ModelSerializer):
@@ -44,7 +44,7 @@ class AnalyisGroupDetailSerializer(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.AnalysisGroup
-        fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid', 'trait_count')
+        fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid', 'trait_count', 'label')
 
 
 class LDPairsSerializer(drf_serializers.ModelSerializer):
@@ -90,7 +90,7 @@ class MarginalTraitSerializerBrief(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.MarginalTrait
-        fields = ('uuid', 'label', 'trait_type', 'genome_build', 'metadata', 'ld')
+        fields = ('uuid', 'label', 'trait_type', 'genome_build', 'metadata', 'ld', 'study_name')
 
 
 class MarginalSignalSerializer(drf_serializers.ModelSerializer):
@@ -117,7 +117,8 @@ class MarginalSignalSerializer(drf_serializers.ModelSerializer):
             'lead_variant_effect_marg',
             'lead_variant_nearest_gene',
             'lead_variant_assoc_gene',
-            'lead_variant_assoc_gene_ensg'
+            'lead_variant_assoc_gene_ensg',
+            'cond_minp_variant'
         )
 
 

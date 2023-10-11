@@ -1,4 +1,4 @@
-import sys
+import sys, platform
 from pathlib import Path
 
 from django.apps import AppConfig
@@ -14,7 +14,12 @@ def load_uint(connection, **kwargs):
     connection.connection.enable_load_extension(True)
 
     if sys.platform == 'darwin':
-        ext_path = ROOT_DIR / "sqlite3" / "uint" / "uint.dylib"
+        if platform.machine() == "arm64":
+            ext_path = ROOT_DIR / "sqlite3" / "uint" / "arm64" / "uint.dylib"
+        elif platform.machine() == "x86_64":
+            ext_path = ROOT_DIR / "sqlite3" / "uint" / "x86_64" / "uint.dylib"
+        else:
+            raise NotImplementedError(f"Unsupported Mac CPU architecture: {platform.machine()}")
     elif sys.platform == 'linux':
         ext_path = ROOT_DIR / "sqlite3" / "uint" / "uint.so"
     else:

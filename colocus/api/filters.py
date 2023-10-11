@@ -86,6 +86,20 @@ class ColocResultFilter(FilterSet):
 
         return queryset.filter(query)
 
+    studies = CharFilter(method='study_or')
+
+    def study_or(self, queryset, name, value):
+        if "," in value:
+            value = value.split(",")
+
+            query = Q(signal1__trait__study_name__in=value)
+            query |= Q(signal2__trait__study_name__in=value)
+        else:
+            query = Q(signal1__trait__study_name=value)
+            query |= Q(signal2__trait__study_name=value)
+
+        return queryset.filter(query)
+
     class Meta:
         model = models.ColocResult
         fields = {

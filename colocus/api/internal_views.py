@@ -33,11 +33,17 @@ def search_page_metadata(request, analysis__uuid):
         models.MarginalTrait.objects.filter(analysis__uuid=analysis__uuid, trait_type=constants.GWAS)
     ))
 
+    studies = list(set(
+        m.study_name
+        for m in models.MarginalTrait.objects.filter(analysis__uuid=analysis__uuid)
+    ))
+
     return http.JsonResponse({
         'count_pairs': count_signal_pairs,
         'tissues': tissues,
         'trait_types': trait_types,
-        'phenotypes': phenotypes
+        'phenotypes': phenotypes,
+        'studies': studies
     })
 
 

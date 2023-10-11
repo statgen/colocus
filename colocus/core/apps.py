@@ -1,4 +1,5 @@
-import sys, platform
+import sys
+import platform
 from pathlib import Path
 
 from django.apps import AppConfig

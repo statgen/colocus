@@ -25,10 +25,8 @@ class ColocResultFilter(FilterSet):
     genes = CharFilter(method='gene_or')
 
     def gene_or(self, queryset, name, value):
-        query = Q(signal1__lead_variant_nearest_gene=value)
+        query = Q(signal1__lead_variant_assoc_gene=value)
         query |= Q(signal2__lead_variant_assoc_gene=value)
-        query |= Q(signal2__lead_variant_assoc_gene=value)
-        query |= Q(signal2__lead_variant_nearest_gene=value)
 
         return queryset.filter(query)
 

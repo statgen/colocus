@@ -3,6 +3,7 @@ import sqlite3
 
 regex = re.compile(r'^[A-Za-z0-9._-]+$')
 
+
 def check_data(data, regex):
     id = data[0]
     nearest = data[1]
@@ -20,7 +21,9 @@ def check_data(data, regex):
 
 con = sqlite3.connect("./database/local.sqlite3")
 cur = con.cursor()
-res = cur.execute('select id, lead_variant_nearest_gene, lead_variant_assoc_gene, lead_variant_assoc_gene_ensg from core_marginalsignal')
+sql = """select id, lead_variant_nearest_gene, lead_variant_assoc_gene, lead_variant_assoc_gene_ensg
+         from core_marginalsignal"""
+res = cur.execute(sql)
 for row in res:
     check_data(row, regex)
 con.close()

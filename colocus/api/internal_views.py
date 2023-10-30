@@ -5,9 +5,10 @@ import os
 import re
 
 from django import http
-from django.db.models import CharField, F, Q, Value
 
 from colocus.core import constants, models
+
+# from django.db.models import CharField, F, Q, Value
 
 
 def search_page_metadata(request, analysis__uuid):
@@ -40,7 +41,7 @@ def search_page_metadata(request, analysis__uuid):
         for m in models.MarginalTrait.objects.filter(analysis__uuid=analysis__uuid)
     ))
 
-    sql = f"""
+    sql = """
         with all_genes as (
             select id, lead_variant_nearest_gene gene from core_marginalsignal
             union select id, lead_variant_assoc_gene gene from core_marginalsignal
@@ -113,7 +114,8 @@ def MarginalSignalGeneView(request):
     requested_genes = request.GET.get('genes', '').split(',')
     requested_genes = [gene.strip() for gene in requested_genes if regex.match(gene.strip())]
 
-    if not requested_genes: return http.JsonResponse({'genes': None})
+    if not requested_genes:
+        return http.JsonResponse({'genes': None})
 
     # this works for all three columns because they're all aliased to 'gene' in the sql union query
     conditions = []

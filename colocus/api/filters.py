@@ -32,14 +32,14 @@ class ColocResultFilter(FilterSet):
         value_annotated = [Value(v, output_field=CharField()) for v in value]
         print(value_annotated)
 
-        query =  Q(signal1__lead_variant_nearest_gene__in=value_annotated)
+        query = Q(signal1__lead_variant_nearest_gene__in=value_annotated)
         query |= Q(signal1__lead_variant_assoc_gene__in=value_annotated)
         query |= Q(signal1__lead_variant_assoc_gene_ensg__in=value_annotated)
         query |= Q(signal2__lead_variant_nearest_gene__in=value_annotated)
         query |= Q(signal2__lead_variant_assoc_gene__in=value_annotated)
         query |= Q(signal2__lead_variant_assoc_gene_ensg__in=value_annotated)
 
-        x =  queryset.filter(query)
+        x = queryset.filter(query)
         print(x.query)
         return x
 

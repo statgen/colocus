@@ -5,7 +5,7 @@ import os
 import re
 
 from django import http
-from django.db.models import Q, Value, CharField, F
+from django.db.models import CharField, F, Q, Value
 
 from colocus.core import constants, models
 

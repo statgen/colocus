@@ -4,7 +4,7 @@ Filters
 https://django-filter.readthedocs.io/en/stable/ref/filterset.html#fields
 """
 
-from django.db.models import Q
+from django.db.models import Q, Value, CharField
 from django_filters.rest_framework import CharFilter, FilterSet
 
 from colocus.core import models
@@ -25,12 +25,23 @@ class ColocResultFilter(FilterSet):
     genes = CharFilter(method='gene_or')
 
     def gene_or(self, queryset, name, value):
-        query = Q(signal1__lead_variant_nearest_gene=value)
-        query |= Q(signal2__lead_variant_assoc_gene=value)
-        query |= Q(signal2__lead_variant_assoc_gene=value)
-        query |= Q(signal2__lead_variant_nearest_gene=value)
+        if "," in value:
+            value = value.split(",")
+        else:
+            value = [value]
+        value_annotated = [Value(v, output_field=CharField()) for v in value]
+        print(value_annotated)
 
-        return queryset.filter(query)
+        query =  Q(signal1__lead_variant_nearest_gene__in=value_annotated)
+        query |= Q(signal1__lead_variant_assoc_gene__in=value_annotated)
+        query |= Q(signal1__lead_variant_assoc_gene_ensg__in=value_annotated)
+        query |= Q(signal2__lead_variant_nearest_gene__in=value_annotated)
+        query |= Q(signal2__lead_variant_assoc_gene__in=value_annotated)
+        query |= Q(signal2__lead_variant_assoc_gene_ensg__in=value_annotated)
+
+        x =  queryset.filter(query)
+        print(x.query)
+        return x
 
     phenotypes = CharFilter(method='phenotype_or')
 
@@ -39,7 +50,7 @@ class ColocResultFilter(FilterSet):
             value = value.split(",")
         else:
             value = [value]
-
+        print('phenotype values: ', value)
         query = Q(signal1__trait__metadata__trait__in=value)
         query |= Q(signal2__trait__metadata__trait__in=value)
 

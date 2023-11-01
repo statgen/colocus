@@ -43,16 +43,13 @@ def search_page_metadata(request, analysis__uuid):
 
     sql = """
         with all_genes as (
-            select id, lead_variant_nearest_gene gene from core_marginalsignal
-            union select id, lead_variant_assoc_gene gene from core_marginalsignal
+            select id, lead_variant_assoc_gene gene from core_marginalsignal
             union select id, lead_variant_assoc_gene_ensg gene from core_marginalsignal
             )
         select distinct id, gene from all_genes where gene > '' order by gene
     """
 
     genes = models.MarginalSignal.objects.raw(sql)
-    # genes = list({m.gene for m in genes if m.gene})
-    # genes.sort()
     genes = [m.gene for m in genes]
 
     return http.JsonResponse({

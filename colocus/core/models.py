@@ -288,6 +288,11 @@ class MarginalSignal(models.Model):
         blank=True,
         help_text='Gene associated with lead variant (Ensembl ENSG ID).'
     )
+    lead_variant_assoc_exon = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text='Gene associated with lead variant (Ensembl ENSG ID).'
+    )
     cond_minp_variant = models.TextField(
         null=True,
         help_text="Variant with the smallest p-value after conditional analysis. Often the lead_variant* fields above"

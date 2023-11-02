@@ -160,3 +160,14 @@ class ColocResultSerializer(drf_serializers.ModelSerializer):
         model = models.ColocResult
         fields = ('uuid', 'analysis', 'signal1', 'signal2', 'coloc_h3', 'coloc_h4', 'cross_signal',
                   'r2', 'n_coloc_between_traits', 'marg_cond_flip')
+
+
+class SimpleMarginalSignalSerializer(drf_serializers.ModelSerializer):
+    class Meta:
+        model = models.MarginalSignal
+        fields = (
+            'uuid',
+            'lead_variant_nearest_gene',
+            'lead_variant_assoc_gene',
+            'lead_variant_assoc_gene_ensg',
+        )

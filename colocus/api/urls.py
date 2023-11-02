@@ -62,6 +62,8 @@ urlpatterns = [
     ),
     path('internal/studies/<analysis_uuid>/traits/<uuid>/qq/', internal_views.trait_qq, name='trait-qq'),
 
+    path('internal/genes', internal_views.MarginalSignalGeneView, name='genes'),
+
     # path("v1/", view=user_redirect_view, name="redirect"),
     # path("~update/", view=user_update_view, name="update"),
     # path("<str:username>/", view=user_detail_view, name="detail"),

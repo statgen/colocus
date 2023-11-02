@@ -25,8 +25,15 @@ class ColocResultFilter(FilterSet):
     genes = CharFilter(method='gene_or')
 
     def gene_or(self, queryset, name, value):
-        query = Q(signal1__lead_variant_assoc_gene=value)
-        query |= Q(signal2__lead_variant_assoc_gene=value)
+        if "," in value:
+            value = value.split(",")
+        else:
+            value = [value]
+
+        query = Q(signal1__lead_variant_assoc_gene__in=value)
+        query |= Q(signal1__lead_variant_assoc_gene_ensg__in=value)
+        query |= Q(signal2__lead_variant_assoc_gene__in=value)
+        query |= Q(signal2__lead_variant_assoc_gene_ensg__in=value)
 
         return queryset.filter(query)
 
@@ -81,6 +88,20 @@ class ColocResultFilter(FilterSet):
         else:
             query = Q(signal1__uuid=value)
             query |= Q(signal2__uuid=value)
+
+        return queryset.filter(query)
+
+    studies = CharFilter(method='study_or')
+
+    def study_or(self, queryset, name, value):
+        if "," in value:
+            value = value.split(",")
+
+            query = Q(signal1__trait__study_name__in=value)
+            query |= Q(signal2__trait__study_name__in=value)
+        else:
+            query = Q(signal1__trait__study_name=value)
+            query |= Q(signal2__trait__study_name=value)
 
         return queryset.filter(query)
 

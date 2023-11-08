@@ -10,15 +10,30 @@ from colocus.api import internal_views, views
 
 app_name = "api"
 urlpatterns = [
-    # FIXME:
-    # /signals = LISTVIEW
-    #     /<uid>/ (DETAILVIEW = metadata describing which trait and lead variant this is for)
-    #     /<uid>/summ_stats/ = (joined summary stats: marg trait + cond analysis)
-    # /coloc/ = LISTVIEW
-    #     /<uid> = metadata: what are the two signals + h3/h4 for this item? Used for region plot page
-    # /ld/ = LISTVIEW
-    #     /<uid>/ ?chr-start-end - retrieve LD for a given view, translate to LZ api fields.
-    #     Uses panel ID from marg trait page
+    ### New API endpoints that can optionally take an analysis_uuid as GET parameter
+
+    # Colocalization results
+    path('coloc/', views.ColocResultListView.as_view(), name='coloc-all'),
+    path('coloc/<uuid>/', views.ColocResultDetailView.as_view(), name='coloc-detail'),
+    path(
+        'signals/<uuid>/region/',
+        views.MarginalSignalSummRegionView.as_view(),
+        name='signals-summstats'
+    ),
+    path('traits/', views.MarginalTraitListView.as_view(), name='traits-all'),
+    path('traits/<uuid>/', views.MarginalTraitDetailView.as_view(), name='traits-detail'),
+    path(
+        'internal/search_metadata/',
+        internal_views.search_page_metadata,
+        name='search-metadata'
+    ),
+    path(
+        'internal/traits/<uuid>/manhattan/',
+        internal_views.trait_manhattan,
+        name='trait-manhattan'
+    ),
+
+    ### Study specific endpoints
 
     # List of studies / datasets
     path('studies/', views.AnalysisGroupListView.as_view(), name='studies-all'),

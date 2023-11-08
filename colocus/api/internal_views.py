@@ -11,34 +11,48 @@ from colocus.core import constants, models
 # from django.db.models import CharField, F, Q, Value
 
 
-def search_page_metadata(request, analysis__uuid):
+def search_page_metadata(request, *args, **kwargs):
+    analysis_uuid = None
+    if "analysis_uuid" in kwargs:
+        analysis_uuid = kwargs["analysis_uuid"]
+    elif "analysis_uuid" in request.GET:
+        analysis_uuid = request.GET.get('analysis_uuid')
+
+    # Apply analysis_uuid filter if provided, else use all objects
+    qs_trait = models.MarginalTrait.objects.all()
+    qs_coloc = models.ColocResult.objects.all()
+
+    if analysis_uuid:
+        qs_trait = qs_trait.filter(analysis__uuid=analysis_uuid)
+        qs_coloc = qs_coloc.filter(analysis__uuid=analysis_uuid)
+
     """Return metadata required to power the "available categories" menus in the "search" page UI"""
-    count_signal_pairs = models.ColocResult.objects.filter(analysis__uuid=analysis__uuid).count()
+    count_signal_pairs = qs_coloc.count()
 
     # Trait types seen across all signals
     trait_types = list(set(
         m.trait_type
         for m in
-        models.MarginalTrait.objects.filter(analysis__uuid=analysis__uuid)
+        qs_trait
     ))
 
     # Get list of available tissues
     tissues = list(set(
         m.metadata["tissue"]
         for m in
-        models.MarginalTrait.objects.filter(analysis__uuid=analysis__uuid, trait_type=constants.EQTL)
+        qs_trait.filter(trait_type=constants.EQTL)
     ))
 
     # Get list of all possible traits
     phenotypes = list(set(
         m.metadata["trait"]
         for m in
-        models.MarginalTrait.objects.filter(analysis__uuid=analysis__uuid, trait_type=constants.GWAS)
+        qs_trait.filter(trait_type=constants.GWAS)
     ))
 
     studies = list(set(
         m.study_name
-        for m in models.MarginalTrait.objects.filter(analysis__uuid=analysis__uuid)
+        for m in qs_trait
     ))
 
     sql = """
@@ -63,14 +77,19 @@ def search_page_metadata(request, analysis__uuid):
 
 
 # TODO: DRY manhattan / qq views
-def trait_manhattan(request, analysis_uuid, uuid):
+def trait_manhattan(request, *args, **kwargs):
     """
     Return the data used to render a manhattan plot. This only makes sense for a GWAS; other traits, like cis-eQTLs,
       may be defined only around a specific locus, and can't meaningfully be visualized genome wide
-      TODO Currently this is tied to a local filesystem. May need to refactor if we switch to S3.
     """
+
+    filter_args = {"uuid": kwargs.get("uuid")}
+    analysis_uuid = request.GET.get("analysis_uuid")
+    if analysis_uuid:
+        filter_args["analysis__uuid"] = analysis_uuid
+
     try:
-        model = models.MarginalTrait.objects.get(analysis__uuid=analysis_uuid, uuid=uuid)
+        model = models.MarginalTrait.objects.get(**filter_args)
     except models.MarginalTrait.DoesNotExist:
         return http.HttpResponseNotFound("No record was found for the specified study + trait")
 

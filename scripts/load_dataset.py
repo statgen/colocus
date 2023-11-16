@@ -35,7 +35,8 @@ from colocus.core.models import (  # noqa E402
 def parse_args():
     parser = argparse.ArgumentParser(description="Load a packaged coloc dataset into the database. Assumes validation "
                                                  "was performed elsewhere, eg for uuid integrity")
-    parser.add_argument('input', help='The top level folder of the packaged dataset with a predefined structure.', nargs="+")
+    parser.add_argument('input', help='The top level folder of the packaged dataset with a predefined '
+                                      'structure.', nargs="+")
     return parser.parse_args()
 
 

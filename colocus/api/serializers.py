@@ -71,7 +71,7 @@ class MarginalTraitSerializer(drf_serializers.ModelSerializer):
         the primary use case for this serializer/endpoint is to render pages with all the info we want about this trait.
     """
     analysis = AnalysisGroupSerializer(read_only=True)
-    ld = StudyHyperlinkRelatedField(read_only=True, view_name='api:ld-region', lookup_field='uuid')
+    ld = drf_serializers.CharField(source='ld.uuid', read_only=True)
 
     class Meta:
         model = models.MarginalTrait
@@ -86,7 +86,7 @@ class MarginalTraitSerializerBrief(drf_serializers.ModelSerializer):
     """
     Serialize a selection of marginal trait fields. Suitable for embedding concise information in another response
     """
-    ld = StudyHyperlinkRelatedField(read_only=True, view_name='api:ld-region', lookup_field='uuid')
+    ld = drf_serializers.CharField(source='ld.uuid', read_only=True)
 
     class Meta:
         model = models.MarginalTrait

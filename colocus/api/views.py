@@ -20,7 +20,18 @@ class OneStudyMixin:
     def filter_queryset(self, queryset):
         """"""
         queryset = super(OneStudyMixin, self).filter_queryset(queryset)        # type: ignore
-        return queryset.filter(analysis__uuid=self.kwargs['analysis_uuid'])    # type: ignore
+
+        # Take analysis_uuid from the URL first if it exists
+        analysis_uuid = self.kwargs.get("analysis_uuid")                      # type: ignore
+        if analysis_uuid:
+            return queryset.filter(analysis__uuid=analysis_uuid)
+
+        # If it didn't exist in the URL, see if it was a GET query parameter
+        analysis_uuid = self.request.query_params.get("analysis_uuid", None)  # type: ignore
+        if analysis_uuid:
+            return queryset.filter(analysis__uuid=analysis_uuid)
+
+        return queryset
 
 
 class TabixRegionView(generics.RetrieveAPIView):
@@ -77,8 +88,12 @@ class AnalysisGroupDetailView(generics.RetrieveAPIView):
     serializer_class = serializers.AnalyisGroupDetailSerializer
 
 
-class ColocResultListView(generics.ListAPIView):
+class ColocResultListView(OneStudyMixin, generics.ListAPIView):
     ordering = ('-coloc_h4',)
+    queryset = models.ColocResult.objects \
+        .select_related('signal1', 'signal2', 'analysis', 'signal1__trait', 'signal2__trait') \
+        .prefetch_related('signal1__trait__ld', 'signal2__trait__ld')
+
     serializer_class = serializers.ColocResultSerializer
     filterset_class = filters.ColocResultFilter
     ordering_fields = (
@@ -116,7 +131,7 @@ class ColocResultListView(generics.ListAPIView):
         return queryset
 
 
-class ColocResultDetailView(generics.RetrieveAPIView):
+class ColocResultDetailView(OneStudyMixin, generics.RetrieveAPIView):
     lookup_field = 'uuid'
     queryset = models.ColocResult.objects.select_related('analysis', 'signal1', 'signal2')
     serializer_class = serializers.ColocResultSerializer
@@ -148,14 +163,14 @@ class MarginalSignalDetailView(OneStudyMixin, generics.RetrieveAPIView):
     serializer_class = serializers.MarginalSignalSerializer
 
 
-class MarginalTraitListView(generics.ListAPIView):
+class MarginalTraitListView(OneStudyMixin, generics.ListAPIView):
     ordering = ('study_name',)
     queryset = models.MarginalTrait.objects.select_related('analysis').prefetch_related('ld')
 
     serializer_class = serializers.MarginalTraitSerializer
 
 
-class MarginalTraitDetailView(generics.RetrieveAPIView):
+class MarginalTraitDetailView(OneStudyMixin, generics.RetrieveAPIView):
     lookup_field = 'uuid'
     queryset = models.MarginalTrait.objects.select_related('analysis')
     serializer_class = serializers.MarginalTraitSerializer
@@ -163,7 +178,7 @@ class MarginalTraitDetailView(generics.RetrieveAPIView):
 
 # Tabix-based "region view" endpoints
 # -------------------------------------
-class MarginalSignalSummRegionView(TabixRegionView):
+class MarginalSignalSummRegionView(OneStudyMixin, TabixRegionView):
     """Provide all summary stats associated with a particular signal (marginal + conditional) in a given region"""
     lookup_field = 'uuid'
     queryset = models.MarginalSignal.objects.select_related('trait')

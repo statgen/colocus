@@ -32,6 +32,9 @@ urlpatterns = [
         internal_views.trait_manhattan,
         name='trait-manhattan'
     ),
+    path('ld/', views.LDPairsListView.as_view(), name='ld-all'),
+    path('ld/<uuid>/', views.LDPairsDetailView.as_view(), name='ld-detail'),
+    path('ld/<uuid>/region/', views.LDPairsRegionView.as_view(), name='ld-region'),
 
     ### Study specific endpoints
 

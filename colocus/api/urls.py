@@ -8,7 +8,6 @@ from colocus.api import internal_views, views
 #     user_update_view,
 # )
 
-app_name = "api"
 urlpatterns = [
     # New API endpoints that can optionally take an analysis_uuid as GET parameter
     # These endpoints do not require an analysis_uuid as they are not study-specific

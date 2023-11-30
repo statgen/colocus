@@ -11,6 +11,7 @@ def parse_variant(v):
     else:
         return None
 
+
 def is_variant(v):
     return parse_variant(v) is not None
 

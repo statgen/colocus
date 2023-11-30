@@ -2,13 +2,9 @@ from django.urls import path
 
 from colocus.api import internal_views, views
 
-# .views import (
-#     user_detail_view,
-#     user_redirect_view,
-#     user_update_view,
-# )
-
-urlpatterns = [
+# Version 1 of the API
+app_name = "api"
+urls_v1 = [
     # New API endpoints that can optionally take an analysis_uuid as GET parameter
     # These endpoints do not require an analysis_uuid as they are not study-specific
 
@@ -87,3 +83,5 @@ urlpatterns = [
     # path("~update/", view=user_update_view, name="update"),
     # path("<str:username>/", view=user_detail_view, name="detail"),
 ]
+
+# urls_v2 = []

@@ -1,10 +1,12 @@
+import json
+
 import pytest
 from django.test import TestCase  # noqa F401
-from rest_framework.test import APITestCase
 from django.urls import reverse
 from rest_framework.status import HTTP_200_OK
+from rest_framework.test import APITestCase
+
 from colocus.api.tests.util import is_variant, valid_alleles
-import json
 
 
 @pytest.mark.django_db

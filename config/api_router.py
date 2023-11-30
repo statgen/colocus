@@ -3,6 +3,8 @@
 # from django.conf import settings
 # from rest_framework.routers import DefaultRouter, SimpleRouter
 
+from django.urls import include, path
+
 from colocus.api import urls as api_urls
 
 # from colocus.users.api.views import UserViewSet
@@ -15,5 +17,7 @@ from colocus.api import urls as api_urls
 # router.register("users", UserViewSet)
 
 
-app_name = "api"
-urlpatterns = api_urls.urlpatterns  # router.urls
+urlpatterns = [
+    path('v1/', include((api_urls.urls_v1, 'api'), namespace='v1')),
+    # path('v2/', include((api_urls.urls_v2, 'api'), namespace='v2')),
+]

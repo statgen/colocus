@@ -1,0 +1,14 @@
+lead_variant_alt: G
+lead_variant_assoc_gene: TIPARP
+lead_variant_assoc_gene_ensg: ENSG00000163659
+lead_variant_chrom: '3'
+lead_variant_effect: 0.564419
+lead_variant_effect_marg: 0.564
+lead_variant_marker: 3_156795468_A_G
+lead_variant_nearest_gene: LEKR1
+lead_variant_neg_log_p: 230.69848061315014
+lead_variant_pos: 156795468
+lead_variant_ref: A
+lead_variant_se: 0.0151551
+original_file: data/original-copy/eQTL_marginal_files/TIPARP_eQTL_svar.txt
+uuid: '4105831771'

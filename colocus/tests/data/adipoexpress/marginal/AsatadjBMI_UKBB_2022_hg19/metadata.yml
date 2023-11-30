@@ -1,0 +1,13 @@
+authors: Agrawal et al. (Nat Commun 2022)
+description: Provided by sbrotman@email.unc.edu
+external_link: https://cvd.hugeamp.org/downloads.html#summary
+genome_build: GRCh37
+label: Abdominal subcutaneous adipose tissue volume adjusted for BMI meta-analysis
+ld_panel: ukbb_grch37_all
+metadata:
+  trait: Abdominal subcutaneous adipose tissue volume adjusted for BMI
+  trait_abbrev: AsatadjBMI
+pmid: 35773277
+study_name: UKBB
+trait_type: gwas
+uuid: AsatadjBMI_UKBB_2022_hg19

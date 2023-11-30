@@ -1,0 +1,29 @@
+coloc_h3: 7.237470956660721e-05
+coloc_h4: 0.9999276248189799
+cross_signal:
+  effect:
+  - - -0.047
+    - -0.171
+  - - -0.047
+    - -0.171
+  log_pval:
+  - - 12.6
+    - 14.8
+  - - 12.6
+    - 14.8
+  se:
+  - - 0.0064
+    - 0.0206
+  - - 0.0064
+    - 0.0206
+n_coloc_between_traits: 0
+qtl_gene: ENSG00000134247.9_117529423_117532980
+qtl_symb: PTGFRN
+r2: 1.0
+signal1: 2167784824
+signal2: 1402440295
+study1: gwas_diamante_t2d_eur
+study2: eqtl_inspire_islet
+trait1_variant: 1_117532790_C_T
+trait2_variant: 1_117532790_C_T
+uuid: 6373253703356835840

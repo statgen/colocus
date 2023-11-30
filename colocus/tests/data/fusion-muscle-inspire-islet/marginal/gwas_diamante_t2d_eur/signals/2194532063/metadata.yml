@@ -1,0 +1,13 @@
+cond_minp_variant: null
+lead_variant_alt: T
+lead_variant_chrom: '3'
+lead_variant_effect: 9.932
+lead_variant_effect_marg: 0.055
+lead_variant_marker: 3_186665645_C_T
+lead_variant_nearest_gene: ST6GAL1
+lead_variant_nearest_gene_ensg: ENSG00000073849.10
+lead_variant_neg_log_p: 22.74
+lead_variant_pos: 186665645
+lead_variant_ref: C
+lead_variant_se: 0.995
+uuid: '2194532063'

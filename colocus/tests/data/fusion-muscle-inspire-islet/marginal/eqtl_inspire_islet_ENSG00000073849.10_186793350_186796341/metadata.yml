@@ -1,0 +1,17 @@
+authors: Varshney et al.
+description: ''
+external_link: ''
+genome_build: GRCh37
+label: INSPIRE islet eQTL
+ld_panel: ukbb_grch37_all_muscislet
+metadata:
+  exon: ENSG00000073849.10_186793350_186796341
+  exon_end: 186796341
+  exon_start: 186793350
+  gene: ST6GAL1
+  gene_ensg: ENSG00000073849.10
+  tissue: islet
+pmid: ''
+study_name: INSPIRE
+trait_type: eQTL
+uuid: eqtl_inspire_islet_ENSG00000073849.10_186793350_186796341

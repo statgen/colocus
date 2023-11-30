@@ -1,0 +1,13 @@
+authors: Mahajan et al. (Nature Genetics 2022)
+description: ''
+external_link: https://diagram-consortium.org/downloads.html
+genome_build: GRCh37
+label: T2D Meta-analysis (EUR)
+ld_panel: ukbb_grch37_all_muscislet
+metadata:
+  trait: Type 2 diabetes
+  trait_abbrev: T2D
+pmid: 35551307
+study_name: DIAMANTE
+trait_type: gwas
+uuid: gwas_diamante_t2d_eur

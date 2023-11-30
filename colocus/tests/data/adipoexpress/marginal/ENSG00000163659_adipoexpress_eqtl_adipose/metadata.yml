@@ -1,0 +1,14 @@
+authors: Brotman et. al
+description: Provided by Brotman et al; provenance unknown
+external_link: https://mohlke.web.unc.edu/data/
+genome_build: GRCh37
+label: AdipoExpress eQTL Meta-analysis
+ld_panel: ukbb_grch37_all
+metadata:
+  gene: TIPARP
+  gene_ensg: ENSG00000163659
+  tissue: adipose
+pmid: ''
+study_name: AdipoExpress
+trait_type: eQTL
+uuid: ENSG00000163659_adipoexpress_eqtl_adipose

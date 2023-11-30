@@ -1,0 +1,14 @@
+lead_variant_alt: G
+lead_variant_assoc_gene: ATP2B4
+lead_variant_assoc_gene_ensg: ENSG00000058668
+lead_variant_chrom: '1'
+lead_variant_effect: 0.263705075333769
+lead_variant_effect_marg: 0.313
+lead_variant_marker: 1_203517292_A_G
+lead_variant_nearest_gene: OPTC
+lead_variant_neg_log_p: 97.2651919296442
+lead_variant_pos: 203517292
+lead_variant_ref: A
+lead_variant_se: 0.0118645958151485
+original_file: data/original-copy/eQTL_AB1_files/ATP2B4_1:3_eQTL_AB1.txt
+uuid: '2714515857'

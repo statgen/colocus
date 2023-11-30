@@ -1,0 +1,17 @@
+cond_minp_variant: null
+lead_variant_alt: T
+lead_variant_assoc_exon: ENSG00000073849.10_186793350_186796341
+lead_variant_assoc_exon_end: 186796341
+lead_variant_assoc_exon_start: 186793350
+lead_variant_assoc_gene: ST6GAL1
+lead_variant_assoc_gene_ensg: ENSG00000073849.10
+lead_variant_chrom: '3'
+lead_variant_effect: 9.373
+lead_variant_effect_marg: 0.367
+lead_variant_marker: 3_186665645_C_T
+lead_variant_nearest_gene: ST6GAL1
+lead_variant_neg_log_p: 20.37
+lead_variant_pos: 186665645
+lead_variant_ref: C
+lead_variant_se: 0.9944
+uuid: '911128926'

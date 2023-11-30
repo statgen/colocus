@@ -1,0 +1,17 @@
+cond_minp_variant: null
+lead_variant_alt: T
+lead_variant_assoc_exon: ENSG00000134247.9_117529423_117532980
+lead_variant_assoc_exon_end: 117532980
+lead_variant_assoc_exon_start: 117529423
+lead_variant_assoc_gene: PTGFRN
+lead_variant_assoc_gene_ensg: ENSG00000134247.9
+lead_variant_chrom: '1'
+lead_variant_effect: -9.453
+lead_variant_effect_marg: -0.171
+lead_variant_marker: 1_117532790_C_T
+lead_variant_nearest_gene: PTGFRN
+lead_variant_neg_log_p: 20.7
+lead_variant_pos: 117532790
+lead_variant_ref: C
+lead_variant_se: 0.9945
+uuid: '1402440295'

@@ -1,0 +1,29 @@
+coloc_h3: 0.00285
+coloc_h4: 1.0
+cross_signal:
+  effect:
+  - - 0.057
+    - 0.305
+  - - 0.0565
+    - 0.313
+  log_pval:
+  - - 14.3
+    - 135.0
+  - - 14.1
+    - 141.0
+  se:
+  - - 0.00719
+    - 0.0114
+  - - 0.00722
+    - 0.0114
+n_coloc_between_traits: 1
+qtl_gene: ENSG00000058668
+qtl_symb: ATP2B4
+r2: 0.865452
+signal1: 3927258885
+signal2: 2714515857
+study1: AsatadjBMI_UKBB_2022_hg19
+study2: adipoexpress_eqtl
+trait1_variant: 1_203516075_T_A
+trait2_variant: 1_203517292_A_G
+uuid: 4293814911

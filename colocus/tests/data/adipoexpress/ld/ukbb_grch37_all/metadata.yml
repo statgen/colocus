@@ -1,0 +1,4 @@
+uuid: 'ukbb_grch37_all'
+panel: 'UKBB'
+population: 'ALL'
+genome_build: 'GRCh37'

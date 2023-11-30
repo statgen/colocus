@@ -1,0 +1,15 @@
+cond_minp_variant: null
+lead_variant_alt: G
+lead_variant_chrom: '3'
+lead_variant_effect: -0.0571
+lead_variant_effect_marg: -0.0571
+lead_variant_marker: 3_156795468_A_G
+lead_variant_nearest_gene: LEKR1
+lead_variant_nearest_gene_ensg: ENSG00000197980
+lead_variant_neg_log_p: 14.6
+lead_variant_pos: 156795468
+lead_variant_ref: A
+lead_variant_se: 0.00731
+original_file: data/processed/marginal/AsatadjBMI_UKBB_2022_hg19/summ_stats.harmonized.gz
+original_lead_variant_marker: 3_156795468_A_G
+uuid: '1235799925'

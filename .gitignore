@@ -326,6 +326,7 @@ tags
 
 ### Project template
 colocus/media/
+colocus/tests/media/
 database/**
 
 .pytest_cache/

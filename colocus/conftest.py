@@ -1,4 +1,5 @@
 import logging
+import os
 import shutil
 from subprocess import run
 
@@ -20,16 +21,17 @@ def django_logger():
 def django_db_setup(django_db_setup, django_db_blocker, django_logger):
     # The database loading script will create some files the media directory, which we need to make sure have been
     # cleared out first
-    try:
-        if check_media_dir(settings.MEDIA_ROOT):
-            django_logger.info("Clearing out test media directory...")
-            django_logger.info(f"Media directory: {settings.MEDIA_ROOT}")
-            shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
-    except Exception as e:
-        django_logger.error(f"Media directory did not pass check, cannot delete, you may need to manually delete the "
-                            f"directory before running tests: {settings.MEDIA_ROOT}")
-        django_logger.error(f"Error was: {e}")
-        raise e
+    if os.path.isdir(settings.MEDIA_ROOT):
+        try:
+            if check_media_dir(settings.MEDIA_ROOT):
+                django_logger.info("Clearing out test media directory...")
+                django_logger.info(f"Media directory: {settings.MEDIA_ROOT}")
+                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+        except Exception as e:
+            django_logger.error(f"Media directory did not pass check, cannot delete, you may need to manually "
+                                f"delete the directory before running tests: {settings.MEDIA_ROOT}")
+            django_logger.error(f"Error was: {e}")
+            raise e
 
     with django_db_blocker.unblock():
         # TODO: in the future, `load_dataset.py` should be converted into a django command

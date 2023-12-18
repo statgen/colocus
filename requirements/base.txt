@@ -12,7 +12,7 @@ django==3.2.13  # pyup: < 4.0  # https://www.djangoproject.com/
 django-environ==0.8.1  # https://github.com/joke2k/django-environ
 django-model-utils==4.2.0  # https://github.com/jazzband/django-model-utils
 django-crispy-forms==1.14.0  # https://github.com/django-crispy-forms/django-crispy-forms
-django-filter==22.1  # https://pypi.org/project/django-filter/
+django-filter==23.5  # https://pypi.org/project/django-filter/
 crispy-bootstrap5==0.6  # https://github.com/django-crispy-forms/crispy-bootstrap5
 django-redis==5.2.0  # https://github.com/jazzband/django-redis
 # Django REST Framework

@@ -1,0 +1,15 @@
+.swagger-ui .markdown code, .swagger-ui .renderedMarkdown code {
+  color: #1E90FF;
+  padding: 2px 2px;
+  font-size: inherit;
+}
+
+tr.property-row span.model span.model-title {
+  font-size: 12px;
+}
+
+/* Fix issue with '>' causing line to be too large to not vertically align properly */
+.swagger-ui .model-toggle::after {
+  height: 0px;
+  width: 0px;
+}

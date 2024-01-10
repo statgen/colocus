@@ -24,11 +24,19 @@ sys.path.append(str(Path(__file__).parent.parent.resolve()))
 django.setup()
 
 from colocus.core.models import (  # noqa E402
-    AnalysisGroup,
+    DataSubmission,
     ColocResult,
-    LDPairs,
-    MarginalSignal,
-    MarginalTrait,
+    LDStats,
+    FineMappedSignal,
+    FineMappingProgram,
+    MarginalAnalysis,
+    Publication,
+    Trait,
+    Study,
+    Gene,
+    Exon,
+    Phenotype,
+    LeadVariant
 )
 
 
@@ -48,7 +56,7 @@ def _save_file_to_file(field, local_filename: pathlib.Path):
         field.save(base_name, f)
 
 
-def load_analysis(package_root: pathlib.Path) -> AnalysisGroup:
+def load_submission(package_root: pathlib.Path) -> DataSubmission:
     meta_path = package_root / "metadata.yml"
     if not meta_path.exists():
         raise Exception('No analysis package found')
@@ -58,19 +66,19 @@ def load_analysis(package_root: pathlib.Path) -> AnalysisGroup:
 
     try:
         # We don't use get_or_create because additional NOT NULL fields may be required
-        analysis = AnalysisGroup.objects.get(uuid=metadata['uuid'])
-    except AnalysisGroup.DoesNotExist:
-        analysis = AnalysisGroup(**metadata)
+        ds = DataSubmission.objects.get(uuid=metadata['uuid'])
+    except DataSubmission.DoesNotExist:
+        ds = DataSubmission(**metadata)
 
     metadata["ingest_date"] = datetime.utcnow()
     for k, v in metadata.items():
-        setattr(analysis, k, v)
+        setattr(ds, k, v)
 
-    analysis.save()
-    return analysis
+    ds.save()
+    return ds
 
 
-def load_ld(analysis, ld_dir: pathlib.Path) -> LDPairs:
+def load_ld(analysis, ld_dir: pathlib.Path) -> LDStats:
     meta_path = ld_dir / "metadata.yml"
     if not meta_path.exists():
         raise Exception('No analysis package found')
@@ -80,13 +88,13 @@ def load_ld(analysis, ld_dir: pathlib.Path) -> LDPairs:
 
     try:
         # Don't use get_or_create because additional non-null fields exist
-        ld = LDPairs.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['uuid'])
+        ld = LDStats.objects.get(uuid=metadata['uuid'])
         for k, v in metadata.items():
             setattr(ld, k, v)
-    except LDPairs.DoesNotExist:
-        ld = LDPairs(**metadata)
+    except LDStats.DoesNotExist:
+        ld = LDStats(**metadata)
 
-    ld.analysis = analysis
+    ld.data_submission = analysis
 
     _save_file_to_file(ld.ld_data, ld_dir / 'ld.gz')
     _save_file_to_file(ld.ld_data_tbi, ld_dir / 'ld.gz.tbi')
@@ -104,11 +112,41 @@ def init_model(model, attrs: dict):
     return model(**{k: v for k, v in attrs.items() if k in [f.name for f in model._meta.get_fields()]})
 
 
+def get_by_id_or_create(model, id_field, id_value, attrs: dict):
+    try:
+        return model.objects.get(**{id_field: id_value})
+    except model.DoesNotExist:
+        m = init_model(model, attrs)
+        m.save()
+        return m
+
+
 def load_one_signal(
-    analysis: AnalysisGroup,
-    trait: MarginalTrait,
+    data_submission: DataSubmission,
+    analysis: MarginalAnalysis,
     signal_dir: pathlib.Path
-) -> ty.Optional[MarginalSignal]:
+) -> ty.Optional[FineMappedSignal]:
+    """
+    Load a single fine mapped signal + conditional analysis results
+
+    A metadata.yml file for this will look something like:
+
+    ```
+    uuid: VV2ycPVcUnrg1Pa9Vcyuox
+    lead_variant:
+      alt: A
+      chrom: '7'
+      pos: 157020640
+      ref: C
+    effect_cond: -4.205
+    effect_marg: -0.497
+    neg_log_p: 4.844
+    se_cond: 0.9691
+    finemap_program:
+      name: SuSiE
+      version: 0.7.1
+    ```
+    """
 
     meta_path = signal_dir / 'metadata.yml'
     if not meta_path.exists():
@@ -117,22 +155,24 @@ def load_one_signal(
     with open(meta_path, 'r') as f:
         metadata = yaml.safe_load(f)
 
-    if 'error' in metadata:
-        # FIXME: some Ryan metadata files contain errors instead of data. If that happens, skip ingesting this signal.
-        #  Eventually those bad yml files will cease to exist and this can be removed.
-        return
+    if "lead_variant" not in metadata:
+        raise Exception(f'Signal metadata must specify `lead_variant` block')
 
-    try:
-        # Don't use get_or_create because additional non-null fields exist
-        signal = MarginalSignal.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['uuid'])
-    except MarginalSignal.DoesNotExist:
-        signal = init_model(MarginalSignal, metadata)
+    # Get the lead variant for this fine-mapped signal
+    # We want a brand new `LeadVariant` each time; it is a utility class to keep track of the variant & its statistics
+    # but those statistics (neg_log_p, effect, se, etc.) change depending on the associated trait and analysis
+    lead_variant = LeadVariant.objects.create(**(metadata.pop("lead_variant")))
 
-    for k, v in metadata.items():
-        setattr(signal, k, v)
+    # Get fine-mapping program used
+    program, _ = FineMappingProgram.objects.get_or_create(**metadata.pop("finemap_program"))
 
-    signal.analysis = analysis
-    signal.trait = trait
+    metadata["lead_variant"] = lead_variant
+    metadata["analysis"] = analysis
+    metadata["program"] = program
+
+    # Create a signal. This should never have existed previously. If it did, the `unique=True` check on the model should
+    # kick it back when we try to save it.
+    signal = FineMappedSignal(**metadata)
 
     _save_file_to_file(signal.cond_analysis, signal_dir / 'results.harmonized.gz')
     _save_file_to_file(signal.cond_analysis_tbi, signal_dir / 'results.harmonized.gz.tbi')
@@ -141,8 +181,39 @@ def load_one_signal(
     return signal
 
 
-def load_one_marginal(analysis: AnalysisGroup, trait_dir: pathlib.Path) -> MarginalTrait:
-    meta_path = trait_dir / 'metadata.yml'
+def load_one_marginal(data_submission: DataSubmission, analysis_dir: pathlib.Path) -> MarginalAnalysis:
+    """
+    Load a single marginal analysis + all signals contained in subdirectories.
+
+    The `analysis_dir` is the top level folder for a single trait, which contains a metadata.yml file and a set of
+    subfolders, one per signal.
+
+    The `metadata.yml` file will look something like:
+
+    ```
+    uuid: "eqtl_adipoexpress_adipose_ENSG0101401401"
+    analysis_type: "eqtl"
+    description: 'AdipoExpress Adipose eQTL analysis for ENSG0104141'
+    publication:
+      authors: "Mahajan et al. (Nature Genetics 2022)"
+      pmid: 35551307
+    trait:
+      uuid: "ENSG01040141041"
+      gene:
+        ens_id: "ENSG101041041401"
+        symbol: "TCF7L2"
+      tissue: "adipose"
+      biomarker_type: "gene-expression"
+    study:
+      name: "AdipoExpress"
+      description: "AdipoExpress eQTL Meta-Analysis"
+    external_link: "https://www.adipoexpress.org/"
+    genome_build: "GRCh37"
+    ld_panel: "ukbb_grch37_all_muscislet"
+    ```
+    """
+
+    meta_path = analysis_dir / 'metadata.yml'
     if not meta_path.exists():
         raise Exception(f'Marginal trait must specify metadata as {meta_path}')
 
@@ -150,22 +221,54 @@ def load_one_marginal(analysis: AnalysisGroup, trait_dir: pathlib.Path) -> Margi
         metadata = yaml.safe_load(f)
 
     try:
-        marginal = MarginalTrait.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['uuid'])
-    except MarginalTrait.DoesNotExist:
-        marginal = MarginalTrait()
+        marginal = MarginalAnalysis.objects.get(uuid=metadata['uuid'])
+    except MarginalAnalysis.DoesNotExist:
+        marginal = MarginalAnalysis()
 
     for k, v in metadata.items():
         if k == 'ld_panel':
-            marginal.ld = LDPairs.objects.get(uuid=v)
+            marginal.ld = LDStats.objects.get(uuid=v)
+        elif k == 'publication':
+            pub, created = Publication.objects.get_or_create(**v)
+            marginal.publication = pub
+        elif k == 'study':
+            study, created = Study.objects.get_or_create(**v)
+            marginal.study = study
+        elif k == 'trait':
+            gene = v.pop('gene', None)
+            exon = v.pop('exon', None)
+            pheno = v.pop('phenotype', None)
+
+            # trait, created = Trait.objects.get_or_create(**v)
+            trait = get_by_id_or_create(Trait, 'uuid', v['uuid'], v)
+
+            if gene:
+                # gene, created = Gene.objects.get_or_create(**gene)
+                gene = get_by_id_or_create(Gene, 'ens_id', gene['ens_id'], gene)
+                trait.gene = gene
+
+            if exon:
+                exon["gene"] = gene
+                # exon, created = Exon.objects.get_or_create(**exon)
+                exon = get_by_id_or_create(Exon, 'ens_id', exon['ens_id'], exon)
+                trait.exon = exon
+
+            if pheno:
+                # pheno, created = Phenotype.objects.get_or_create(**pheno)
+                pheno = get_by_id_or_create(Phenotype, 'efo_id', pheno['efo_id'], pheno)
+                trait.phenotype = pheno
+
+            trait.save()
+            marginal.trait = trait
         else:
             setattr(marginal, k, v)
 
-    marginal.analysis = analysis
+    marginal.data_submission = data_submission
 
-    _save_file_to_file(marginal.summary_stats, trait_dir / 'summ_stats.harmonized.gz')
+    _save_file_to_file(marginal.summary_stats, analysis_dir / 'summ_stats.harmonized.gz')
 
-    manhattan_path = trait_dir / 'manhattan.json'
-    qq_path = trait_dir / 'qq.json'
+    manhattan_path = analysis_dir / 'manhattan.json'
+    qq_path = analysis_dir / 'qq.json'
 
     # Only GWAS traits (not eQTLs!) have a manhattan plot file. Don't require it for QTLs.
     if manhattan_path.exists():
@@ -174,21 +277,21 @@ def load_one_marginal(analysis: AnalysisGroup, trait_dir: pathlib.Path) -> Margi
     if qq_path.exists():
         _save_file_to_file(marginal.qq_bins, qq_path)
 
-    _save_file_to_file(marginal.summary_stats_tbi, trait_dir / 'summ_stats.harmonized.gz.tbi')
+    _save_file_to_file(marginal.summary_stats_tbi, analysis_dir / 'summ_stats.harmonized.gz.tbi')
 
     marginal.save()
 
     # Load all independent signals identified for this trait
-    signals_path = trait_dir / "signals"
+    signals_path = analysis_dir / "signals"
     for signal in signals_path.iterdir():
         if not signal.is_dir():
             continue
-        load_one_signal(analysis, marginal, signal)
+        load_one_signal(data_submission, marginal, signal)
 
     return marginal
 
 
-def load_one_colocalization(analysis: AnalysisGroup, signal_dir: pathlib.Path) -> ColocResult:
+def load_one_colocalization(data_submission: DataSubmission, signal_dir: pathlib.Path) -> ColocResult:
     """Load colocalization results (H3 + H4 for one signal pair)"""
     meta_path = signal_dir / 'metadata.yml'
     if not meta_path.exists():
@@ -198,18 +301,19 @@ def load_one_colocalization(analysis: AnalysisGroup, signal_dir: pathlib.Path) -
         metadata = yaml.safe_load(f)
 
     try:
-        coloc = ColocResult.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['uuid'])
+        coloc = ColocResult.objects.get(uuid=metadata['uuid'])
     except ColocResult.DoesNotExist:
         coloc = ColocResult()
 
     for k, v in metadata.items():
-        if k not in {"signal1", "signal2"}:
+        if k not in {"data_submission", "signal1", "signal2"}:
             setattr(coloc, k, v)
 
-    coloc.analysis = analysis
+    coloc.data_submission = data_submission
+
     # An external validation step should have already verified that signal1 and signal2 exist
-    coloc.signal1 = MarginalSignal.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['signal1'])
-    coloc.signal2 = MarginalSignal.objects.get(analysis__uuid=analysis.uuid, uuid=metadata['signal2'])
+    coloc.signal1 = FineMappedSignal.objects.get(uuid=metadata['signal1'])
+    coloc.signal2 = FineMappedSignal.objects.get(uuid=metadata['signal2'])
 
     coloc.save()
     return coloc
@@ -221,7 +325,7 @@ def main(package_root: str):
         raise Exception(f'Package directory does not exist: {path}')
 
     # Load parent analysis
-    analysis = load_analysis(path)
+    analysis = load_submission(path)
 
     # Load possible LD panels
     ld_dir = path / "ld"

@@ -11,13 +11,24 @@ urls_v1 = [
     # Colocalization results
     path('coloc/', views.ColocResultListView.as_view(), name='coloc-all'),
     path('coloc/<uuid>/', views.ColocResultDetailView.as_view(), name='coloc-detail'),
+
+    path('signals/', views.FinemappedSignalListView.as_view(), name='signals-all'),
+    path('signals/<uuid>/', views.FinemappedSignalDetailView.as_view(), name='signals-detail'),
     path(
         'signals/<uuid>/region/',
-        views.MarginalSignalSummRegionView.as_view(),
+        views.FinemappedSignalSummRegionView.as_view(),
         name='signals-summstats'
     ),
-    path('traits/', views.MarginalTraitListView.as_view(), name='traits-all'),
-    path('traits/<uuid>/', views.MarginalTraitDetailView.as_view(), name='traits-detail'),
+
+    path('analysis/', views.MarginalAnalysisListView.as_view(), name='analysis-all'),
+    path('analysis/<uuid>/', views.MarginalAnalysisDetailView.as_view(), name='analysis-detail'),
+
+    path("traits/", views.TraitListView.as_view(), name="traits-all"),
+    path("traits/<uuid>/", views.TraitDetailView.as_view(), name="traits-detail"),
+
+    path("studies/", views.StudyListView.as_view(), name="studies-all"),
+    path("studies/<uuid>/", views.StudyDetailView.as_view(), name="studies-detail"),
+
     path(
         'internal/search_metadata/',
         internal_views.search_page_metadata,
@@ -35,7 +46,7 @@ urls_v1 = [
     ### Study specific endpoints
 
     # # List of studies / datasets
-    path('studies/', views.AnalysisGroupListView.as_view(), name='studies-all'),
+    # path('studies/', views.MAKE_NEW_STUDY_VIEW.as_view(), name='studies-all'),
 
     # path('studies/<uuid>/', views.AnalysisGroupDetailView.as_view(), name='studies-detail'),
     #

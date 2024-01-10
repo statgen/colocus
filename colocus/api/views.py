@@ -9,31 +9,13 @@ from zorp.readers import TabixReader
 from zorp.sniffers import guess_gwas_standard
 
 from colocus.core import models
+from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 
 from . import filters, parsers, serializers, util
 
 
 # Base classes shared among views
 # --------------------------------
-class OneStudyMixin:
-    """Most URLs in this app are scoped to one particular study. Restrict the queryset accordingly"""
-    def filter_queryset(self, queryset):
-        """"""
-        queryset = super(OneStudyMixin, self).filter_queryset(queryset)        # type: ignore
-
-        # Take analysis_uuid from the URL first if it exists
-        analysis_uuid = self.kwargs.get("analysis_uuid")                      # type: ignore
-        if analysis_uuid:
-            return queryset.filter(analysis__uuid=analysis_uuid)
-
-        # If it didn't exist in the URL, see if it was a GET query parameter
-        analysis_uuid = self.request.query_params.get("analysis_uuid", None)  # type: ignore
-        if analysis_uuid:
-            return queryset.filter(analysis__uuid=analysis_uuid)
-
-        return queryset
-
-
 class TabixRegionView(generics.RetrieveAPIView):
     def get_serializer(self, *args, **kwargs):
         """Unique scenario: a single model that returns a list of records"""
@@ -74,122 +56,195 @@ class TabixRegionView(generics.RetrieveAPIView):
         return chrom, start, end
 
 
-# Metadata endpoints
-# -----------------------
-class AnalysisGroupListView(generics.ListAPIView):
-    ordering = ('study_date',)
-    queryset = models.AnalysisGroup.objects.all()
-    serializer_class = serializers.AnalyisGroupDetailSerializer
+# Collect a list of possible ordering/sorting fields for documenting the API below.
+order_options = sorted([
+    f"\n * `{field[0]}`"
+    for field in filters.ColocResultFilter.base_filters.get('ordering').field.choices
+    if field and (not field[0].startswith("-")) and (not field[0] == '')
+])
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='ordering',
+            description=(
+                'Use the following options for ordering/sorting results: ' +
+                ''.join(order_options) + '\n\n' +
+                'H4 is posterior probability of colocalization (i.e. the two signals share the same causal variant).\n'
+            ),
+            required=False,
+            type=str
+        ),
+        OpenApiParameter(
+            name='uuid',
+            description='Filter results by coloc result UUID',
+            required=False,
+            type=str
+        ),
+    ],
+    examples=[
+        OpenApiExample(
+            'Example of filtering on H4 > some value and sorting',
+            summary='Example GET request with sorting',
+            description='This is an example of a GET request with sorting by coloc_h4.',
+            value={
+                'ordering': '-coloc_h4',
+                'coloc_h4__gte': 0.95
+            },
+            request_only=True,
+        ),
+    ]
+)
+class ColocResultListView(generics.ListAPIView):
+    """
+    ## List colocalization results
 
-class AnalysisGroupDetailView(generics.RetrieveAPIView):
-    lookup_field = 'uuid'
-    queryset = models.AnalysisGroup.objects.all()
-    serializer_class = serializers.AnalyisGroupDetailSerializer
+    This endpoint provides a list of `ColocResult`. Each result represents one colocalization result, which is
+    the result of colocalizing two fine-mapped signals from a GWAS or eQTL analysis.
+    """
 
-
-class ColocResultListView(OneStudyMixin, generics.ListAPIView):
-    ordering = ('-coloc_h4',)
-    queryset = models.ColocResult.objects \
-        .select_related('signal1', 'signal2', 'analysis', 'signal1__trait', 'signal2__trait') \
-        .prefetch_related('signal1__trait__ld', 'signal2__trait__ld')
+    queryset = (
+        models.ColocResult.objects
+        .select_related(
+            'signal1', 'signal2',
+            'signal1__analysis', 'signal2__analysis',
+            'signal1__analysis__trait', 'signal2__analysis__trait',
+            'signal1__lead_variant', 'signal2__lead_variant',
+            'signal1__analysis__trait__gene', 'signal2__analysis__trait__gene',
+            'signal1__analysis__trait__exon', 'signal2__analysis__trait__exon',
+            'signal1__analysis__trait__phenotype', 'signal2__analysis__trait__phenotype',
+            'signal1__analysis__study', 'signal2__analysis__study')
+        .prefetch_related(
+            'signal1__analysis__ld', 'signal2__analysis__ld'))
 
     serializer_class = serializers.ColocResultSerializer
     filterset_class = filters.ColocResultFilter
-    ordering_fields = (
-        'coloc_h4',
-        'r2',
-        'cross_signal__effect',
-        'n_coloc_between_traits',
-        'signal1__lead_variant_neg_log_p',
-        'signal1__lead_variant_chrom',
-        'signal1__lead_variant_pos',
-        'signal1__trait__metadata__trait',
-        'signal2__lead_variant_neg_log_p',
-        'signal2__lead_variant_chrom',
-        'signal2__lead_variant_pos',
-        'signal2__trait__metadata__gene',
-        'signal2__trait__metadata__gene_ensg',
-        'signal2__trait__metadata__tissue',
-        'signal1__lead_variant_nearest_gene',
-        'signal2__lead_variant_assoc_gene',
-        'signal2__lead_variant_assoc_exon',
-        'signal1__trait__study_name',
-        'signal2__trait__study_name'
-    )
-
-    def get_queryset(self):
-        queryset = models.ColocResult.objects \
-            .select_related('signal1', 'signal2', 'analysis', 'signal1__trait', 'signal2__trait') \
-            .prefetch_related('signal1__trait__ld', 'signal2__trait__ld')
-
-        # Fetch the analysis_uuid from query parameters if it exists
-        analysis_uuid = self.request.query_params.get('analysis_uuid', None)
-        if analysis_uuid is not None:
-            queryset = queryset.filter(analysis__uuid=analysis_uuid)
-
-        return queryset
 
 
-class ColocResultDetailView(OneStudyMixin, generics.RetrieveAPIView):
+class ColocResultDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
-    queryset = models.ColocResult.objects.select_related('analysis', 'signal1', 'signal2')
+    queryset = models.ColocResult.objects.select_related('signal1', 'signal2')
     serializer_class = serializers.ColocResultSerializer
 
 
-class LDPairsListView(OneStudyMixin, generics.ListAPIView):
+class LDPairsListView(generics.ListAPIView):
     ordering = ('panel', 'population')
-    queryset = models.LDPairs.objects.all()
+    queryset = models.LDStats.objects.all()
+    serializer_class = serializers.LDStatsSerializer
 
-    serializer_class = serializers.LDPairsSerializer
 
-
-class LDPairsDetailView(OneStudyMixin, generics.RetrieveAPIView):
+class LDPairsDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
-    queryset = models.LDPairs.objects.all()
-    serializer_class = serializers.LDPairsSerializer
+    queryset = models.LDStats.objects.all()
+    serializer_class = serializers.LDStatsSerializer
 
 
-class MarginalSignalListView(OneStudyMixin, generics.ListAPIView):
-    ordering = ('lead_variant_neg_log_p',)
-    queryset = models.MarginalSignal.objects.select_related('trait').prefetch_related('trait__ld')
+class FinemappedSignalListView(generics.ListAPIView):
+    """
+    ## List fine-mapped signals
 
-    serializer_class = serializers.MarginalSignalSerializer
+    This endpoint provides a list of all fine-mapped signals across all analyses in the database.
+
+    A fine-mapping program like SuSiE or FINEMAP takes GWAS or eQTL summary statistics (for a single gene) in a
+    particular region and outputs a list of independent signals, where each signal is a credible set of variants that
+    are likely to be "causal" for the trait.
+
+    Each signal has a lead variant, which is the variant with the strongest association in the set. However, it
+    is possible for there to be more than one lead variant (with equivalent posterior probability of being causal), but
+    we only use one as the sentinel variant for the signal.
+    """
+    queryset = models.FineMappedSignal.objects.select_related(
+        'analysis', 'analysis__trait', 'analysis__study', 'analysis__ld', 'lead_variant')
+    serializer_class = serializers.FinemappedSignalSerializer
 
 
-class MarginalSignalDetailView(OneStudyMixin, generics.RetrieveAPIView):
+class FinemappedSignalDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
-    queryset = models.MarginalSignal.objects.select_related('trait')
-    serializer_class = serializers.MarginalSignalSerializer
+    queryset = models.FineMappedSignal.objects.select_related(
+        'analysis', 'analysis__trait', 'analysis__study', 'analysis__ld', 'lead_variant')
+    serializer_class = serializers.FinemappedSignalSerializer
 
 
-class MarginalTraitListView(OneStudyMixin, generics.ListAPIView):
-    ordering = ('study_name',)
-    queryset = models.MarginalTrait.objects.select_related('analysis').prefetch_related('ld')
+class MarginalAnalysisListView(generics.ListAPIView):
+    """
+    ## List marginal analyses
 
-    serializer_class = serializers.MarginalTraitSerializer
+    A marginal analysis, sometimes shortened to just 'analysis', represents a marginal association scan
+    for a single trait. It is the output of GWAS or eQTL analysis for one trait or gene. In a marginal analysis, no
+    other variants have been conditioned on. The association test is:
+
+    ```
+    trait ~ variant + covariates
+    ```
+
+    This is often provided as a single file, with summary statistics for every variant's association with the trait
+    (p-value, beta, se, etc.)
+    """
+
+    queryset = models.MarginalAnalysis.objects.select_related(
+        'trait', 'trait__gene', 'trait__exon', 'trait__phenotype', 'study', 'publication', 'ld')
+    serializer_class = serializers.MarginalAnalysisSerializer
 
 
-class MarginalTraitDetailView(OneStudyMixin, generics.RetrieveAPIView):
+class MarginalAnalysisDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
-    queryset = models.MarginalTrait.objects.select_related('analysis')
-    serializer_class = serializers.MarginalTraitSerializer
+    queryset = models.MarginalAnalysis.objects.select_related('data_submission')
+    serializer_class = serializers.MarginalAnalysisSerializer
+
+
+class TraitListView(generics.ListAPIView):
+    """
+    ## List of traits across all analyses in the database.
+
+    A trait is a phenotype, gene expression trait, or other response/outcome variable that was analyzed in a marginal
+    GWAS or eQTL analysis.
+
+    A phenotype may be any non-molecular measured trait, such as height, BMI, T2D affection status, etc.
+    """
+
+    queryset = models.Trait.objects.select_related('gene', 'exon', 'phenotype')
+    serializer_class = serializers.TraitSerializer
+
+
+class TraitDetailView(generics.RetrieveAPIView):
+    lookup_field = 'uuid'
+    queryset = models.Trait.objects.select_related('gene', 'exon', 'phenotype')
+    serializer_class = serializers.TraitSerializer
+
+
+class StudyListView(generics.ListAPIView):
+    """
+    ## List of studies
+
+    Each analysis is conducted by a `Study`, which represents the group of researchers who conducted the analysis. This
+    may be a consortium, such as "DIAGRAM", or a single study group, such as "UK Biobank" or "FUSION".
+    """
+
+    ordering = ('uuid',)
+    queryset = models.Study.objects.all()
+    serializer_class = serializers.StudySerializer
+
+
+class StudyDetailView(generics.RetrieveAPIView):
+    lookup_field = 'uuid'
+    queryset = models.Study.objects.all()
+    serializer_class = serializers.StudySerializer
 
 
 # Tabix-based "region view" endpoints
 # -------------------------------------
-class MarginalSignalSummRegionView(OneStudyMixin, TabixRegionView):
+class FinemappedSignalSummRegionView(TabixRegionView):
     """Provide all summary stats associated with a particular signal (marginal + conditional) in a given region"""
     lookup_field = 'uuid'
-    queryset = models.MarginalSignal.objects.select_related('trait')
+    queryset = models.FineMappedSignal.objects.select_related('analysis')
     serializer_class = serializers.MergedSignalRegionSerializer
 
     def get_object(self):
-        signal = super(MarginalSignalSummRegionView, self).get_object()
+        signal = super(FinemappedSignalSummRegionView, self).get_object()
         chrom, start, end = self._query_params()
 
         # Two files need to be joined
-        marg_fn = os.path.join(settings.MEDIA_ROOT, signal.trait.summary_stats.name)
+        marg_fn = os.path.join(settings.MEDIA_ROOT, signal.analysis.summary_stats.name)
         cond_fn = os.path.join(settings.MEDIA_ROOT, signal.cond_analysis.name)
 
         if not os.path.isfile(marg_fn):
@@ -228,7 +283,7 @@ class MarginalSignalSummRegionView(OneStudyMixin, TabixRegionView):
 
 class LDPairsRegionView(TabixRegionView):
     lookup_field = 'uuid'
-    queryset = models.LDPairs.objects.all()
+    queryset = models.LDStats.objects.all()
     serializer_class = serializers.LDRegionSerializer
 
     def _query_params_variant(self) -> ty.Tuple[str, int, int, str]:

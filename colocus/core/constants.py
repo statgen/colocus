@@ -4,9 +4,9 @@ GENOME_BUILDS = (
 )
 
 GWAS = 'gwas'
-EQTL = 'eQTL'
+EQTL = 'eqtl'
 
-TRAIT_TYPES = (
+ANALYSIS_TYPES = (
     (GWAS, 'GWAS'),
     (EQTL, 'eQTL')
 )

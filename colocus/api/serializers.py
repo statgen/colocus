@@ -5,37 +5,29 @@ from colocus.core import models
 
 from .util import serialize_neg_log_pvalue
 
-
-class StudyHyperlinkRelatedField(drf_serializers.HyperlinkedRelatedField):
-    """
-    For URLs with two lookup fields (study uuid and pk), we need a custom relationship field serializer.
-        (the default hyperlinked serializer doesn't handle nested relationships well)
-
-    See: https://www.django-rest-framework.org/api-guide/relations/#custom-hyperlinked-fields
-    """
-
-    def get_url(self, obj, view_name, request, format):
-        url_kwargs = {
-            'analysis_uuid': obj.analysis.uuid,
-            'uuid': obj.uuid
-        }
-        return reverse(view_name, kwargs=url_kwargs, request=request, format=format)
-
-    def get_object(self, view_name, view_args, view_kwargs):
-        lookup_kwargs = {
-            'analysis_uuid': view_kwargs['analysis_uuid'],
-            'uuid': self.lookup_field,
-        }
-        return self.get_queryset().get(**lookup_kwargs)
+from collections import OrderedDict
+from drf_spectacular.utils import extend_schema_serializer, OpenApiExample, OpenApiParameter
 
 
-class AnalysisGroupSerializer(drf_serializers.ModelSerializer):
+class ReducedPrecisionFloatField(drf_serializers.FloatField):
+    def to_representation(self, value):
+        s = format(value, '.3g')
+        return float(s)
+
+
+class NonNullModelSerializer(drf_serializers.ModelSerializer):
+    def to_representation(self, instance):
+        result = super(NonNullModelSerializer, self).to_representation(instance)
+        return OrderedDict([(key, result[key]) for key in result if result[key] is not None])
+
+
+class DataSubmissionSerializer(drf_serializers.ModelSerializer):
     class Meta:
-        model = models.AnalysisGroup
-        fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid', 'label')
+        model = models.DataSubmission
+        fields = ('uuid', 'authors', 'contact_email', 'pmid', 'description')
 
 
-class AnalyisGroupDetailSerializer(drf_serializers.ModelSerializer):
+class DataSubmissionDetailSerializer(drf_serializers.ModelSerializer):
     """
     A specialized serializer for when the only thing we are displaying is analysis group.
         This allows more expensive queries (like trait_count`) than the "general purpose" `AnalysisGroupSerializer`,
@@ -43,14 +35,13 @@ class AnalyisGroupDetailSerializer(drf_serializers.ModelSerializer):
     """
 
     class Meta:
-        model = models.AnalysisGroup
-        fields = ('uuid', 'study_name', 'study_date', 'authors', 'contact_email', 'pmid', 'trait_count', 'label')
+        model = models.DataSubmission
+        fields = ('uuid', 'authors', 'contact_email', 'pmid', 'trait_count', 'description')
 
 
-class LDPairsSerializer(drf_serializers.ModelSerializer):
-    # TODO: It would be nice to include hyperlinks for related fields; DRF fields behavior gets weird
+class LDStatsSerializer(drf_serializers.ModelSerializer):
     class Meta:
-        model = models.LDPairs
+        model = models.LDStats
         fields = ('uuid', 'panel', 'population', 'genome_build')
 
 
@@ -65,60 +56,120 @@ class LDRegionSerializer(drf_serializers.Serializer):
     correlation = drf_serializers.FloatField(source='r2', read_only=True)
 
 
-class MarginalTraitSerializer(drf_serializers.ModelSerializer):
-    """
-    Full set of marginal trait fields for standalone endpoints. Analysis info is embedded into the response because
-        the primary use case for this serializer/endpoint is to render pages with all the info we want about this trait.
-    """
-    analysis = AnalysisGroupSerializer(read_only=True)
-    ld = drf_serializers.CharField(source='ld.uuid', read_only=True)
+class GeneSerializer(drf_serializers.ModelSerializer):
+    class Meta:
+        model = models.Gene
+        fields = ('ens_id', 'symbol', 'chrom', 'start', 'end')
+
+
+class ExonSerializer(drf_serializers.ModelSerializer):
+    # gene = GeneSerializer(read_only=True)
 
     class Meta:
-        model = models.MarginalTrait
+        model = models.Exon
+        fields = ('ens_id', 'chrom', 'start', 'end')
+
+
+class PhenotypeSerializer(drf_serializers.ModelSerializer):
+    class Meta:
+        model = models.Phenotype
+        fields = ('efo_id', 'name')
+
+
+class TraitSerializer(NonNullModelSerializer):
+    gene = GeneSerializer(read_only=True)
+    exon = ExonSerializer(read_only=True)
+    phenotype = PhenotypeSerializer(read_only=True)
+
+    class Meta:
+        model = models.Trait
+        fields = ('uuid', 'biomarker_type', 'tissue', 'gene', 'exon', 'phenotype')
+
+
+class StudySerializer(drf_serializers.ModelSerializer):
+    class Meta:
+        model = models.Study
+        fields = ('uuid', 'description')
+
+
+class LeadVariantSerializer(drf_serializers.ModelSerializer):
+    class Meta:
+        model = models.LeadVariant
+        fields = ('chrom', 'pos', 'ref', 'alt')
+
+
+class PublicationSerializer(drf_serializers.ModelSerializer):
+    class Meta:
+        model = models.Publication
+        fields = ('pmid', 'authors')
+
+
+class MarginalAnalysisSerializer(drf_serializers.ModelSerializer):
+    """
+    A marginal analysis, sometimes shortened to just 'analysis', represents a marginal association scan
+    for a single trait. In other words, it is the output of GWAS or eQTL analysis for one trait or gene.
+    """
+
+    trait = TraitSerializer(read_only=True)
+    ld = drf_serializers.CharField(source='ld.uuid', read_only=True)
+    study = StudySerializer(read_only=True)
+    publication = PublicationSerializer(read_only=True)
+
+    class Meta:
+        model = models.MarginalAnalysis
         fields = (
-            'uuid', 'analysis',
-            'trait_type', 'genome_build', 'metadata', 'ld',
-            'study_name', 'label', 'pmid', 'authors', 'external_link',
+            'uuid', 'analysis_type', 'genome_build', 'trait',
+            'study', 'publication', 'ld', 'external_link'
         )
 
 
-class MarginalTraitSerializerBrief(drf_serializers.ModelSerializer):
+class MarginalAnalysisSerializerBrief(drf_serializers.ModelSerializer):
     """
-    Serialize a selection of marginal trait fields. Suitable for embedding concise information in another response
+    A marginal analysis, sometimes shortened to just 'analysis', represents a marginal association scan
+    for a single trait. In other words, it is the output of GWAS or eQTL analysis for one trait or gene.
     """
+
     ld = drf_serializers.CharField(source='ld.uuid', read_only=True)
+    trait = TraitSerializer(read_only=True)
+    study = StudySerializer(read_only=True)
 
     class Meta:
-        model = models.MarginalTrait
-        fields = ('uuid', 'label', 'trait_type', 'genome_build', 'metadata', 'ld', 'study_name')
+        model = models.MarginalAnalysis
+        fields = ('uuid', 'analysis_type', 'genome_build', 'trait', 'study', 'ld')
 
 
-class MarginalSignalSerializer(drf_serializers.ModelSerializer):
-    # TODO: Add link fields to traits
-    # Embed the related data into this response to avoid a separate query
-    trait = MarginalTraitSerializerBrief(read_only=True)
+class FinemappedSignalSerializer(drf_serializers.ModelSerializer):
+    """
+    One specific signal after fine-mapping or conditional analysis of a marginal association analysis. Usually this
+    process is performed by SuSiE, APEX, FINEMAP, or GCTA.
 
-    lead_variant_neg_log_p = drf_serializers.SerializerMethodField(method_name='get_lead_variant_neg_log_p',
-                                                                   read_only=True)
+    Fields:
+    - `uuid`: A stable unique identifier for this fine-mapped signal
+    - `analysis`: The analysis in which this signal was identified
+    - `lead_variant`: The variant with the strongest association in this signal
+    - `neg_log_p`: The negative log10 p-value of the lead variant
+    - `effect_cond`: The effect size of the lead variant in the conditional analysis
+    - `effect_marg`: The effect size of the lead variant in the marginal analysis
+    """
 
-    def get_lead_variant_neg_log_p(self, obj):
-        return serialize_neg_log_pvalue(obj.lead_variant_neg_log_p)
+    analysis = MarginalAnalysisSerializerBrief(read_only=True)
+    lead_variant = LeadVariantSerializer(read_only=True)
+    neg_log_p = drf_serializers.SerializerMethodField(
+        method_name='get_neg_log_p',
+        read_only=True)
+
+    def get_neg_log_p(self, obj):
+        return serialize_neg_log_pvalue(obj.neg_log_p)
 
     class Meta:
-        model = models.MarginalSignal
+        model = models.FineMappedSignal
         fields = (
             'uuid',
-            'trait',
-            'lead_variant_chrom',
-            'lead_variant_pos',
-            'lead_variant_marker',
-            'lead_variant_neg_log_p',
-            'lead_variant_effect',
-            'lead_variant_effect_marg',
-            'lead_variant_nearest_gene',
-            'lead_variant_assoc_gene',
-            'lead_variant_assoc_gene_ensg',
-            'lead_variant_assoc_exon',
+            'analysis',
+            'lead_variant',
+            'neg_log_p',
+            'effect_cond',
+            'effect_marg',
             'cond_minp_variant'
         )
 
@@ -152,22 +203,19 @@ class MergedSignalRegionSerializer(drf_serializers.Serializer):
 
 
 class ColocResultSerializer(drf_serializers.ModelSerializer):
-    analysis = AnalysisGroupSerializer(read_only=True)
-    signal1 = MarginalSignalSerializer(read_only=True)
-    signal2 = MarginalSignalSerializer(read_only=True)
+    """
+    A `ColocResult` represents the output of a colocalization analysis between two signals. It is the result of
+    comparing two `FineMappedSignal` objects, and represents the probability that the two signals are both
+    associated with the same causal variant.
+    """
+
+    signal1 = FinemappedSignalSerializer(read_only=True, label="Signal 1")
+    signal2 = FinemappedSignalSerializer(read_only=True, label="Signal 2")
+    coloc_h3 = ReducedPrecisionFloatField(read_only=True, label="Posterior probability of H3")
+    coloc_h4 = ReducedPrecisionFloatField(read_only=True, label="Posterior probability of H4")
+    r2 = ReducedPrecisionFloatField(read_only=True, label="r2 between lead variants")
 
     class Meta:
         model = models.ColocResult
-        fields = ('uuid', 'analysis', 'signal1', 'signal2', 'coloc_h3', 'coloc_h4', 'cross_signal',
+        fields = ('uuid', 'signal1', 'signal2', 'coloc_h3', 'coloc_h4', 'cross_signal',
                   'r2', 'n_coloc_between_traits', 'marg_cond_flip')
-
-
-class SimpleMarginalSignalSerializer(drf_serializers.ModelSerializer):
-    class Meta:
-        model = models.MarginalSignal
-        fields = (
-            'uuid',
-            'lead_variant_nearest_gene',
-            'lead_variant_assoc_gene',
-            'lead_variant_assoc_gene_ensg',
-        )

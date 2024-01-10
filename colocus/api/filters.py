@@ -5,9 +5,17 @@ https://django-filter.readthedocs.io/en/stable/ref/filterset.html#fields
 """
 
 from django.db.models import Q
-from django_filters.rest_framework import CharFilter, FilterSet
+from django_filters.rest_framework import CharFilter, FilterSet, NumberFilter, OrderingFilter
 
 from colocus.core import models
+import re
+
+
+def parse_region(region):
+    regex = r'^(?:chr)?([0-9a-zA-Z]+):(\d+)-(\d+)$'
+    match = re.match(regex, region)
+    if match:
+        return match.groups()
 
 
 class ColocResultFilter(FilterSet):
@@ -20,106 +28,166 @@ class ColocResultFilter(FilterSet):
       We allow filters to be applied for either signal 1 (usually a GWAS) or signal 2 (some sort of QTL), because
         people might have a particular interest in the line of biological evidence
     """
+    def create_query(self, field, value):
+        if "," in value:
+            value = value.split(",")
+            query = Q(**{f'{field}__in': value})
+        else:
+            query = Q(**{f'{field}': value})
+        return query
 
     # Create an `all_genes` filter that searches all available gene fields
-    genes = CharFilter(method='gene_or')
+    genes = CharFilter(
+        method='gene_or',
+        label="Provide a list of comma-separated genes to filter by. Can be either Ensembl IDs or gene symbols.")
 
     def gene_or(self, queryset, name, value):
-        if "," in value:
-            value = value.split(",")
-        else:
-            value = [value]
-
-        query = Q(signal1__lead_variant_assoc_gene__in=value)
-        query |= Q(signal1__lead_variant_assoc_gene_ensg__in=value)
-        query |= Q(signal2__lead_variant_assoc_gene__in=value)
-        query |= Q(signal2__lead_variant_assoc_gene_ensg__in=value)
-
+        query = self.create_query('signal1__analysis__trait__gene__symbol', value)
+        query |= self.create_query('signal1__analysis__trait__gene__ens_id', value)
+        query |= self.create_query('signal2__analysis__trait__gene__symbol', value)
+        query |= self.create_query('signal2__analysis__trait__gene__ens_id', value)
         return queryset.filter(query)
 
-    phenotypes = CharFilter(method='phenotype_or')
+    traits = CharFilter(
+        method='trait_or',
+        label="Provide a list of comma-separated traits to filter by.")
 
-    def phenotype_or(self, queryset, name, value):
-        if "," in value:
-            value = value.split(",")
-        else:
-            value = [value]
-
-        query = Q(signal1__trait__metadata__trait__in=value)
-        query |= Q(signal2__trait__metadata__trait__in=value)
-
+    def trait_or(self, queryset, name, value):
+        """
+        Filter on traits.
+        """
+        query = self.create_query('signal1__analysis__trait__uuid', value)
+        query |= self.create_query('signal2__analysis__trait__uuid', value)
         return queryset.filter(query)
 
-    tissues = CharFilter(method='tissue_or')
+    tissues = CharFilter(
+        method='tissue_or',
+        label="Provide a list of comma-separated tissues to filter by.")
 
     def tissue_or(self, queryset, name, value):
-        if "," in value:
-            value = value.split(",")
-        else:
-            value = [value]
-
-        query = Q(signal1__trait__metadata__tissue__in=value)
-        query |= Q(signal2__trait__metadata__tissue__in=value)
-
+        query = self.create_query('signal1__analysis__trait__tissue', value)
+        query |= self.create_query('signal2__analysis__trait__tissue', value)
         return queryset.filter(query)
 
-    trait_uuid = CharFilter(method='trait_uuid_or')
+    analyses = CharFilter(
+        method='analysis_uuid_or',
+        label="Provide a list of comma-separated marginal analysis UUIDs to filter by.")
 
-    def trait_uuid_or(self, queryset, name, value):
-        if "," in value:
-            value = value.split(",")
-
-            query = Q(signal1__trait__uuid__in=value)
-            query |= Q(signal2__trait__uuid__in=value)
-        else:
-            query = Q(signal1__trait__uuid=value)
-            query |= Q(signal2__trait__uuid=value)
-
+    def analysis_uuid_or(self, queryset, name, value):
+        query = self.create_query('signal1__analysis__uuid', value)
+        query |= self.create_query('signal2__analysis__uuid', value)
         return queryset.filter(query)
 
-    signals = CharFilter(method='signal_or')
+    signals = CharFilter(
+        method='signal_or',
+        label="Provide a list of comma-separated fine-mapped signal UUIDs to filter by.")
 
     def signal_or(self, queryset, name, value):
-        if "," in value:
-            value = value.split(",")
-
-            query = Q(signal1__uuid__in=value)
-            query |= Q(signal2__uuid__in=value)
-        else:
-            query = Q(signal1__uuid=value)
-            query |= Q(signal2__uuid=value)
-
+        query = self.create_query('signal1__uuid', value)
+        query |= self.create_query('signal2__uuid', value)
         return queryset.filter(query)
 
-    studies = CharFilter(method='study_or')
+    studies = CharFilter(
+        method='study_or',
+        label="Provide a list of comma-separated study UUIDs to filter by.")
 
     def study_or(self, queryset, name, value):
-        if "," in value:
-            value = value.split(",")
-
-            query = Q(signal1__trait__study_name__in=value)
-            query |= Q(signal2__trait__study_name__in=value)
-        else:
-            query = Q(signal1__trait__study_name=value)
-            query |= Q(signal2__trait__study_name=value)
-
+        query = self.create_query('signal1__analysis__study__uuid', value)
+        query |= self.create_query('signal2__analysis__study__uuid', value)
         return queryset.filter(query)
+
+    signal1_region = CharFilter(
+        method='filter_region',
+        label="Only retrieve signal 1 results within a specified region given as chr:start-end")
+
+    signal2_region = CharFilter(
+        method='filter_region',
+        label="Only retrieve signal 2 results within a specified region given as chr:start-end")
+
+    def filter_region(self, queryset, name, value):
+        """
+        Filter results within a specified position range.
+
+        The expected format of the input is 'start-end', e.g., '10000-20000'.
+        It filters results where 'signal2__lead_variant__pos' is within this range.
+
+        :param queryset: The base queryset.
+        :param name: The name of the filter field, here 'position_range'.
+        :param value: The value provided for the filter, expected in 'start-end' format.
+        :return: A filtered QuerySet.
+        """
+        match = parse_region(value)
+
+        if match:
+            chrom, start_pos, end_pos = match
+
+            field = None
+            if "sig1" in name:
+                field = "signal1__lead_variant__pos"
+            elif "sig2" in name:
+                field = "signal2__lead_variant__pos"
+
+            if field:
+                return queryset.filter(
+                    Q(**{f'{field}__gte': start_pos}) &
+                    Q(**{f'{field}__lte': end_pos})
+                )
+
+        return queryset
+
+    signal1_analysis = CharFilter(field_name='signal1__analysis__uuid', lookup_expr='exact',
+                                  label="Signal 1 analysis UUID")
+    signal2_analysis = CharFilter(field_name='signal2__analysis__uuid', lookup_expr='exact',
+                                  label="Signal 2 analysis UUID")
+
+    signal1_min_logp = NumberFilter(field_name='signal1__neg_log_p', lookup_expr='gte',
+                                    label="Minimum -log10 p-value for signal 1")
+    signal2_min_logp = NumberFilter(field_name='signal2__neg_log_p', lookup_expr='gte',
+                                    label="Minimum -log10 p-value for signal 2")
+
+    min_h4 = NumberFilter(field_name='coloc_h4', lookup_expr='gte', label="Minimum PP(H4)")
+    min_r2 = NumberFilter(field_name='r2', lookup_expr='gte', label="Minimum r2 between the two signals' lead variants")
+
+    order_by_field = 'ordering'
+    ordering = OrderingFilter(
+        # fields(('model field name', 'parameter name used by API request / user'),)
+        fields=(
+            ('coloc_h4', 'h4'),
+            ('r2', 'r2'),
+            ('n_coloc_between_traits', 'n_coloc_between_traits'),
+            ('signal1__neg_log_p', 'signal1_logp'),
+            ('signal2__neg_log_p', 'signal2_logp'),
+            ('signal1__lead_variant_chrom', 'signal1_chrom'),
+            ('signal1__lead_variant_pos', 'signal1_pos'),
+            ('signal1__analysis__trait', 'signal1_trait'),
+            ('signal2__analysis__trait', 'signal2_trait'),
+            ('signal2__lead_variant_chrom', 'signal2_chrom'),
+            ('signal2__lead_variant_pos', 'signal2_pos'),
+            ('signal2__analysis__trait__gene__ens_id', 'signal2_gene_ens_id'),
+            ('signal2__analysis__trait__gene__symbol', 'signal2_gene_symbol'),
+            ('signal2__analysis__trait__gene__tissue', 'signal2_tissue'),
+            ('signal2__analysis__trait__exon__ens_id', 'signal2_exon_ens_id'),
+            ('signal1__analysis__study__name', 'signal1_study'),
+            ('signal2__analysis__study__name', 'signal2_study')
+        )
+    )
 
     class Meta:
         model = models.ColocResult
-        fields = {
-            # 'analysis__uuid': ['exact'],  # TODO move this one to a URL segment
-            'signal1__trait__uuid': ['exact', 'in'],
-            'signal2__trait__uuid': ['exact', 'in'],
-            'signal1__lead_variant_chrom': ['exact'],
-            'signal1__lead_variant_pos': ['exact', 'gte', 'gt', 'lte', 'lt'],
-            'signal1__lead_variant_nearest_gene': ['exact', 'in'],
-            'signal2__lead_variant_chrom': ['exact'],
-            'signal2__lead_variant_pos': ['exact', 'gte', 'gt', 'lte', 'lt'],
-            'signal2__lead_variant_nearest_gene': ['exact'],
-            'signal2__lead_variant_assoc_gene': ['exact', 'in'],
-            'signal1__lead_variant_neg_log_p': ['gte'],
-            'signal2__lead_variant_neg_log_p': ['gte'],
-            'coloc_h4': ['gte'],  # "query just the significant results"
-            'r2': ['gte']
-        }
+        fields = (
+            'uuid',
+            'genes',
+            'traits',
+            'tissues',
+            'analyses',
+            'signals',
+            'studies',
+            'signal1_region',
+            'signal2_region',
+            'signal1_analysis',
+            'signal2_analysis',
+            'signal1_min_logp',
+            'signal2_min_logp',
+            'min_h4',
+            'min_r2',
+        )

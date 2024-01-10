@@ -8,291 +8,381 @@ from colocus.utils.storages import OverwriteStorage
 from ..api.util import sign
 from . import constants, file_util
 
+
 # from model_utils.models import SoftDeletableModel, TimeStampedModel
 
 
-class AnalysisGroup(models.Model):
+class DataSubmission(models.Model):
     """
-    A group of colocalization analyses, like a paper that performs the same pipeline on a thousand distinct signals
-    across many gwas-eqtl pairs. Externally in URLs, we often refer to this as a "study"
+    A group of colocalization analyses, individual study summary statistics (marginal and conditional analyses), and
+    fine-mapping results that have been submitted together by a collaborator or group.
     """
-    uuid = models.CharField(
-        max_length=32,
+    uuid = models.TextField(
         blank=False,
         null=False,
         unique=True,
-        help_text='A stable unique identifier for this dataset, should be specified on ingest'
-    )
+        help_text='A stable unique identifier for this dataset, should be specified on ingest')
 
-    # User-provided study metadata
-    study_name = models.CharField(
-        max_length=100,
-        db_index=True,
-        help_text='Name of the parent study (like "GLGC" or "GTEx") that produced the colocalization analysis'
-    )
-
-    label = models.TextField(
-        help_text='A human-readable description of the dataset, like "GIANT BMI meta-analysis"',
+    description = models.TextField(
+        help_text='A human-readable description of the dataset, like "Colocalization & fine-mapping of adipose eQTLs"',
         null=True,
         blank=True,
-        unique=False
-    )
+        unique=False)
 
-    ingest_complete = models.DateTimeField(
+    ingest_date = models.DateTimeField(
         auto_now_add=True,
         null=True,
-        help_text='Date when this dataset was loaded into the site'
-    )
-    study_date = models.DateField(null=False, blank=False,
-                                  help_text='Author provided date when the analysis was performed')
+        help_text='Date when this dataset was loaded into the site')
 
     authors = models.TextField(
-        help_text='Free-text author list, eg "ACRONYM Consortium" or "Mendel et al" (used for display only)'
-    )
+        help_text='Free-text author list, eg "ACRONYM Consortium" or "Mendel et al" (used for display only)')
 
     # We only collect this for the coloc (not upstream data) because upstream contacts may not be involved with the site
     contact_email = models.EmailField(
         blank=True,
         null=True,
-        help_text='Contact of record to report problems / questions about this analysis'
-    )
+        help_text='Contact of record to report problems / questions about this data submission')
 
-    pmid = models.CharField(max_length=20,
-                            blank=True,
-                            null=True,
-                            help_text='Identify a publication describing this colocalization analysis',
-                            verbose_name='PMID')
+    pmid = models.TextField(
+        blank=True,
+        null=True,
+        help_text='PubMed ID for a publication describing this overall set of data',
+        verbose_name='PMID')
 
-    #### Computed properties used by serializers
+    # Computed properties used by serializers
     @property
     def trait_count(self):
-        return self.marginaltrait_set.count()
+        # marginalanalysis_set is an automatically generated Django reverse relation field due to the fact that
+        # MarginalAnalysis has a ForeignKey to DataSubmission
+        return self.marginalanalysis_set.count()
 
 
-class LDPairs(models.Model):
-    """LD data for a particular population / dataset/ genome build."""
-    analysis = models.ForeignKey(
-        AnalysisGroup,
-        on_delete=models.CASCADE,
-        null=False,
-        help_text='This LD was provided for a specific analysis'
-    )
+class LDStats(models.Model):
+    """
+    Linkage disequilibrium (LD) statistics for a particular population / dataset / genome build.
+    """
 
-    uuid = models.CharField(
-        max_length=32,
+    uuid = models.TextField(
         blank=False,
         null=False,
         unique=True,
-        help_text='A stable unique identifier for this entity. Should be specified on ingest.'
-    )
+        db_index=True,
+        help_text='A stable unique identifier for this entity. Should be specified on ingest.')
 
-    panel = models.CharField(max_length=32, help_text='Name of LD panel used (eg 1000G)')
-    population = models.CharField(max_length=32, help_text='Name of population (eg EUR)')
-    genome_build = models.CharField(max_length=10, choices=constants.GENOME_BUILDS)
+    data_submission = models.ForeignKey(
+        DataSubmission,
+        on_delete=models.CASCADE,
+        null=False,
+        help_text='Data submission that this LD data was provided with')
+
+    panel = models.TextField(help_text='Name of LD panel used (eg 1000G)')
+    population = models.TextField(help_text='Name of population (eg EUR)')
+    genome_build = models.TextField(choices=constants.GENOME_BUILDS)
 
     ld_data = models.FileField(
         upload_to=file_util.get_ld_filename,
         verbose_name='LD data',
         help_text='PLINK formatted LD data (relative to at least key signal SNPs). Must be compressed with bgzip',
-        storage=OverwriteStorage(),
-    )
+        storage=OverwriteStorage())
 
     ld_data_tbi = models.FileField(
         upload_to=file_util.get_ld_filename_tbi,
         verbose_name='LD tabix index',
         help_text='Tabix index for the LD data. Must match the bgzip file',
-        storage=OverwriteStorage(),
-    )
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['analysis', 'uuid'], name='LD-in-study identifier')
-        ]
-
-        indexes = [
-            models.Index(fields=['analysis', 'uuid'], name='LD-in-study index'),
-        ]
+        storage=OverwriteStorage())
 
 
-class MarginalTrait(models.Model):
+class Study(models.Model):
     """
-    Marginal summary statistics for one study (GWAS, QTL, etc)
+    A study is a research group or consortium that has produced one or more analyses.
     """
-    uuid = models.CharField(
-        max_length=32,
+    uuid = models.TextField(
         blank=False,
         null=False,
         unique=True,
-        help_text='A stable unique identifier for this entity. Should be specified on ingest'
+        db_index=True,
+        help_text='A stable unique identifier for this entity. Should be specified on ingest.')
+
+    description = models.TextField(
+        help_text='A description of the study, e.g. "Global Lipids Genetics Consortium"',
+        null=True,
+        blank=True,
+        unique=False)
+
+
+class Phenotype(models.Model):
+    efo_id = models.TextField(
+        blank=False,
+        null=False,
+        unique=True,
+        help_text='External ID in EFO for the trait, e.g. "EFO_0001360" or "MONDO_0005148"')
+
+    name = models.TextField(
+        help_text='Full name of the trait, e.g. "Body Mass Index" or "Fasting glucose adjusted for BMI"',
+        null=False,
+        blank=False,
+        unique=False)
+
+
+class Gene(models.Model):
+    ens_id = models.TextField(null=False, blank=False, db_index=True, unique=True, help_text="Ensembl ID")
+
+    symbol = models.TextField(null=False, blank=False, db_index=True)
+    chrom = models.TextField(null=True, blank=False)
+    start = models.PositiveIntegerField(null=True, blank=False)
+    end = models.PositiveIntegerField(null=True, blank=False)
+
+
+class Exon(models.Model):
+    ens_id = models.TextField(
+        null=False, blank=False, db_index=True, unique=True,
+        help_text="Ensembl ID of the exon, or Ensembl ID of the gene + exon coordinates, e.g. ENSG00000141510.15_1_100")
+
+    gene = models.ForeignKey(
+        Gene, on_delete=models.CASCADE,
+        help_text="The gene to which this exon belongs",
+        related_name="exons")
+
+    chrom = models.TextField(null=True, blank=False)
+    start = models.PositiveIntegerField(null=True, blank=False)
+    end = models.PositiveIntegerField(null=True, blank=False)
+
+
+class Trait(models.Model):
+    """
+    A trait is a phenotype or other biological property that has been studied in one or more analyses. This could be a
+    phenotype like type 2 diabetes, or a gene expression trait like "expression of gene X in adipose tissue".
+    """
+
+    uuid = models.TextField(
+        blank=False,
+        null=False,
+        unique=True,
+        db_index=True,
+        help_text='Universally unique identifier')
+
+    biomarker_type = models.TextField(
+        help_text="Type of biomarker, e.g. phenotype or gene-expression exon-expression or methylation or atac-seq",
+        null=False,
+        blank=False,
+        unique=False)
+
+    tissue = models.TextField(
+        help_text='Tissue or cell type in which the trait was analyzed, e.g. "adipose" or "liver"',
+        null=True,
+        blank=True,
+        unique=False)
+
+    gene = models.ForeignKey(
+        Gene,
+        on_delete=models.CASCADE,
+        related_name='trait',
+        null=True
     )
 
-    analysis = models.ForeignKey(
-        AnalysisGroup,
+    exon = models.ForeignKey(
+        Exon,
+        on_delete=models.CASCADE,
+        related_name='trait',
+        null=True
+    )
+
+    phenotype = models.ForeignKey(
+        Phenotype,
+        on_delete=models.CASCADE,
+        related_name='trait',
+        null=True
+    )
+
+
+class Publication(models.Model):
+    """
+    A publication is a record of a scientific article that describes one or more analyses.
+    """
+
+    pmid = models.PositiveIntegerField(
+        blank=False,
+        null=False,
+        unique=True,
+        db_index=True,
+        help_text='PubMed ID for the publication')
+
+    authors = models.TextField(
+        null=True,
+        help_text='Free-text author list, eg "ACRONYM Consortium" or "Mendel et al" (used for display only)')
+
+    title = models.TextField(
+        null=True,
+        help_text='Title of the publication')
+
+    year = models.PositiveIntegerField(
+        null=True,
+        help_text='Year of publication')
+
+    journal = models.TextField(
+        null=True,
+        help_text='Journal of publication')
+
+
+class MarginalAnalysis(models.Model):
+    """
+    Marginal summary statistics for one study (GWAS, QTL, etc) and one trait (T2D, gene expression of TCF7L2, etc.)
+    """
+
+    uuid = models.TextField(
+        blank=False,
+        null=False,
+        unique=True,
+        db_index=True,
+        help_text='A stable unique identifier for this analysis'
+    )
+
+    data_submission = models.ForeignKey(
+        DataSubmission,
         on_delete=models.CASCADE,
         null=False,
         help_text='This trait was provided with a specific group of analyses'
     )
 
-    #### Basic properties that define the dataset
-    trait_type = models.CharField(max_length=10, choices=constants.TRAIT_TYPES)
-    genome_build = models.CharField(max_length=10, choices=constants.GENOME_BUILDS)
-    # JSON field consisting of {trait} for gwas ; {gene, tissue} for eQTL
-    metadata = models.JSONField(help_text='Additional trait-type specific information. Eg {trait} for GWAS, '
-                                          'or { gene, tissue } for eQTL')
+    analysis_type = models.TextField(
+        choices=constants.ANALYSIS_TYPES,
+        help_text="Type of association analysis - GWAS, eQTL, pQTL, ATAC-seq, methylation, etc.")
 
-    ld = models.ForeignKey(
-        LDPairs,
+    genome_build = models.TextField(
+        choices=constants.GENOME_BUILDS,
+        help_text="Genome build used for this analysis (positions of variants)")
+
+    trait = models.ForeignKey(
+        Trait,
         on_delete=models.CASCADE,
         null=False,
-        help_text='The LD panel/ population corresponding to this dataset'
+        help_text='The trait analyzed in this analysis')
+
+    study = models.ForeignKey(
+        Study,
+        on_delete=models.CASCADE,
+        null=False,
+        help_text='The study that produced this analysis')
+
+    ld = models.ForeignKey(
+        LDStats,
+        on_delete=models.CASCADE,
+        null=False,
+        help_text='LD panel to be used with this dataset'
     )
 
-    #### Files that must be present. All are generated during an ingest pipeline step.
+    # Files that must be present. All are generated during an ingest pipeline step.
     summary_stats = models.FileField(
         upload_to=file_util.get_marginal_summstats,
         verbose_name='Marginal summary stats',
         help_text='The marginal summary stats for this study. Must be compressed with bgzip',
-        storage=OverwriteStorage(),
-    )
+        storage=OverwriteStorage())
 
     summary_stats_tbi = models.FileField(
         upload_to=file_util.get_marginal_summstats_tbi,
         verbose_name='Tabix index for summary stats',
         help_text='Tabix index for summary stats (.tbi file). Must match bgzip file.',
-        storage=OverwriteStorage(),
-    )
+        storage=OverwriteStorage())
 
     manhattan_bins = models.FileField(
         upload_to=file_util.get_manhattan,
         verbose_name='Binned data for manhattan plots',
         help_text='Results of manhattan plot binning process',
-        storage=OverwriteStorage(),
-    )
+        storage=OverwriteStorage())
 
     qq_bins = models.FileField(
         upload_to=file_util.get_qq,
         verbose_name='Binned data for QQ plots',
         help_text='Results of manhattan plot binning process',
-        storage=OverwriteStorage(),
-    )
+        storage=OverwriteStorage())
 
-    #### Things used for search and provenance
-    study_name = models.CharField(
-        max_length=100,
-        db_index=True,
-        help_text='Name of the parent study (like "GLGC" or "GTEx") that produced the dataset'
-    )
-
-    label = models.TextField(help_text='A human-readable description of the dataset, like "Body Mass Index"')
     description = models.TextField(
         help_text='Freetext with important info such as analysis parameters. In the future, some parameters might '
                   'be tracked as part of the DB schema.')
 
-    pmid = models.CharField(max_length=20,
-                            blank=True,
-                            null=True,
-                            help_text='The publication describing this trait analysis',
-                            verbose_name='PMID')
-
-    authors = models.TextField(
-        help_text='Free-text author list, eg "ACRONYM Consortium" or "Mendel et al" (used for display only)'
-    )
+    publication = models.ForeignKey(
+        Publication,
+        on_delete=models.CASCADE,
+        null=True,
+        help_text='The publication describing this analysis')
 
     external_link = models.URLField(
         blank=True,
         null=True,
-        help_text='URL for where the data was downloaded from. Used to track provenance.'
-    )
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['analysis', 'uuid'], name='Trait-in-study identifier')
-        ]
-        indexes = [
-            models.Index(fields=['analysis', 'uuid'], name='Trait-in-study index'),
-        ]
+        help_text='URL for where the data was downloaded from. Used to track provenance.')
 
 
-class MarginalSignal(models.Model):
+class LeadVariant(models.Model):
+    chrom = models.TextField(db_collation="uint")
+    pos = models.PositiveIntegerField(help_text="Position of the variant in the genome")
+    ref = models.TextField(help_text='Reference allele')
+    alt = models.TextField(help_text='Alternate allele. This must also be the effect allele.')
+
+
+class FineMappingProgram(models.Model):
     """
-    One specific signal in one specific trait. This specifies the signal, as well as things like conditional
-     analysis of the marginal trait in a nearby region.
+    A program used to perform fine-mapping or conditional analysis of a marginal association analysis. Usually this
+    process is performed by SuSiE, APEX, FINEMAP, or GCTA.
     """
-    uuid = models.CharField(
-        max_length=32,
+
+    name = models.TextField(
+        blank=False,
+        null=False,
+        unique=False,
+        help_text='Name of the fine-mapping program, e.g. "SuSiE" or "FINEMAP"')
+
+    version = models.TextField(
+        blank=False,
+        null=False,
+        help_text='Version of the fine-mapping program, e.g. "v1.0.0"')
+
+
+class FineMappedSignal(models.Model):
+    """
+    One specific signal after fine-mapping or conditional analysis of a marginal association analysis. Usually this
+    process is performed by SuSiE, APEX, FINEMAP, or GCTA.
+    """
+
+    uuid = models.TextField(
         blank=False,
         null=False,
         unique=True,
-        help_text='A stable unique identifier for this entity. Should be specified on ingest'
-    )
+        db_index=True,
+        help_text='A stable unique identifier for this entity. Should be specified on ingest')
 
     analysis = models.ForeignKey(
-        AnalysisGroup,
+        MarginalAnalysis,
         on_delete=models.CASCADE,
         null=False,
-        help_text='This signal was identified as part of a specific bulk colocalization analysis'
-    )
+        help_text='The analysis in which this signal was identified')
 
-    trait = models.ForeignKey(
-        MarginalTrait,
+    program = models.ForeignKey(
+        FineMappingProgram,
         on_delete=models.CASCADE,
         null=False,
-        help_text='The trait in which this signal was identified'
-    )
+        help_text='The program used to perform the fine-mapping or conditional analysis')
 
     cond_analysis = models.FileField(
         upload_to=file_util.get_signals_cond,
         verbose_name='Cond analysis results ',
         help_text='Conditional (or "all but one") analysis of marginal results (rel to lead variant of this signal)',
-        storage=OverwriteStorage(),
-    )
+        storage=OverwriteStorage())
 
     cond_analysis_tbi = models.FileField(
         upload_to=file_util.get_signals_cond_tbi,
         verbose_name='tbi for cond results',
         help_text='Tabix index; must match the conditional analysis file',
-        storage=OverwriteStorage(),
-    )
+        storage=OverwriteStorage())
 
-    #### Human readable description of lead variant. Explicit cp are required to support search by region
-    lead_variant_chrom = models.CharField(max_length=5, blank=False, null=False, db_collation="uint")
-    lead_variant_pos = models.PositiveIntegerField()
-    lead_variant_marker = models.CharField(
-        max_length=5, blank=False, null=False,
-        help_text='Specifier of the form chrom:pos_ref/alt. Used for display only')
-    lead_variant_ref = models.TextField(
-        blank=False, null=False,
-        help_text='Reference allele of lead variant')
-    lead_variant_alt = models.TextField(
-        blank=False, null=False,
-        help_text='Alternate allele of lead variant. This must also be the effect allele.')
-    lead_variant_neg_log_p = models.FloatField(
-        help_text="Marginal -log10p value for lead variant. Used for display purposes.")
-    lead_variant_effect = models.FloatField(
-        help_text='Effect size of lead variant')
-    lead_variant_effect_marg = models.FloatField(
-        help_text='Effect size of lead variant, in the marginal analysis')
-    lead_variant_se = models.FloatField(
-        help_text='Standard error of the effect size of the lead variant')
-    lead_variant_nearest_gene = models.CharField(
-        max_length=50,
-        help_text='Human-friendly name of the closest gene. Used for display purposes.'
-    )
-    lead_variant_assoc_gene = models.CharField(
-        max_length=50,
-        blank=True,
-        help_text='Gene associated with lead variant (HGNC symbol).'
-    )
-    lead_variant_assoc_gene_ensg = models.CharField(
-        max_length=50,
-        blank=True,
-        help_text='Gene associated with lead variant (Ensembl ENSG ID).'
-    )
-    lead_variant_assoc_exon = models.CharField(
-        max_length=50,
-        blank=True,
-        help_text='Gene associated with lead variant (Ensembl ENSG ID).'
-    )
+    # Lead variant
+    lead_variant = models.ForeignKey(LeadVariant, on_delete=models.CASCADE,
+        help_text="Lead variant of the fine-mapped signal.")
+
+    neg_log_p = models.FloatField(help_text="Conditional or fine-mapped -log10p value.")
+    effect_marg = models.FloatField(help_text='Effect size in the marginal analysis')
+    effect_cond = models.FloatField(help_text='Effect size in the conditional/fine-mapping analysis')
+    se_cond = models.FloatField(help_text='Conditional standard error of the effect size')
+
     cond_minp_variant = models.TextField(
         null=True,
         help_text="Variant with the smallest p-value after conditional analysis. Often the lead_variant* fields above"
@@ -300,45 +390,38 @@ class MarginalSignal(models.Model):
                   "that variant will also be the most significant in the conditional analysis."
     )
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['analysis', 'uuid'], name='Signal-in-study identifier')
-        ]
-
-        indexes = [
-            models.Index(fields=['analysis', 'uuid'], name='Signal-in-study index'),
-        ]
-
 
 class ColocResult(models.Model):
     """
     Colocalization results for one specific pair of signals across two traits
     """
+
     uuid = models.CharField(
         max_length=32,
         blank=False,
         null=False,
         unique=True,
+        db_index=True,
         help_text='A stable unique identifier for this entity. Should be specified on ingest.'
     )
 
-    analysis = models.ForeignKey(
-        AnalysisGroup,
+    data_submission = models.ForeignKey(
+        DataSubmission,
         on_delete=models.CASCADE,
         null=False,
         help_text='This signal was identified as part of a specific bulk colocalization analysis'
     )
 
     signal1 = models.ForeignKey(
-        MarginalSignal,
-        related_name="+",
+        FineMappedSignal,
+        related_name="+", # do not create reverse relation, not needed
         on_delete=models.CASCADE,
         null=False,
-        help_text='The first signal (from trait 1)'
+        help_text='The first signal (from trait 1)',
     )
 
     signal2 = models.ForeignKey(
-        MarginalSignal,
+        FineMappedSignal,
         related_name="+",
         on_delete=models.CASCADE,
         null=False,
@@ -374,14 +457,5 @@ class ColocResult(models.Model):
 
     @property
     def marg_cond_flip(self):
-        return (sign(self.signal1.lead_variant_effect) != sign(self.signal1.lead_variant_effect_marg)) or \
-               (sign(self.signal2.lead_variant_effect) != sign(self.signal2.lead_variant_effect_marg))
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['analysis', 'uuid'], name='Coloc-in-study identifier')
-        ]
-
-        indexes = [
-            models.Index(fields=['analysis', 'uuid'], name='Coloc-in-study index'),
-        ]
+        return (sign(self.signal1.effect_cond) != sign(self.signal1.effect_marg)) or \
+            (sign(self.signal2.effect_cond) != sign(self.signal2.effect_marg))

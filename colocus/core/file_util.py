@@ -6,8 +6,6 @@ This exists because Django requires that file upload fields calculate default pa
 
 import os
 
-# TODO: Should these paths take into account analysis ID? (probably need some schema for preventing dupe uuids)
-
 
 def get_marginal_summstats(instance, filename):
     return os.path.join('marginal', instance.uuid, 'marginal.gz')

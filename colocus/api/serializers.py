@@ -28,18 +28,16 @@ class DataSubmissionSerializer(drf_serializers.ModelSerializer):
 
 
 class DataSubmissionDetailSerializer(drf_serializers.ModelSerializer):
-    """
-    A specialized serializer for when the only thing we are displaying is analysis group.
-        This allows more expensive queries (like trait_count`) than the "general purpose" `AnalysisGroupSerializer`,
-        which is intended to be embedded inside other things.
-    """
-
     class Meta:
         model = models.DataSubmission
         fields = ('uuid', 'authors', 'contact_email', 'pmid', 'trait_count', 'description')
 
 
 class LDStatsSerializer(drf_serializers.ModelSerializer):
+    """
+    Represents a set of LD statistics for a single population and genome build. For colocus, we require LD between
+    the lead variant of each fine-mapped signal, and all other variants in the region.
+    """
     class Meta:
         model = models.LDStats
         fields = ('uuid', 'panel', 'population', 'genome_build')
@@ -57,12 +55,22 @@ class LDRegionSerializer(drf_serializers.Serializer):
 
 
 class GeneSerializer(drf_serializers.ModelSerializer):
+    """
+    A gene is a region of the genome that is transcribed into RNA. Genes are represented by Ensembl gene IDs, which are
+    stable identifiers from the Ensembl database. Genes are also given a symbol by HGNC, which is a human-readable
+    identifier for the gene, e.g. "TCF7L2".
+    """
     class Meta:
         model = models.Gene
         fields = ('ens_id', 'symbol', 'chrom', 'start', 'end')
 
 
 class ExonSerializer(drf_serializers.ModelSerializer):
+    """
+    An exon is a region of a gene that is transcribed into RNA. Exons are represented by Ensembl exon IDs, or custom IDs
+    that begin with the ensembl gene ID and end with the start/end position of the called exon, e.g.
+    ENSG00000123456_1000_2000.
+    """
     # gene = GeneSerializer(read_only=True)
 
     class Meta:
@@ -71,12 +79,22 @@ class ExonSerializer(drf_serializers.ModelSerializer):
 
 
 class PhenotypeSerializer(drf_serializers.ModelSerializer):
+    """
+    A phenotype is a type of trait. These are usually human diseases or measurements of human traits, such as "BMI" or
+    "type 2 diabetes". Phenotypes are represented by EFO IDs, which are stable identifiers from the Experimental
+    Factor Ontology (EFO).
+    """
     class Meta:
         model = models.Phenotype
         fields = ('efo_id', 'name')
 
 
 class TraitSerializer(NonNullModelSerializer):
+    """
+    A trait is a phenotype or other biological property that has been studied in one or more analyses. This could be a
+    phenotype like type 2 diabetes, or a gene expression trait like "expression of gene X in adipose tissue".
+    """
+
     gene = GeneSerializer(read_only=True)
     exon = ExonSerializer(read_only=True)
     phenotype = PhenotypeSerializer(read_only=True)
@@ -93,12 +111,19 @@ class StudySerializer(drf_serializers.ModelSerializer):
 
 
 class LeadVariantSerializer(drf_serializers.ModelSerializer):
+    """
+    Helper object for representing the lead variant in a fine-mapped signal.
+    """
     class Meta:
         model = models.LeadVariant
         fields = ('chrom', 'pos', 'ref', 'alt')
 
 
 class PublicationSerializer(drf_serializers.ModelSerializer):
+    """
+    A publication is a scientific paper that describes one or more analyses. Publications are represented by PubMed
+    IDs (PMIDs), which are stable identifiers from the PubMed database.
+    """
     class Meta:
         model = models.Publication
         fields = ('pmid', 'authors')
@@ -214,6 +239,9 @@ class ColocResultSerializer(drf_serializers.ModelSerializer):
     coloc_h3 = ReducedPrecisionFloatField(read_only=True, label="Posterior probability of H3")
     coloc_h4 = ReducedPrecisionFloatField(read_only=True, label="Posterior probability of H4")
     r2 = ReducedPrecisionFloatField(read_only=True, label="r2 between lead variants")
+    n_coloc_between_traits = drf_serializers.IntegerField(
+        read_only=True,
+        label="Number of coloc results between signal1's trait and signal2's trait")
 
     class Meta:
         model = models.ColocResult

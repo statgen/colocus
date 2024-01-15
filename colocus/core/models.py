@@ -2,6 +2,7 @@
 Core models describing key data entities
 """
 from django.db import models
+from django.core.validators import RegexValidator
 
 from colocus.utils.storages import OverwriteStorage
 
@@ -127,10 +128,10 @@ class Phenotype(models.Model):
 class Gene(models.Model):
     ens_id = models.TextField(null=False, blank=False, db_index=True, unique=True, help_text="Ensembl ID")
 
-    symbol = models.TextField(null=False, blank=False, db_index=True)
-    chrom = models.TextField(null=True, blank=False)
-    start = models.PositiveIntegerField(null=True, blank=False)
-    end = models.PositiveIntegerField(null=True, blank=False)
+    symbol = models.TextField(null=False, blank=False, db_index=True, help_text="HGNC symbol")
+    chrom = models.TextField(null=True, blank=False, help_text="Chromosome")
+    start = models.PositiveIntegerField(null=True, blank=False, help_text="Start position of the gene")
+    end = models.PositiveIntegerField(null=True, blank=False, help_text="End position of the gene")
 
 
 class Exon(models.Model):
@@ -143,9 +144,9 @@ class Exon(models.Model):
         help_text="The gene to which this exon belongs",
         related_name="exons")
 
-    chrom = models.TextField(null=True, blank=False)
-    start = models.PositiveIntegerField(null=True, blank=False)
-    end = models.PositiveIntegerField(null=True, blank=False)
+    chrom = models.TextField(null=True, blank=False, help_text="Chromosome")
+    start = models.PositiveIntegerField(null=True, blank=False, help_text="Start position of the exon")
+    end = models.PositiveIntegerField(null=True, blank=False, help_text="End position of the exon")
 
 
 class Trait(models.Model):
@@ -241,7 +242,7 @@ class MarginalAnalysis(models.Model):
         DataSubmission,
         on_delete=models.CASCADE,
         null=False,
-        help_text='This trait was provided with a specific group of analyses'
+        help_text='Analysis was part of this data submission'
     )
 
     analysis_type = models.TextField(
@@ -313,6 +314,10 @@ class MarginalAnalysis(models.Model):
 
 
 class LeadVariant(models.Model):
+    """
+    The lead variant from a fine-mapped signal.
+    """
+
     chrom = models.TextField(db_collation="uint")
     pos = models.PositiveIntegerField(help_text="Position of the variant in the genome")
     ref = models.TextField(help_text='Reference allele')

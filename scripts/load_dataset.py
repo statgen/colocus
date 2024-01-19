@@ -138,6 +138,7 @@ def load_one_signal(
       chrom: '7'
       pos: 157020640
       ref: C
+      vid: "7_157020640_C_A"
     effect_cond: -4.205
     effect_marg: -0.497
     neg_log_p: 4.844
@@ -161,7 +162,9 @@ def load_one_signal(
     # Get the lead variant for this fine-mapped signal
     # We want a brand new `LeadVariant` each time; it is a utility class to keep track of the variant & its statistics
     # but those statistics (neg_log_p, effect, se, etc.) change depending on the associated trait and analysis
-    lead_variant = LeadVariant.objects.create(**(metadata.pop("lead_variant")))
+    lv_dict = metadata.pop("lead_variant")
+    lv_dict["vid"] = lv_dict["chrom"] + "_" + str(lv_dict["pos"]) + "_" + lv_dict["ref"] + "_" + lv_dict["alt"]
+    lead_variant = LeadVariant.objects.create(**lv_dict)
 
     # Get fine-mapping program used
     program, _ = FineMappingProgram.objects.get_or_create(**metadata.pop("finemap_program"))

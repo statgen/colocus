@@ -318,6 +318,7 @@ class LeadVariant(models.Model):
     The lead variant from a fine-mapped signal.
     """
 
+    vid = models.TextField(help_text="Full variant ID in chr_pos_ref_alt format.")
     chrom = models.TextField(db_collation="uint")
     pos = models.PositiveIntegerField(help_text="Position of the variant in the genome")
     ref = models.TextField(help_text='Reference allele')

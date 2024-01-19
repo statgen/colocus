@@ -116,7 +116,7 @@ class LeadVariantSerializer(drf_serializers.ModelSerializer):
     """
     class Meta:
         model = models.LeadVariant
-        fields = ('chrom', 'pos', 'ref', 'alt')
+        fields = ('vid', 'chrom', 'pos', 'ref', 'alt')
 
 
 class PublicationSerializer(drf_serializers.ModelSerializer):

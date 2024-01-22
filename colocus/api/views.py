@@ -113,7 +113,8 @@ class ColocResultListView(generics.ListAPIView):
             'signal1__analysis__trait__gene', 'signal2__analysis__trait__gene',
             'signal1__analysis__trait__exon', 'signal2__analysis__trait__exon',
             'signal1__analysis__trait__phenotype', 'signal2__analysis__trait__phenotype',
-            'signal1__analysis__study', 'signal2__analysis__study')
+            'signal1__analysis__study', 'signal2__analysis__study',
+            'signal1__analysis__publication', 'signal2__analysis__publication',)
         .prefetch_related(
             'signal1__analysis__ld', 'signal2__analysis__ld'))
 

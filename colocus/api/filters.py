@@ -140,6 +140,11 @@ class ColocResultFilter(FilterSet):
     signal2_analysis = CharFilter(field_name='signal2__analysis__uuid', lookup_expr='exact',
                                   label="Signal 2 analysis UUID")
 
+    signal1_trait = CharFilter(field_name='signal1__analysis__trait__uuid', lookup_expr='exact',
+                               label="Signal 1 trait UUID")
+    signal2_trait = CharFilter(field_name='signal2__analysis__trait__uuid', lookup_expr='exact',
+                               label="Signal 2 trait UUID")
+
     signal1_min_logp = NumberFilter(field_name='signal1__neg_log_p', lookup_expr='gte',
                                     label="Minimum -log10 p-value for signal 1")
     signal2_min_logp = NumberFilter(field_name='signal2__neg_log_p', lookup_expr='gte',

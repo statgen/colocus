@@ -70,7 +70,7 @@ def search_page_metadata(request, *args, **kwargs):
 
 
 # TODO: DRY manhattan / qq views
-def trait_manhattan(request, *args, **kwargs):
+def analysis_manhattan(request, *args, **kwargs):
     """
     Return the data used to render a manhattan plot. This only makes sense for a GWAS; other traits, like cis-eQTLs,
       may be defined only around a specific locus, and can't meaningfully be visualized genome wide
@@ -90,7 +90,7 @@ def trait_manhattan(request, *args, **kwargs):
     return http.FileResponse(open(filename, 'rb'), content_type='application/json')
 
 
-def trait_qq(request, analysis_uuid, uuid):
+def analysis_qq(request, uuid):
     """
     Return the data used to render a QQ plot. We're only going to provide this feature for a GWAS for now, because other
       traits (like cis-eQTLs) may be evaluated locally, and inspecting the QQ plot in "only a region of high signal"
@@ -98,7 +98,7 @@ def trait_qq(request, analysis_uuid, uuid):
       TODO Currently this is tied to a local filesystem. May need to refactor if we switch to S3.
     """
     try:
-        model = models.MarginalAnalysis.objects.get(analysis__uuid=analysis_uuid, uuid=uuid)
+        model = models.MarginalAnalysis.objects.get(uuid=uuid)
     except models.MarginalAnalysis.DoesNotExist:
         return http.HttpResponseNotFound("No record was found for the specified study + trait")
 

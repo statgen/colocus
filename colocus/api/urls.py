@@ -35,9 +35,9 @@ urls_v1 = [
         name='search-metadata'
     ),
     path(
-        'internal/traits/<uuid>/manhattan/',
-        internal_views.trait_manhattan,
-        name='trait-manhattan'
+        'internal/analysis/<uuid>/manhattan/',
+        internal_views.analysis_manhattan,
+        name='analysis-manhattan'
     ),
     path('ld/', views.LDPairsListView.as_view(), name='ld-all'),
     path('ld/<uuid>/', views.LDPairsDetailView.as_view(), name='ld-detail'),

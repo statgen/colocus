@@ -13,7 +13,7 @@ from colocus.core import constants, models
 
 def search_page_metadata(request, *args, **kwargs):
     # Apply analysis_uuid filter if provided, else use all objects
-    qs_analysis = models.MarginalAnalysis.objects.all()
+    qs_analysis = models.MarginalAnalysis.objects.select_related("trait", "study")
     qs_coloc = models.ColocResult.objects.all()
 
     """Return metadata required to power the "available categories" menus in the "search" page UI"""

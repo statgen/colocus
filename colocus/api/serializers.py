@@ -177,7 +177,7 @@ class FinemappedSignalSerializer(drf_serializers.ModelSerializer):
     - `effect_marg`: The effect size of the lead variant in the marginal analysis
     """
 
-    analysis = MarginalAnalysisSerializerBrief(read_only=True)
+    analysis = MarginalAnalysisSerializer(read_only=True)
     lead_variant = LeadVariantSerializer(read_only=True)
     neg_log_p = drf_serializers.SerializerMethodField(
         method_name='get_neg_log_p',

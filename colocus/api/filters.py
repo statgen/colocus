@@ -162,18 +162,22 @@ class ColocResultFilter(FilterSet):
             ('n_coloc_between_traits', 'n_coloc_between_traits'),
             ('signal1__neg_log_p', 'signal1_logp'),
             ('signal2__neg_log_p', 'signal2_logp'),
-            ('signal1__lead_variant_chrom', 'signal1_chrom'),
-            ('signal1__lead_variant_pos', 'signal1_pos'),
-            ('signal1__analysis__trait', 'signal1_trait'),
-            ('signal2__analysis__trait', 'signal2_trait'),
-            ('signal2__lead_variant_chrom', 'signal2_chrom'),
-            ('signal2__lead_variant_pos', 'signal2_pos'),
+            ('signal1__lead_variant__chrom', 'signal1_chrom'),
+            ('signal1__lead_variant__pos', 'signal1_pos'),
+            ('signal1__analysis__trait__uuid', 'signal1_trait'),
+            ('signal2__analysis__trait__uuid', 'signal2_trait'),
+            ('signal2__lead_variant__chrom', 'signal2_chrom'),
+            ('signal2__lead_variant__pos', 'signal2_pos'),
+            ('signal1__analysis__trait__gene__ens_id', 'signal1_gene_ens_id'),
+            ('signal1__analysis__trait__gene__symbol', 'signal1_gene_symbol'),
+            ('signal1__analysis__trait__tissue', 'signal1_tissue'),
+            ('signal1__analysis__trait__exon__ens_id', 'signal1_exon_ens_id'),
             ('signal2__analysis__trait__gene__ens_id', 'signal2_gene_ens_id'),
             ('signal2__analysis__trait__gene__symbol', 'signal2_gene_symbol'),
-            ('signal2__analysis__trait__gene__tissue', 'signal2_tissue'),
+            ('signal2__analysis__trait__tissue', 'signal2_tissue'),
             ('signal2__analysis__trait__exon__ens_id', 'signal2_exon_ens_id'),
-            ('signal1__analysis__study__name', 'signal1_study'),
-            ('signal2__analysis__study__name', 'signal2_study')
+            ('signal1__analysis__study__uuid', 'signal1_study'),
+            ('signal2__analysis__study__uuid', 'signal2_study')
         )
     )
 

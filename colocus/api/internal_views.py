@@ -2,9 +2,11 @@
 Views that power internal functionality: non-public API endpoints with additional information required for some pages
 """
 import os
-import re
+# import re
+# import json
 
 from django import http
+# from django.conf import settings
 
 from colocus.core import constants, models
 
@@ -49,14 +51,22 @@ def search_page_metadata(request, *args, **kwargs):
     genes = ([g.ens_id for g in all_genes] +
              [g.symbol for g in all_genes])
 
-    return http.JsonResponse({
+    result = {
         'count_pairs': count_signal_pairs,
         'tissues': tissues,
         'analysis_types': analysis_types,
         'phenotypes': phenotypes,
         'studies': studies,
         'genes': genes
-    })
+    }
+
+    # For debugging: Return data as HTML
+    # This allows Django debug toolbar to show up
+    # if settings.DEBUG:
+    #     html = "<html><body><pre>{}</pre></body></html>".format(json.dumps(result, indent=4))
+    #     return http.HttpResponse(html)
+
+    return http.JsonResponse(result)
 
 
 # TODO: DRY manhattan / qq views

@@ -96,24 +96,15 @@ class ColocResultFilter(FilterSet):
         query |= self.create_query('signal2__analysis__study__uuid', value)
         return queryset.filter(query)
 
-    signal1_region = CharFilter(
-        method='filter_region',
-        label="Only retrieve signal 1 results within a specified region given as chr:start-end")
-
-    signal2_region = CharFilter(
-        method='filter_region',
-        label="Only retrieve signal 2 results within a specified region given as chr:start-end")
-
     def filter_region(self, queryset, name, value):
         """
-        Filter results within a specified position range.
+        Filter results within a specified chromosome & position range.
 
-        The expected format of the input is 'start-end', e.g., '10000-20000'.
-        It filters results where 'signal2__lead_variant__pos' is within this range.
+        The expected format of the input is 'chr:start-end', e.g., '4:10000-20000'.
 
         :param queryset: The base queryset.
-        :param name: The name of the filter field, here 'position_range'.
-        :param value: The value provided for the filter, expected in 'start-end' format.
+        :param name: The name of the requested filter field in the API, here 'signal1_region' or 'signal2_region'.
+        :param value: The value provided for the filter, expected in 'chr:start-end' format.
         :return: A filtered QuerySet.
         """
         match = parse_region(value)
@@ -121,19 +112,34 @@ class ColocResultFilter(FilterSet):
         if match:
             chrom, start_pos, end_pos = match
 
-            field = None
-            if "sig1" in name:
-                field = "signal1__lead_variant__pos"
-            elif "sig2" in name:
-                field = "signal2__lead_variant__pos"
+            pos_field = None
+            if "signal1" in name:
+                pos_field = "signal1__lead_variant__pos"
+            elif "signal2" in name:
+                pos_field = "signal2__lead_variant__pos"
 
-            if field:
+            chrom_field = None
+            if "signal1" in name:
+                chrom_field = "signal1__lead_variant__chrom"
+            elif "signal2" in name:
+                chrom_field = "signal2__lead_variant__chrom"
+
+            if chrom_field and pos_field:
                 return queryset.filter(
-                    Q(**{f'{field}__gte': start_pos}) &
-                    Q(**{f'{field}__lte': end_pos})
+                    Q(**{f'{chrom_field}': chrom}) &
+                    Q(**{f'{pos_field}__gte': start_pos}) &
+                    Q(**{f'{pos_field}__lte': end_pos})
                 )
 
         return queryset
+
+    signal1_region = CharFilter(
+        method='filter_region',
+        label="Only retrieve signal 1 results within a specified region given as chr:start-end")
+
+    signal2_region = CharFilter(
+        method='filter_region',
+        label="Only retrieve signal 2 results within a specified region given as chr:start-end")
 
     signal1_analysis = CharFilter(field_name='signal1__analysis__uuid', lookup_expr='exact',
                                   label="Signal 1 analysis UUID")

@@ -265,6 +265,11 @@ class MarginalAnalysis(models.Model):
         null=False,
         help_text='The study that produced this analysis')
 
+    ancestry = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Ancestry of the samples used in this analysis, e.g. "EUR"')
+
     ld = models.ForeignKey(
         LDStats,
         on_delete=models.CASCADE,

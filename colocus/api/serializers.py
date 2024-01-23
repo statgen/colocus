@@ -143,7 +143,7 @@ class MarginalAnalysisSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.MarginalAnalysis
         fields = (
-            'uuid', 'analysis_type', 'genome_build', 'trait', 'description',
+            'uuid', 'analysis_type', 'genome_build', 'trait', 'description', 'ancestry',
             'study', 'publication', 'ld', 'external_link'
         )
 
@@ -160,7 +160,7 @@ class MarginalAnalysisSerializerBrief(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.MarginalAnalysis
-        fields = ('uuid', 'analysis_type', 'genome_build', 'trait', 'description', 'study', 'ld')
+        fields = ('uuid', 'analysis_type', 'genome_build', 'trait', 'description', 'ancestry', 'study', 'ld')
 
 
 class FinemappedSignalSerializer(drf_serializers.ModelSerializer):

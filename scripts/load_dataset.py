@@ -68,7 +68,7 @@ def load_submission(package_root: pathlib.Path) -> DataSubmission:
         # We don't use get_or_create because additional NOT NULL fields may be required
         ds = DataSubmission.objects.get(uuid=metadata['uuid'])
     except DataSubmission.DoesNotExist:
-        ds = DataSubmission(**metadata)
+        ds = init_model(DataSubmission, metadata)
 
     metadata["ingest_date"] = datetime.utcnow()
     for k, v in metadata.items():

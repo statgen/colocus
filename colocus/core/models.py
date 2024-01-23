@@ -35,20 +35,17 @@ class DataSubmission(models.Model):
         null=True,
         help_text='Date when this dataset was loaded into the site')
 
-    authors = models.TextField(
-        help_text='Free-text author list, eg "ACRONYM Consortium" or "Mendel et al" (used for display only)')
-
     # We only collect this for the coloc (not upstream data) because upstream contacts may not be involved with the site
     contact_email = models.EmailField(
         blank=True,
         null=True,
         help_text='Contact of record to report problems / questions about this data submission')
 
-    pmid = models.TextField(
-        blank=True,
+    publication = models.ForeignKey(
+        'Publication',
+        on_delete=models.CASCADE,
         null=True,
-        help_text='PubMed ID for a publication describing this overall set of data',
-        verbose_name='PMID')
+        help_text='Publication describing this overall data submission')
 
     # Computed properties used by serializers
     @property

@@ -128,13 +128,13 @@ class ColocResultDetailView(generics.RetrieveAPIView):
     serializer_class = serializers.ColocResultSerializer
 
 
-class LDPairsListView(generics.ListAPIView):
+class LDStatsListView(generics.ListAPIView):
     ordering = ('panel', 'population')
     queryset = models.LDStats.objects.all()
     serializer_class = serializers.LDStatsSerializer
 
 
-class LDPairsDetailView(generics.RetrieveAPIView):
+class LDStatsDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
     queryset = models.LDStats.objects.all()
     serializer_class = serializers.LDStatsSerializer

@@ -38,7 +38,7 @@ def django_db_setup(django_db_setup, django_db_blocker, django_logger):
         # under colocus/api/management/commands/load_data.py
         print("Loading database for testing...")
         run(['python', 'manage.py', 'migrate'])
-        run(['python', 'scripts/load_dataset.py', 'colocus/tests/data/adipoexpress'])
+        # run(['python', 'scripts/load_dataset.py', 'colocus/tests/data/adipoexpress'])
         run(['python', 'scripts/load_dataset.py', 'colocus/tests/data/fusion-muscle-inspire-islet'])
 
 

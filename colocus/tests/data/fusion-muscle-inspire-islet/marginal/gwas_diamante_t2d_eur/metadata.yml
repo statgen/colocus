@@ -1,13 +1,22 @@
-authors: Mahajan et al. (Nature Genetics 2022)
+uuid: "gwas_diamante_t2d_eur"
+analysis_type: "gwas"
+ancestry: EUR
 description: ''
-external_link: https://diagram-consortium.org/downloads.html
-genome_build: GRCh37
-label: T2D Meta-analysis (EUR)
-ld_panel: ukbb_grch37_all_muscislet
-metadata:
-  trait: Type 2 diabetes
-  trait_abbrev: T2D
-pmid: 35551307
-study_name: DIAMANTE
-trait_type: gwas
-uuid: gwas_diamante_t2d_eur
+publication:
+  authors: "Mahajan et al."
+  journal: "Nature Genetics"
+  year: 2022
+  pmid: '35551307'
+trait:
+  uuid: "T2D"
+  phenotype:
+    efo_id: "MONDO_0005148"
+    kp_id: "T2D"
+    name: "Type 2 diabetes"
+  biomarker_type: "phenotype"
+study:
+  uuid: "DIAMANTE"
+  description: "Diabetes Meta-Analysis of Trans-Ethnic Association Studies"
+external_link: "https://diagram-consortium.org/downloads.html"
+genome_build: "GRCh37"
+ld_panel: "ukbb_grch37_all_muscislet"

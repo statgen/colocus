@@ -15,7 +15,7 @@ class TestColocResultListView(APITestCase):
         self.url = reverse('api:coloc-all')
         response = self.client.get(self.url, format="json")
 
-        expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 analysis cross_signal n_coloc_between_traits".split()
+        expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 cross_signal n_coloc_between_traits".split()
         for key in expected_keys:
             assert key in response.data["results"][0]
 
@@ -23,55 +23,56 @@ class TestColocResultListView(APITestCase):
 
     def test_gene(self):
         self.url = reverse('api:coloc-all')
-        response = self.client.get(self.url, data={"genes": "ATP2B4"}, format="json")
+        response = self.client.get(self.url, data={"genes": "ST6GAL1"}, format="json")
 
-        expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 analysis cross_signal n_coloc_between_traits".split()
+        expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 cross_signal n_coloc_between_traits".split()
         for key in expected_keys:
             assert key in response.data["results"][0]
 
-        assert response.data["results"][0]["signal2"]["lead_variant_assoc_gene"] == "ATP2B4"
+        assert response.data["results"][0]["signal2"]["analysis"]["trait"]["gene"]["symbol"] == "ST6GAL1"
 
         assert response.status_code == HTTP_200_OK
 
     def test_signal1_trait(self):
         self.url = reverse('api:coloc-all')
 
+        region = "3:186665644-186665645"
+
         data = {
-            "signal1__trait__uuid": "AsatadjBMI_UKBB_2022_hg19",
-            "signal1__lead_variant_chrom": "1",
-            "signal1__lead_variant_pos__gte": 203016075,
-            "signal1__lead_variant_pos__lte": 204016075,
-            "coloc_h4__gte": 0.5,
-            "r2__gte": 0.3,
-            "signal1__lead_variant_neg_log_p__gte": 0,
-            "signal2__lead_variant_neg_log_p__gte": 0,
+            "signal1_analysis": "gwas_diamante_t2d_eur",
+            "signal1_region": region,
+            "min_h4": 0.5,
+            "min_r2": 0.3,
+            "signal1_min_logp": 0,
+            "signal2_min_logp": 0,
         }
 
         response = self.client.get(self.url, data=data, format="json")
 
-        expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 analysis cross_signal n_coloc_between_traits".split()
+        expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 cross_signal n_coloc_between_traits".split()
         for key in expected_keys:
             assert key in response.data["results"][0]
 
-        assert response.data["results"][0]["signal1"]["trait"]["uuid"] == "AsatadjBMI_UKBB_2022_hg19"
+        assert response.data["results"][0]["signal1"]["analysis"]["trait"]["uuid"] == "T2D"
+        assert response.data["results"][0]["signal1"]["analysis"]["uuid"] == "gwas_diamante_t2d_eur"
 
         assert response.status_code == HTTP_200_OK
 
-    def test_trait_uuid(self):
+    def test_analysis_uuid(self):
         self.url = reverse('api:coloc-all')
 
         data = {
-            "trait_uuid": "gwas_diamante_t2d_eur",
-            "coloc_h4__gte": 0.5
+            "analyses": "gwas_diamante_t2d_eur",
+            "min_h4": 0.5
         }
 
         response = self.client.get(self.url, data=data, format="json")
 
-        expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 analysis cross_signal n_coloc_between_traits".split()
+        expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 cross_signal n_coloc_between_traits".split()
         for key in expected_keys:
             assert key in response.data["results"][0]
 
-        assert response.data["results"][0]["signal1"]["trait"]["uuid"] == "gwas_diamante_t2d_eur"
+        assert response.data["results"][0]["signal1"]["analysis"]["uuid"] == "gwas_diamante_t2d_eur"
 
         assert response.status_code == HTTP_200_OK
 
@@ -80,48 +81,47 @@ class TestColocResultListView(APITestCase):
 class TestColocResultDetailView(APITestCase):
     def test_simple(self):
         self.params = {
-            'uuid': 4293814911,
+            'uuid': "F3NhnTvjunBzffcBYTR8XS",
         }
         self.url = reverse('api:coloc-detail', kwargs=self.params)
         response = self.client.get(self.url, format="json")
 
-        expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 analysis cross_signal n_coloc_between_traits".split()
+        expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 cross_signal n_coloc_between_traits".split()
         for key in expected_keys:
             assert key in response.data
 
-        analysis_keys = "uuid study_name study_date authors contact_email pmid label".split()
+        analysis_keys = "uuid analysis_type genome_build trait study publication ld external_link".split()
         for key in analysis_keys:
-            assert key in response.data["analysis"]
+            assert key in response.data["signal1"]["analysis"]
+            assert key in response.data["signal2"]["analysis"]
 
-        signal_keys = ("uuid trait lead_variant_chrom lead_variant_pos lead_variant_marker lead_variant_neg_log_p "
-                       "lead_variant_effect lead_variant_effect_marg lead_variant_nearest_gene lead_variant_assoc_gene"
-                       " lead_variant_assoc_gene_ensg lead_variant_assoc_exon cond_minp_variant").split()
+        signal_keys = ("uuid analysis lead_variant neg_log_p effect_cond effect_marg cond_minp_variant").split()
         for key in signal_keys:
             assert key in response.data["signal1"]
             assert key in response.data["signal2"]
 
-        trait_keys = "uuid label trait_type genome_build metadata ld study_name".split()
+        trait_keys = "uuid biomarker_type".split()
         for key in trait_keys:
-            assert key in response.data["signal1"]["trait"]
-            assert key in response.data["signal2"]["trait"]
+            assert key in response.data["signal1"]["analysis"]["trait"]
+            assert key in response.data["signal2"]["analysis"]["trait"]
 
-        assert response.data["uuid"] == "4293814911"
-        assert response.data["signal2"]["lead_variant_assoc_gene"] == "ATP2B4"
+        assert response.data["uuid"] == "F3NhnTvjunBzffcBYTR8XS"
+        assert response.data["signal2"]["analysis"]["trait"]["gene"]["symbol"] == "ST6GAL1"
 
         assert response.status_code == HTTP_200_OK
 
 
 @pytest.mark.django_db
-class TestLDPairsRegionView(APITestCase):
+class TestLDStatsRegionView(APITestCase):
     def test_simple(self):
         self.params = {
-            'uuid': "ukbb_grch37_all",
+            'uuid': "ukbb_grch37_all_muscislet",
         }
         self.data = {
-            'chrom': '1',
-            'start': 203466075,
-            'end': 203566075,
-            'variant': "1:203516075_T/A"
+            'chrom': '3',
+            'start': 186655645,
+            'end': 186675645,
+            'variant': "3:186665645_C/T"
         }
         self.url = reverse('api:ld-region', kwargs=self.params)
         response = self.client.get(self.url, data=self.data, format="json")
@@ -139,15 +139,15 @@ class TestLDPairsRegionView(APITestCase):
 
 
 @pytest.mark.django_db
-class TestMarginalSignalSummRegionView(APITestCase):
+class TestFinemappedSignalSummRegionView(APITestCase):
     def test_simple(self):
         self.params = {
-            'uuid': 3927258885,
+            'uuid': "LkCCTQ4hwMcu5bKcen7nGC",
         }
         self.data = {
             'chrom': '1',
-            'start': 203466075,
-            'end': 203566075,
+            'start': 117532790 - 10000,
+            'end': 117532790 + 10000,
         }
         self.url = reverse('api:signals-summstats', kwargs=self.params)
         response = self.client.get(self.url, data=self.data, format="json")
@@ -174,7 +174,7 @@ class TestInternalTraitManhattanView(APITestCase):
         self.params = {
             'uuid': "gwas_diamante_t2d_eur",
         }
-        self.url = reverse('api:trait-manhattan', kwargs=self.params)
+        self.url = reverse('api:analysis-manhattan', kwargs=self.params)
         response = self.client.get(self.url, format="json")
 
         # This view unfortunately returns a `http.FileResponse` which is streaming content...

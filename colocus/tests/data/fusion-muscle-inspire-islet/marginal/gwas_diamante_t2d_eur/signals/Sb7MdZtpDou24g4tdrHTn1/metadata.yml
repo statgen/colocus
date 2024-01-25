@@ -1,0 +1,14 @@
+cond_minp_variant: null
+effect_cond: 9.932
+effect_marg: 0.055
+finemap_program:
+  name: susieR
+  version: v0.0.0
+lead_variant:
+  alt: T
+  chrom: '3'
+  pos: 186665645
+  ref: C
+neg_log_p: 22.74
+se_cond: 0.995
+uuid: Sb7MdZtpDou24g4tdrHTn1

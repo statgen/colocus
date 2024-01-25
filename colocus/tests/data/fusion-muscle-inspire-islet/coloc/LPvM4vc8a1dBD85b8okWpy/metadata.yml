@@ -20,10 +20,10 @@ n_coloc_between_traits: 0
 qtl_gene: ENSG00000134247.9_117529423_117532980
 qtl_symb: PTGFRN
 r2: 1.0
-signal1: 2167784824
-signal2: 1402440295
+signal1: LkCCTQ4hwMcu5bKcen7nGC
+signal2: VfscWWVZcgzxZycuTzkGVf
 study1: gwas_diamante_t2d_eur
 study2: eqtl_inspire_islet
 trait1_variant: 1_117532790_C_T
 trait2_variant: 1_117532790_C_T
-uuid: 6373253703356835840
+uuid: LPvM4vc8a1dBD85b8okWpy

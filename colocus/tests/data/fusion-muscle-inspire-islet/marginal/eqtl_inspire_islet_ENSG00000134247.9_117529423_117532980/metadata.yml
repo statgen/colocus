@@ -1,17 +1,30 @@
-authors: Varshney et al.
+analysis_type: eqtl
+ancestry: EUR
 description: ''
-external_link: ''
+external_link: https://zenodo.org/records/3408356
 genome_build: GRCh37
-label: INSPIRE islet eQTL
 ld_panel: ukbb_grch37_all_muscislet
-metadata:
-  exon: ENSG00000134247.9_117529423_117532980
-  exon_end: 117532980
-  exon_start: 117529423
-  gene: PTGFRN
-  gene_ensg: ENSG00000134247.9
+publication:
+  authors: "Vi\xF1uela et al."
+  journal: Nature Communications
+  pmid: '32999275'
+  year: 2020
+study:
+  description: INSPIRE islet eQTL meta-analysis consortium
+  uuid: INSPIRE
+trait:
+  biomarker_type: exon-expression
+  exon:
+    chrom: '1'
+    end: 117532980
+    ens_id: ENSG00000134247.9_117529423_117532980
+    start: 117529423
+  gene:
+    chrom: '1'
+    end: 117532980
+    ens_id: ENSG00000134247.9
+    start: 117452679
+    symbol: PTGFRN
   tissue: islet
-pmid: ''
-study_name: INSPIRE
-trait_type: eQTL
+  uuid: ENSG00000134247.9_117529423_117532980
 uuid: eqtl_inspire_islet_ENSG00000134247.9_117529423_117532980

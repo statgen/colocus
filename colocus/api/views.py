@@ -3,13 +3,13 @@ import typing as ty
 from typing import Union
 
 from django.conf import settings
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import exceptions as drf_exceptions
 from rest_framework import generics
 from zorp.readers import TabixReader
 from zorp.sniffers import guess_gwas_standard
 
 from colocus.core import models
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 
 from . import filters, parsers, serializers, util
 
@@ -63,14 +63,16 @@ order_options = sorted([
     if field and (not field[0].startswith("-")) and (not field[0] == '')
 ])
 
+
 @extend_schema(
     parameters=[
         OpenApiParameter(
             name='ordering',
             description=(
-                'Use the following options for ordering/sorting results: ' +
-                ''.join(order_options) + '\n\n' +
-                'H4 is posterior probability of colocalization (i.e. the two signals share the same causal variant).\n'
+                'Use the following options for ordering/sorting results: '
+                + ''.join(order_options) + '\n\n'
+                + 'H4 is posterior probability of colocalization '
+                  '(i.e. the two signals share the same causal variant).\n'
             ),
             required=False,
             type=str

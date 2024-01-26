@@ -1,12 +1,10 @@
+from collections import OrderedDict
+
 from rest_framework import serializers as drf_serializers
-from rest_framework.reverse import reverse
 
 from colocus.core import models
 
 from .util import serialize_neg_log_pvalue
-
-from collections import OrderedDict
-from drf_spectacular.utils import extend_schema_serializer, OpenApiExample, OpenApiParameter
 
 
 class ReducedPrecisionFloatField(drf_serializers.FloatField):

@@ -4,11 +4,17 @@ Filters
 https://django-filter.readthedocs.io/en/stable/ref/filterset.html#fields
 """
 
+import re
+
 from django.db.models import Q
-from django_filters.rest_framework import CharFilter, FilterSet, NumberFilter, OrderingFilter
+from django_filters.rest_framework import (
+    CharFilter,
+    FilterSet,
+    NumberFilter,
+    OrderingFilter,
+)
 
 from colocus.core import models
-import re
 
 
 def parse_region(region):
@@ -126,9 +132,9 @@ class ColocResultFilter(FilterSet):
 
             if chrom_field and pos_field:
                 return queryset.filter(
-                    Q(**{f'{chrom_field}': chrom}) &
-                    Q(**{f'{pos_field}__gte': start_pos}) &
-                    Q(**{f'{pos_field}__lte': end_pos})
+                    Q(**{f'{chrom_field}': chrom})
+                    & Q(**{f'{pos_field}__gte': start_pos})
+                    & Q(**{f'{pos_field}__lte': end_pos})
                 )
 
         return queryset

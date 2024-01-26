@@ -24,19 +24,19 @@ sys.path.append(str(Path(__file__).parent.parent.resolve()))
 django.setup()
 
 from colocus.core.models import (  # noqa E402
-    DataSubmission,
     ColocResult,
-    LDStats,
+    DataSubmission,
+    Exon,
     FineMappedSignal,
     FineMappingProgram,
-    MarginalAnalysis,
-    Publication,
-    Trait,
-    Study,
     Gene,
-    Exon,
+    LDStats,
+    LeadVariant,
+    MarginalAnalysis,
     Phenotype,
-    LeadVariant
+    Publication,
+    Study,
+    Trait,
 )
 
 
@@ -157,7 +157,7 @@ def load_one_signal(
         metadata = yaml.safe_load(f)
 
     if "lead_variant" not in metadata:
-        raise Exception(f'Signal metadata must specify `lead_variant` block')
+        raise Exception('Signal metadata must specify `lead_variant` block')
 
     # Get the lead variant for this fine-mapped signal
     # We want a brand new `LeadVariant` each time; it is a utility class to keep track of the variant & its statistics

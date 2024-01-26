@@ -2,13 +2,11 @@
 Core models describing key data entities
 """
 from django.db import models
-from django.core.validators import RegexValidator
 
 from colocus.utils.storages import OverwriteStorage
 
 from ..api.util import sign
 from . import constants, file_util
-
 
 # from model_utils.models import SoftDeletableModel, TimeStampedModel
 
@@ -383,7 +381,8 @@ class FineMappedSignal(models.Model):
         storage=OverwriteStorage())
 
     # Lead variant
-    lead_variant = models.ForeignKey(LeadVariant, on_delete=models.CASCADE,
+    lead_variant = models.ForeignKey(
+        LeadVariant, on_delete=models.CASCADE,
         help_text="Lead variant of the fine-mapped signal.")
 
     neg_log_p = models.FloatField(help_text="Conditional or fine-mapped -log10p value.")
@@ -422,7 +421,7 @@ class ColocResult(models.Model):
 
     signal1 = models.ForeignKey(
         FineMappedSignal,
-        related_name="+", # do not create reverse relation, not needed
+        related_name="+",  # do not create reverse relation, not needed
         on_delete=models.CASCADE,
         null=False,
         help_text='The first signal (from trait 1)',

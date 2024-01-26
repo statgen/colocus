@@ -2,13 +2,16 @@
 Views that power internal functionality: non-public API endpoints with additional information required for some pages
 """
 import os
+
+from django import http
+
+from colocus.core import constants, models
+
 # import re
 # import json
 
-from django import http
 # from django.conf import settings
 
-from colocus.core import constants, models
 
 # from django.db.models import CharField, F, Q, Value
 
@@ -48,8 +51,8 @@ def search_page_metadata(request, *args, **kwargs):
     ))
 
     all_genes = models.Gene.objects.all()
-    genes = ([g.ens_id for g in all_genes] +
-             [g.symbol for g in all_genes])
+    genes = ([g.ens_id for g in all_genes]
+             + [g.symbol for g in all_genes])
 
     result = {
         'count_pairs': count_signal_pairs,

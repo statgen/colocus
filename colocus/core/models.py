@@ -2,6 +2,7 @@
 Core models describing key data entities
 """
 from django.db import models
+from django.core.exceptions import ValidationError
 
 from colocus.utils.storages import OverwriteStorage
 
@@ -107,11 +108,24 @@ class Study(models.Model):
 
 
 class Phenotype(models.Model):
-    efo_id = models.TextField(
+    uuid = models.TextField(
         blank=False,
         null=False,
         unique=True,
+        db_index=True,
+        help_text='Universally unique identifier')
+
+    efo_id = models.TextField(
+        blank=False,
+        null=False,
+        unique=False,
         help_text='External ID in EFO for the trait, e.g. "EFO_0001360" or "MONDO_0005148"')
+
+    kp_id = models.TextField(
+        blank=False,
+        null=False,
+        unique=False,
+        help_text='External ID in AMP knowledge portal for the trait, e.g. "T2DadjBMI"')
 
     name = models.TextField(
         help_text='Full name of the trait, e.g. "Body Mass Index" or "Fasting glucose adjusted for BMI"',
@@ -197,25 +211,35 @@ class Publication(models.Model):
     """
 
     pmid = models.PositiveIntegerField(
-        blank=False,
-        null=False,
+        blank=True,
+        null=True,
         unique=True,
         db_index=True,
         help_text='PubMed ID for the publication')
+
+    doi = models.TextField(
+        blank=True,
+        null=True,
+        unique=True,
+        db_index=True,
+        help_text='Digital Object Identifier for the publication')
 
     authors = models.TextField(
         null=True,
         help_text='Free-text author list, eg "ACRONYM Consortium" or "Mendel et al" (used for display only)')
 
     title = models.TextField(
+        blank=True,
         null=True,
         help_text='Title of the publication')
 
     year = models.PositiveIntegerField(
+        blank=True,
         null=True,
         help_text='Year of publication')
 
     journal = models.TextField(
+        blank=True,
         null=True,
         help_text='Journal of publication')
 

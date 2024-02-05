@@ -119,12 +119,12 @@ class LeadVariantSerializer(drf_serializers.ModelSerializer):
 
 class PublicationSerializer(drf_serializers.ModelSerializer):
     """
-    A publication is a scientific paper that describes one or more analyses. Publications are represented by PubMed
-    IDs (PMIDs), which are stable identifiers from the PubMed database.
+    A publication is a scientific paper that describes one or more analyses. Publications have either a PubMed
+    ID (stable identifiers from the PubMed database), or a DOI (Digital Object Identifier), or both.
     """
     class Meta:
         model = models.Publication
-        fields = ('pmid', 'authors')
+        fields = ('pmid', 'doi', 'authors')
 
 
 class MarginalAnalysisSerializer(drf_serializers.ModelSerializer):

@@ -235,7 +235,7 @@ def load_one_marginal(data_submission: DataSubmission, analysis_dir: pathlib.Pat
             pub, created = Publication.objects.get_or_create(**v)
             marginal.publication = pub
         elif k == 'study':
-            study, created = Study.objects.get_or_create(**v)
+            study = get_by_id_or_create(Study, 'uuid', v['uuid'], v)
             marginal.study = study
         elif k == 'trait':
             gene = v.pop('gene', None)
@@ -258,7 +258,9 @@ def load_one_marginal(data_submission: DataSubmission, analysis_dir: pathlib.Pat
 
             if pheno:
                 # pheno, created = Phenotype.objects.get_or_create(**pheno)
-                pheno = get_by_id_or_create(Phenotype, 'efo_id', pheno['efo_id'], pheno)
+                if "uuid" not in pheno:
+                    pheno["uuid"] = v["uuid"]
+                pheno = get_by_id_or_create(Phenotype, 'uuid', pheno['uuid'], pheno)
                 trait.phenotype = pheno
 
             trait.save()

@@ -161,7 +161,7 @@ class Exon(models.Model):
 class Trait(models.Model):
     """
     A trait is a phenotype or other biological property that has been studied in one or more analyses. This could be a
-    phenotype like type 2 diabetes, or a gene expression trait like "expression of gene X in adipose tissue".
+    phenotype like type 2 diabetes, or a gene expression trait like "expression of gene X".
     """
 
     uuid = models.TextField(
@@ -175,12 +175,6 @@ class Trait(models.Model):
         help_text="Type of biomarker, e.g. phenotype or gene-expression exon-expression or methylation or atac-seq",
         null=False,
         blank=False,
-        unique=False)
-
-    tissue = models.TextField(
-        help_text='Tissue or cell type in which the trait was analyzed, e.g. "adipose" or "liver"',
-        null=True,
-        blank=True,
         unique=False)
 
     gene = models.ForeignKey(
@@ -277,6 +271,12 @@ class MarginalAnalysis(models.Model):
         on_delete=models.CASCADE,
         null=False,
         help_text='The trait analyzed in this analysis')
+
+    tissue = models.TextField(
+        help_text='Tissue or cell type in which this analysis\' trait was analyzed, e.g. "adipose" or "liver"',
+        null=True,
+        blank=True,
+        unique=False)
 
     study = models.ForeignKey(
         Study,

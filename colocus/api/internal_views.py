@@ -33,7 +33,7 @@ def search_page_metadata(request, *args, **kwargs):
 
     # Get list of available tissues
     tissues = list(set(
-        m.trait.tissue
+        m.tissue
         for m in
         qs_analysis.filter(analysis_type=constants.EQTL)
     ))

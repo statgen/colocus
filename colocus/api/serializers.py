@@ -90,7 +90,7 @@ class PhenotypeSerializer(drf_serializers.ModelSerializer):
 class TraitSerializer(NonNullModelSerializer):
     """
     A trait is a phenotype or other biological property that has been studied in one or more analyses. This could be a
-    phenotype like type 2 diabetes, or a gene expression trait like "expression of gene X in adipose tissue".
+    phenotype like type 2 diabetes, or a gene expression trait like "expression of gene X".
     """
 
     gene = GeneSerializer(read_only=True)
@@ -99,7 +99,7 @@ class TraitSerializer(NonNullModelSerializer):
 
     class Meta:
         model = models.Trait
-        fields = ('uuid', 'biomarker_type', 'tissue', 'gene', 'exon', 'phenotype')
+        fields = ('uuid', 'biomarker_type', 'gene', 'exon', 'phenotype')
 
 
 class StudySerializer(drf_serializers.ModelSerializer):
@@ -141,7 +141,7 @@ class MarginalAnalysisSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.MarginalAnalysis
         fields = (
-            'uuid', 'analysis_type', 'genome_build', 'trait', 'description', 'ancestry',
+            'uuid', 'analysis_type', 'genome_build', 'trait', 'tissue', 'description', 'ancestry',
             'study', 'publication', 'ld', 'external_link'
         )
 
@@ -158,7 +158,7 @@ class MarginalAnalysisSerializerBrief(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.MarginalAnalysis
-        fields = ('uuid', 'analysis_type', 'genome_build', 'trait', 'description', 'ancestry', 'study', 'ld')
+        fields = ('uuid', 'analysis_type', 'genome_build', 'trait', 'tissue', 'description', 'ancestry', 'study', 'ld')
 
 
 class FinemappedSignalSerializer(drf_serializers.ModelSerializer):

@@ -71,8 +71,8 @@ class ColocResultFilter(FilterSet):
         label="Provide a list of comma-separated tissues to filter by.")
 
     def tissue_or(self, queryset, name, value):
-        query = self.create_query('signal1__analysis__trait__tissue', value)
-        query |= self.create_query('signal2__analysis__trait__tissue', value)
+        query = self.create_query('signal1__analysis__tissue', value)
+        query |= self.create_query('signal2__analysis__tissue', value)
         return queryset.filter(query)
 
     analyses = CharFilter(
@@ -182,11 +182,11 @@ class ColocResultFilter(FilterSet):
             ('signal2__lead_variant__pos', 'signal2_pos'),
             ('signal1__analysis__trait__gene__ens_id', 'signal1_gene_ens_id'),
             ('signal1__analysis__trait__gene__symbol', 'signal1_gene_symbol'),
-            ('signal1__analysis__trait__tissue', 'signal1_tissue'),
+            ('signal1__analysis__tissue', 'signal1_tissue'),
             ('signal1__analysis__trait__exon__ens_id', 'signal1_exon_ens_id'),
             ('signal2__analysis__trait__gene__ens_id', 'signal2_gene_ens_id'),
             ('signal2__analysis__trait__gene__symbol', 'signal2_gene_symbol'),
-            ('signal2__analysis__trait__tissue', 'signal2_tissue'),
+            ('signal2__analysis__tissue', 'signal2_tissue'),
             ('signal2__analysis__trait__exon__ens_id', 'signal2_exon_ens_id'),
             ('signal1__analysis__study__uuid', 'signal1_study'),
             ('signal2__analysis__study__uuid', 'signal2_study')

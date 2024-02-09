@@ -19,4 +19,4 @@ study:
   description: "Diabetes Meta-Analysis of Trans-Ethnic Association Studies"
 external_link: "https://diagram-consortium.org/downloads.html"
 genome_build: "GRCh37"
-ld_panel: "ukbb_grch37_all_muscislet"
+ld_panel: "UKBB_GRCh37_ALL"

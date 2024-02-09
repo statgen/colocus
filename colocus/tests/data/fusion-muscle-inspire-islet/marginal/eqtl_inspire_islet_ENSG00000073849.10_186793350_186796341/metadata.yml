@@ -3,7 +3,7 @@ ancestry: EUR
 description: ''
 external_link: https://zenodo.org/records/3408356
 genome_build: GRCh37
-ld_panel: ukbb_grch37_all_muscislet
+ld_panel: UKBB_GRCh37_ALL
 publication:
   authors: "Vi\xF1uela et al."
   journal: Nature Communications

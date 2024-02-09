@@ -115,7 +115,7 @@ class TestColocResultDetailView(APITestCase):
 class TestLDStatsRegionView(APITestCase):
     def test_simple(self):
         self.params = {
-            'uuid': "ukbb_grch37_all_muscislet",
+            'uuid': "UKBB_GRCh37_ALL",
         }
         self.data = {
             'chrom': '3',

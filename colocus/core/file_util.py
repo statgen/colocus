@@ -32,8 +32,10 @@ def get_signals_cond_tbi(instance, filename):
 
 
 def get_ld_filename(instance, filename):
-    return os.path.join('ld', instance.uuid, 'ld.gz')
+    ld_dir = f"{instance.panel}_{instance.genome_build}_{instance.population}"
+    return os.path.join('ld', ld_dir, 'ld.gz')
 
 
 def get_ld_filename_tbi(instance, filename):
-    return os.path.join('ld', instance.uuid, 'ld.gz.tbi')
+    ld_dir = f"{instance.panel}_{instance.genome_build}_{instance.population}"
+    return os.path.join('ld', ld_dir, 'ld.gz.tbi')

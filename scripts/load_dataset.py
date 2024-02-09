@@ -14,14 +14,24 @@ import sys
 import typing as ty
 from datetime import datetime
 from pathlib import Path
+import logging
 
 import django
 import yaml
+import heapq
+import gzip
+import time
+from subprocess import Popen, PIPE, check_output
+from contextlib import ExitStack
+from django.conf import settings
 
 # Must configure standalone django usage before importing models
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
 sys.path.append(str(Path(__file__).parent.parent.resolve()))
 django.setup()
+
+# Setup logger
+logger = logging.getLogger(__name__)
 
 from colocus.core.models import (  # noqa E402
     ColocResult,
@@ -78,6 +88,47 @@ def load_submission(package_root: pathlib.Path) -> DataSubmission:
     return ds
 
 
+def touch_if_exists(path):
+    if os.path.exists(path):
+        os.utime(path, None)
+
+
+def tabix(fpath):
+    tbi = fpath + ".tbi"
+
+    check_output(f"tabix -f -c '#' -s 4 -b 5 -e 5 {fpath}", shell=True)
+
+    while not (os.path.exists(tbi) and os.path.getsize(tbi) > 0):
+        time.sleep(0.1)
+
+    touch_if_exists(tbi)
+
+
+def merge_ld_files(out_path, *paths):
+    bgzip_proc = Popen(f"bgzip -c > {out_path}", stdin=PIPE, shell=True, text=True)
+
+    def line_iter(file):
+        for line in file:
+            ls = line.split('\t')
+            # TODO: this seems strange to me that LD is sorted on columns 4,5 (1-index) first, then 1,2.
+            # Need to revisit pipelines generating the LD data and see why that is
+            sort_key = (ls[3], int(ls[4]), ls[0], int(ls[1]))
+            yield sort_key, line
+
+    with ExitStack() as stack:
+        handles = []
+
+        for path in paths:
+            handles.append(stack.enter_context(gzip.open(path, 'rt')))
+
+        for _, line in heapq.merge(*[line_iter(f) for f in handles], key=lambda x: x[0]):
+            bgzip_proc.stdin.write(line)
+            bgzip_proc.stdin.flush()
+
+    bgzip_proc.stdin.close()
+    stdout, stderr = bgzip_proc.communicate()
+
+
 def load_ld(analysis, ld_dir: pathlib.Path) -> LDStats:
     meta_path = ld_dir / "metadata.yml"
     if not meta_path.exists():
@@ -85,6 +136,60 @@ def load_ld(analysis, ld_dir: pathlib.Path) -> LDStats:
 
     with open(meta_path, 'r') as f:
         metadata = yaml.safe_load(f)
+
+    # Check UUID format
+    correct_uuid = f"{metadata['panel']}_{metadata['genome_build']}_{metadata['population']}"
+    if metadata['uuid'] != correct_uuid:
+        raise Exception(f"UUID {metadata['uuid']} does not match expected format {correct_uuid}")
+
+    # Check if there are any other LD files that are the same panel / build / population.
+    # If so, we need to merge them into a single file.
+    matching = LDStats.objects.filter(
+        panel=metadata['panel'],
+        genome_build=metadata['genome_build'],
+        population=metadata['population']
+    )
+
+    found_ld = matching.exists()
+
+    if found_ld and len(matching) > 1:
+        raise Exception(f"Multiple LD files found for panel {metadata['panel']}, build {metadata['genome_build']}, "
+                        f"population {metadata['population']}. There should only be a single entry in the database.")
+
+    db_ld_path = None
+    if found_ld:
+        # The first result is the currently existing LD file in the database
+        ld = matching[0]
+        db_ld_path = ld.ld_data.name
+        db_ld_full_path = os.path.join(settings.MEDIA_ROOT, db_ld_path)
+
+        # The LD data we are currently processing
+        cur_ld_path = ld_dir / 'ld.gz'
+
+        # We are going to store the merged LD file in the same location as the existing LD file in the database
+        final_ld_path = db_ld_full_path
+
+        # We need a temporary file to store the merged LD file, can't overwrite the existing file at the same time we
+        # read from it
+        temp_ld_path = db_ld_full_path + ".tmp"
+
+        # Perform the merge, including bgzip and tabixing the final LD file
+        logger.info(f"Previously seen LD found for {metadata['panel']} {metadata['genome_build']} {metadata['population']}")
+        logger.info(f"Merging {db_ld_full_path} & {cur_ld_path} → {final_ld_path} using temporary file {temp_ld_path}")
+        merge_ld_files(
+            temp_ld_path,
+            db_ld_full_path,
+            cur_ld_path
+        )
+
+        # Move the temporary file to the final location and overwrite existing file
+        os.replace(temp_ld_path, final_ld_path)
+
+        # Tabix the final file in-place
+        tabix(final_ld_path)
+
+        logger.info(f"Final LD file saved to {final_ld_path} for "
+                    f"{metadata['panel']} {metadata['genome_build']} {metadata['population']}")
 
     try:
         # Don't use get_or_create because additional non-null fields exist
@@ -96,10 +201,18 @@ def load_ld(analysis, ld_dir: pathlib.Path) -> LDStats:
 
     ld.data_submission = analysis
 
-    _save_file_to_file(ld.ld_data, ld_dir / 'ld.gz')
-    _save_file_to_file(ld.ld_data_tbi, ld_dir / 'ld.gz.tbi')
+    if not found_ld:
+        # If we didn't find existing LD, then we need to go through the normal process of saving
+        # the LD file, and storing the LD metadata/path in the database
+        logger.info(f"Saving LD file for {metadata['panel']} {metadata['genome_build']} {metadata['population']}")
+        _save_file_to_file(ld.ld_data, ld_dir / 'ld.gz')
+        _save_file_to_file(ld.ld_data_tbi, ld_dir / 'ld.gz.tbi')
+    else:
+        ld.ld_data = db_ld_path
+        ld.ld_data_tbi = db_ld_path + ".tbi"
 
     ld.save()
+
     return ld
 
 

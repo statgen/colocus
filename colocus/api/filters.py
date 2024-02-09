@@ -66,6 +66,18 @@ class ColocResultFilter(FilterSet):
         query |= self.create_query('signal2__analysis__trait__uuid', value)
         return queryset.filter(query)
 
+    phenotypes = CharFilter(
+        method='phenotype_or',
+        label="Provide a list of comma-separated phenotypes to filter by.")
+
+    def phenotype_or(self, queryset, name, value):
+        """
+        Filter on phenotypes.
+        """
+        query = self.create_query('signal1__analysis__trait__phenotype__name', value)
+        query |= self.create_query('signal2__analysis__trait__phenotype__name', value)
+        return queryset.filter(query)
+
     tissues = CharFilter(
         method='tissue_or',
         label="Provide a list of comma-separated tissues to filter by.")
@@ -199,6 +211,7 @@ class ColocResultFilter(FilterSet):
             'uuid',
             'genes',
             'traits',
+            'phenotypes',
             'tissues',
             'analyses',
             'signals',

@@ -8,21 +8,21 @@ This checks:
 3.
 """
 import argparse
+import gzip
+import heapq
+import logging
 import os
 import pathlib
 import sys
+import time
 import typing as ty
+from contextlib import ExitStack
 from datetime import datetime
 from pathlib import Path
-import logging
+from subprocess import PIPE, Popen, check_output
 
 import django
 import yaml
-import heapq
-import gzip
-import time
-from subprocess import Popen, PIPE, check_output
-from contextlib import ExitStack
 from django.conf import settings
 
 # Must configure standalone django usage before importing models
@@ -174,7 +174,8 @@ def load_ld(analysis, ld_dir: pathlib.Path) -> LDStats:
         temp_ld_path = db_ld_full_path + ".tmp"
 
         # Perform the merge, including bgzip and tabixing the final LD file
-        logger.info(f"Previously seen LD found for {metadata['panel']} {metadata['genome_build']} {metadata['population']}")
+        logger.info(f"Previously seen LD found for "
+                    f"{metadata['panel']} {metadata['genome_build']} {metadata['population']}")
         logger.info(f"Merging {db_ld_full_path} & {cur_ld_path} → {final_ld_path} using temporary file {temp_ld_path}")
         merge_ld_files(
             temp_ld_path,

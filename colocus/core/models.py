@@ -2,7 +2,6 @@
 Core models describing key data entities
 """
 from django.db import models
-from django.core.exceptions import ValidationError
 
 from colocus.utils.storages import OverwriteStorage
 

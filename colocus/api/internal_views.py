@@ -51,8 +51,8 @@ def search_page_metadata(request, *args, **kwargs):
     ))
 
     all_genes = models.Gene.objects.all()
-    genes = ([g.ens_id for g in all_genes]
-             + [g.symbol for g in all_genes])
+    genes = list(set([g.ens_id for g in all_genes]
+             + [g.symbol for g in all_genes]))
 
     result = {
         'count_pairs': count_signal_pairs,

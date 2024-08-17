@@ -16,6 +16,8 @@ import pathlib
 import sys
 import time
 import typing as ty
+import polars as pl
+import numpy as np
 from contextlib import ExitStack
 from datetime import datetime
 from pathlib import Path
@@ -129,7 +131,7 @@ def merge_ld_files(out_path, *paths):
     stdout, stderr = bgzip_proc.communicate()
 
 
-def load_ld(analysis, ld_dir: pathlib.Path) -> LDStats:
+def load_ld(data_sub, ld_dir: pathlib.Path) -> LDStats:
     meta_path = ld_dir / "metadata.yml"
     if not meta_path.exists():
         raise Exception('No analysis package found')
@@ -200,7 +202,7 @@ def load_ld(analysis, ld_dir: pathlib.Path) -> LDStats:
     except LDStats.DoesNotExist:
         ld = LDStats(**metadata)
 
-    ld.data_submission = analysis
+    ld.data_submission = data_sub
 
     if not found_ld:
         # If we didn't find existing LD, then we need to go through the normal process of saving
@@ -263,12 +265,11 @@ def load_one_signal(
     ```
     """
 
-    meta_path = signal_dir / 'metadata.yml'
+    meta_path = signal_dir / 'metadata.parquet'
     if not meta_path.exists():
         raise Exception(f'Signal must specify metadata as {meta_path}')
 
-    with open(meta_path, 'r') as f:
-        metadata = yaml.safe_load(f)
+    metadata = pl.read_parquet(meta_path).to_dicts().pop()
 
     if "lead_variant" not in metadata:
         raise Exception('Signal metadata must specify `lead_variant` block')
@@ -308,7 +309,7 @@ def load_one_marginal(data_submission: DataSubmission, analysis_dir: pathlib.Pat
     The `metadata.yml` file will look something like:
 
     ```
-    uuid: "eqtl_adipoexpress_adipose_ENSG0101401401"
+    uuid: "eqtl_adipoexpress_ENSG0101401401"
     analysis_type: "eqtl"
     description: 'AdipoExpress Adipose eQTL analysis for ENSG0104141'
     publication:
@@ -330,12 +331,11 @@ def load_one_marginal(data_submission: DataSubmission, analysis_dir: pathlib.Pat
     ```
     """
 
-    meta_path = analysis_dir / 'metadata.yml'
+    meta_path = analysis_dir / 'metadata.parquet'
     if not meta_path.exists():
         raise Exception(f'Marginal trait must specify metadata as {meta_path}')
 
-    with open(meta_path, 'r') as f:
-        metadata = yaml.safe_load(f)
+    metadata = pl.read_parquet(meta_path).to_dicts().pop()
 
     try:
         marginal = MarginalAnalysis.objects.get(uuid=metadata['uuid'])
@@ -409,34 +409,39 @@ def load_one_marginal(data_submission: DataSubmission, analysis_dir: pathlib.Pat
 
     return marginal
 
+def ndarray_to_list(matrix):
+    matrix = np.where(np.isnan(matrix), None, matrix)
+    return [x.tolist() for x in matrix]
 
-def load_one_colocalization(data_submission: DataSubmission, signal_dir: pathlib.Path) -> ColocResult:
-    """Load colocalization results (H3 + H4 for one signal pair)"""
-    meta_path = signal_dir / 'metadata.yml'
-    if not meta_path.exists():
-        raise Exception(f'Marginal trait must specify metadata as {meta_path}')
+def load_colocalizations(data_submission: DataSubmission, coloc_file: pathlib.Path) -> ColocResult:
+    """Load colocalization results"""
 
-    with open(meta_path, 'r') as f:
-        metadata = yaml.safe_load(f)
+    colocs = pl.read_parquet(coloc_file)
 
-    try:
-        coloc = ColocResult.objects.get(uuid=metadata['uuid'])
-    except ColocResult.DoesNotExist:
-        coloc = ColocResult()
+    if len(colocs) == 0:
+        raise Exception(f"No colocalization results found in file {coloc_file}")
 
-    for k, v in metadata.items():
-        if k not in {"data_submission", "signal1", "signal2"}:
-            setattr(coloc, k, v)
+    for meta_dict in colocs.iter_rows(named=True):
+        try:
+            coloc = ColocResult.objects.get(uuid=meta_dict['uuid'])
+        except ColocResult.DoesNotExist:
+            coloc = ColocResult()
 
-    coloc.data_submission = data_submission
+        # # Convert numpy arrays to lists
+        # for o, e in meta_dict["cross_signal"].items():
+        #     meta_dict["cross_signal"][o] = ndarray_to_list(e)
 
-    # An external validation step should have already verified that signal1 and signal2 exist
-    coloc.signal1 = FineMappedSignal.objects.get(uuid=metadata['signal1'])
-    coloc.signal2 = FineMappedSignal.objects.get(uuid=metadata['signal2'])
+        for k, v in meta_dict.items():
+            if k not in {"data_submission", "signal1", "signal2"}:
+                setattr(coloc, k, v)
 
-    coloc.save()
-    return coloc
+        coloc.data_submission = data_submission
 
+        # An external validation step should have already verified that signal1 and signal2 exist
+        coloc.signal1 = FineMappedSignal.objects.get(uuid=meta_dict['signal1'])
+        coloc.signal2 = FineMappedSignal.objects.get(uuid=meta_dict['signal2'])
+
+        coloc.save()
 
 def main(package_root: str):
     path = pathlib.Path(package_root).resolve()
@@ -444,39 +449,36 @@ def main(package_root: str):
         raise Exception(f'Package directory does not exist: {path}')
 
     # Load parent analysis
-    analysis = load_submission(path)
+    data_sub = load_submission(path)
 
     # Load possible LD panels
     ld_dir = path / "ld"
     for panel in ld_dir.iterdir():
         if not panel.is_dir():
             continue
-        load_ld(analysis, panel)
+        load_ld(data_sub, panel)
 
     # Load each marginal trait + all signals contained in child folders
-    traits_dir = path / "marginal"
-    if not traits_dir.exists():
+    marg_dir = path / "marginal"
+    if not marg_dir.exists():
         raise Exception("No marginal trait information provided")
 
-    for trait in traits_dir.iterdir():
-        if not trait.is_dir():
+    for analysis_dir in marg_dir.glob("*/*"):
+        if not analysis_dir.is_dir():
             continue
-        load_one_marginal(analysis, trait)
+        logger.info(f"Loading marginal analyses from {analysis_dir}")
+        load_one_marginal(data_sub, analysis_dir)
 
-    coloc_dir = path / "coloc"
-    if not coloc_dir.exists():
-        raise Exception(f'Must provide colocalized signal information under {coloc_dir}')
+    coloc_file = path / "coloc" / "coloc.parquet"
+    if not coloc_file.exists():
+        raise Exception(f'Must provide colocalization results as {coloc_file}')
 
-    for coloc in coloc_dir.iterdir():
-        # This directory contains a list of subfolders, one colocalized signal pair
-        #   (and possibly supporting results) per folder
-        if not coloc.is_dir():
-            continue
-        load_one_colocalization(analysis, coloc)
+    logger.info("Loading colocalizations")
+    load_colocalizations(data_sub, coloc_file)
 
 
 if __name__ == '__main__':
     args = parse_args()
     for source_dir in args.input:
-        print(f"Loading dataset from: {source_dir}")
+        logger.info(f"Loading dataset from: {source_dir}")
         main(source_dir)

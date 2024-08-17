@@ -362,7 +362,7 @@ class FineMappingProgram(models.Model):
 
     version = models.TextField(
         blank=False,
-        null=False,
+        null=True,
         help_text='Version of the fine-mapping program, e.g. "v1.0.0"')
 
 

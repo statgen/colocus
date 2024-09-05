@@ -116,13 +116,13 @@ class Phenotype(models.Model):
 
     efo_id = models.TextField(
         blank=False,
-        null=False,
+        null=True,
         unique=False,
         help_text='External ID in EFO for the trait, e.g. "EFO_0001360" or "MONDO_0005148"')
 
     kp_id = models.TextField(
         blank=False,
-        null=False,
+        null=True,
         unique=False,
         help_text='External ID in AMP knowledge portal for the trait, e.g. "T2DadjBMI"')
 

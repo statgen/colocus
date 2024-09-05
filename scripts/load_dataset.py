@@ -343,7 +343,7 @@ def load_one_marginal(data_submission: DataSubmission, analysis_dir: pathlib.Pat
         marginal = MarginalAnalysis()
 
     for k, v in metadata.items():
-        if k == 'ld_panel':
+        if k == 'ld':
             marginal.ld = LDStats.objects.get(uuid=v)
         elif k == 'publication':
             pub, created = Publication.objects.get_or_create(**v)

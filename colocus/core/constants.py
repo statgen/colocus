@@ -3,8 +3,8 @@ GENOME_BUILDS = (
     ('GRCh38', 'GRCh38'),
 )
 
-GWAS = 'gwas'
-EQTL = 'eqtl'
+GWAS = 'GWAS'
+EQTL = 'eQTL'
 
 ANALYSIS_TYPES = (
     (GWAS, 'GWAS'),

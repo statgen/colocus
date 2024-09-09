@@ -23,23 +23,23 @@ class TestColocResultListView(APITestCase):
 
     def test_gene(self):
         self.url = reverse('api:coloc-all')
-        response = self.client.get(self.url, data={"genes": "ST6GAL1"}, format="json")
+        response = self.client.get(self.url, data={"genes": "SLC39A8"}, format="json")
 
         expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 cross_signal n_coloc_between_traits".split()
         for key in expected_keys:
             assert key in response.data["results"][0]
 
-        assert response.data["results"][0]["signal2"]["analysis"]["trait"]["gene"]["symbol"] == "ST6GAL1"
+        assert response.data["results"][0]["signal2"]["analysis"]["trait"]["gene"]["symbol"] == "SLC39A8"
 
         assert response.status_code == HTTP_200_OK
 
     def test_signal1_trait(self):
         self.url = reverse('api:coloc-all')
 
-        region = "3:186665644-186665645"
+        region = "4:103178709-103198709"
 
         data = {
-            "signal1_analysis": "gwas_diamante_t2d_eur",
+            "signal1_analysis": "gwas_BMI_GIANT_2018_hg19_KAB_BMI",
             "signal1_region": region,
             "min_h4": 0.5,
             "min_r2": 0.3,
@@ -53,8 +53,8 @@ class TestColocResultListView(APITestCase):
         for key in expected_keys:
             assert key in response.data["results"][0]
 
-        assert response.data["results"][0]["signal1"]["analysis"]["trait"]["uuid"] == "T2D"
-        assert response.data["results"][0]["signal1"]["analysis"]["uuid"] == "gwas_diamante_t2d_eur"
+        assert response.data["results"][0]["signal1"]["analysis"]["trait"]["uuid"] == "BMI"
+        assert response.data["results"][0]["signal1"]["analysis"]["uuid"] == "gwas_BMI_GIANT_2018_hg19_KAB_BMI"
 
         assert response.status_code == HTTP_200_OK
 
@@ -62,7 +62,7 @@ class TestColocResultListView(APITestCase):
         self.url = reverse('api:coloc-all')
 
         data = {
-            "analyses": "gwas_diamante_t2d_eur",
+            "analyses": "gwas_BMI_GIANT_2018_hg19_KAB_BMI",
             "min_h4": 0.5
         }
 
@@ -72,7 +72,7 @@ class TestColocResultListView(APITestCase):
         for key in expected_keys:
             assert key in response.data["results"][0]
 
-        assert response.data["results"][0]["signal1"]["analysis"]["uuid"] == "gwas_diamante_t2d_eur"
+        assert response.data["results"][0]["signal1"]["analysis"]["uuid"] == "gwas_BMI_GIANT_2018_hg19_KAB_BMI"
 
         assert response.status_code == HTTP_200_OK
 
@@ -81,7 +81,7 @@ class TestColocResultListView(APITestCase):
 class TestColocResultDetailView(APITestCase):
     def test_simple(self):
         self.params = {
-            'uuid': "F3NhnTvjunBzffcBYTR8XS",
+            'uuid': "6MxwbaHqiX4cffxGy6ux3H",
         }
         self.url = reverse('api:coloc-detail', kwargs=self.params)
         response = self.client.get(self.url, format="json")
@@ -105,8 +105,8 @@ class TestColocResultDetailView(APITestCase):
             assert key in response.data["signal1"]["analysis"]["trait"]
             assert key in response.data["signal2"]["analysis"]["trait"]
 
-        assert response.data["uuid"] == "F3NhnTvjunBzffcBYTR8XS"
-        assert response.data["signal2"]["analysis"]["trait"]["gene"]["symbol"] == "ST6GAL1"
+        assert response.data["uuid"] == "6MxwbaHqiX4cffxGy6ux3H"
+        assert response.data["signal2"]["analysis"]["trait"]["gene"]["symbol"] == "SLC39A8"
 
         assert response.status_code == HTTP_200_OK
 
@@ -118,10 +118,10 @@ class TestLDStatsRegionView(APITestCase):
             'uuid': "UKBB_GRCh37_ALL",
         }
         self.data = {
-            'chrom': '3',
-            'start': 186655645,
-            'end': 186675645,
-            'variant': "3:186665645_C/T"
+            'chrom': '4',
+            'start': 103178709,
+            'end': 103198709,
+            'variant': "4:103188709_C/T"
         }
         self.url = reverse('api:ld-region', kwargs=self.params)
         response = self.client.get(self.url, data=self.data, format="json")
@@ -142,12 +142,12 @@ class TestLDStatsRegionView(APITestCase):
 class TestFinemappedSignalSummRegionView(APITestCase):
     def test_simple(self):
         self.params = {
-            'uuid': "LkCCTQ4hwMcu5bKcen7nGC",
+            'uuid': "ExDdZgc17zypsGPt7sEeEz",
         }
         self.data = {
             'chrom': '1',
-            'start': 117532790 - 10000,
-            'end': 117532790 + 10000,
+            'start': 203595798 - 10000,
+            'end': 203595798 + 10000,
         }
         self.url = reverse('api:signals-summstats', kwargs=self.params)
         response = self.client.get(self.url, data=self.data, format="json")
@@ -172,7 +172,7 @@ class TestFinemappedSignalSummRegionView(APITestCase):
 class TestInternalTraitManhattanView(APITestCase):
     def test_simple(self):
         self.params = {
-            'uuid': "gwas_diamante_t2d_eur",
+            'uuid': "gwas_BMI_GIANT_2018_hg19_KAB_BMI",
         }
         self.url = reverse('api:analysis-manhattan', kwargs=self.params)
         response = self.client.get(self.url, format="json")
@@ -199,4 +199,11 @@ class TestInternalTraitManhattanView(APITestCase):
         for qval in json_data["variant_bins"][0]["qvals"]:
             assert qval >= 0
 
+        assert response.status_code == HTTP_200_OK
+
+@pytest.mark.django_db
+class TestInternalSearchMetadata(APITestCase):
+    def test_simple(self):
+        self.url = reverse('api:search-metadata')
+        response = self.client.get(self.url, format="json")
         assert response.status_code == HTTP_200_OK

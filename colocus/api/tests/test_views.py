@@ -201,6 +201,7 @@ class TestInternalTraitManhattanView(APITestCase):
 
         assert response.status_code == HTTP_200_OK
 
+
 @pytest.mark.django_db
 class TestInternalSearchMetadata(APITestCase):
     def test_simple(self):

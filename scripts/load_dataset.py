@@ -16,14 +16,14 @@ import pathlib
 import sys
 import time
 import typing as ty
-import polars as pl
-import numpy as np
 from contextlib import ExitStack
 from datetime import datetime
 from pathlib import Path
 from subprocess import PIPE, Popen, check_output
 
 import django
+import numpy as np
+import polars as pl
 import yaml
 from django.conf import settings
 
@@ -409,9 +409,11 @@ def load_one_marginal(data_submission: DataSubmission, analysis_dir: pathlib.Pat
 
     return marginal
 
+
 def ndarray_to_list(matrix):
     matrix = np.where(np.isnan(matrix), None, matrix)
     return [x.tolist() for x in matrix]
+
 
 def load_colocalizations(data_submission: DataSubmission, coloc_file: pathlib.Path) -> ColocResult:
     """Load colocalization results"""
@@ -442,6 +444,7 @@ def load_colocalizations(data_submission: DataSubmission, coloc_file: pathlib.Pa
         coloc.signal2 = FineMappedSignal.objects.get(uuid=meta_dict['signal2'])
 
         coloc.save()
+
 
 def main(package_root: str):
     path = pathlib.Path(package_root).resolve()

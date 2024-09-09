@@ -6,10 +6,11 @@ from subprocess import run
 import pytest
 from django.conf import settings
 
+import colocus.tests
 from colocus.api.tests.util import check_media_dir
 from colocus.users.models import User
 from colocus.users.tests.factories import UserFactory
-import colocus.tests
+
 
 @pytest.fixture(scope='session', autouse=True)
 def django_logger():

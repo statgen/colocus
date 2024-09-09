@@ -54,6 +54,15 @@ class ColocResultFilter(FilterSet):
         query |= self.create_query('signal2__analysis__trait__gene__ens_id', value)
         return queryset.filter(query)
 
+    variants = CharFilter(
+        method='variant_or',
+        label="Provide a list of comma-separated variant IDs to filter by.")
+
+    def variant_or(self, queryset, name, value):
+        query = self.create_query('signal1__lead_variant__vid', value)
+        query |= self.create_query('signal2__lead_variant__vid', value)
+        return queryset.filter(query)
+
     traits = CharFilter(
         method='trait_or',
         label="Provide a list of comma-separated traits to filter by.")
@@ -210,6 +219,7 @@ class ColocResultFilter(FilterSet):
         fields = (
             'uuid',
             'genes',
+            'variants',
             'traits',
             'phenotypes',
             'tissues',

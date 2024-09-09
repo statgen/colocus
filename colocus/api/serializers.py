@@ -84,7 +84,7 @@ class PhenotypeSerializer(drf_serializers.ModelSerializer):
     """
     class Meta:
         model = models.Phenotype
-        fields = ('efo_id', 'name')
+        fields = ('efo_id', 'kp_id', 'name')
 
 
 class TraitSerializer(NonNullModelSerializer):

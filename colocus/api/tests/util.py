@@ -23,17 +23,16 @@ def valid_alleles(s):
     return True
 
 
-def check_media_dir(d):
+def check_media_dir(d, test_module):
     if not isinstance(d, Path):
         d = Path(d)
 
     if not d.is_dir():
         raise Exception(f'Media directory does not exist or is not a directory: {d}')
 
-    expect_subdirs = {"ld", "marginal", "signals"}
-    actual_subdirs = {s.name for s in d.iterdir() if s.is_dir()}
+    for p in test_module.__path__:
+        p = Path(p)
+        if str(d.relative_to(p)) == 'media':
+            return True
 
-    if not expect_subdirs.issubset(actual_subdirs):
-        raise Exception(f'Media directory is missing subdirectories: {expect_subdirs - actual_subdirs}')
-
-    return True
+    return False

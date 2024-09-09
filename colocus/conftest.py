@@ -9,7 +9,7 @@ from django.conf import settings
 from colocus.api.tests.util import check_media_dir
 from colocus.users.models import User
 from colocus.users.tests.factories import UserFactory
-
+import colocus.tests
 
 @pytest.fixture(scope='session', autouse=True)
 def django_logger():
@@ -23,7 +23,7 @@ def django_db_setup(django_db_setup, django_db_blocker, django_logger):
     # cleared out first
     if os.path.isdir(settings.MEDIA_ROOT):
         try:
-            if check_media_dir(settings.MEDIA_ROOT):
+            if check_media_dir(settings.MEDIA_ROOT, colocus.tests):
                 django_logger.info("Clearing out test media directory...")
                 django_logger.info(f"Media directory: {settings.MEDIA_ROOT}")
                 shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)

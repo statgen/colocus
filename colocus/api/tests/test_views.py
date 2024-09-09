@@ -33,6 +33,18 @@ class TestColocResultListView(APITestCase):
 
         assert response.status_code == HTTP_200_OK
 
+    def test_variant(self):
+        self.url = reverse('api:coloc-all')
+        response = self.client.get(self.url, data={"variants": "4_103188709_C_T"}, format="json")
+
+        expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 cross_signal n_coloc_between_traits".split()
+        for key in expected_keys:
+            assert key in response.data["results"][0]
+
+        assert response.data["results"][0]["signal2"]["lead_variant"]["vid"] == "4_103188709_C_T"
+
+        assert response.status_code == HTTP_200_OK
+
     def test_signal1_trait(self):
         self.url = reverse('api:coloc-all')
 

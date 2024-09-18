@@ -213,14 +213,14 @@ class Publication(models.Model):
     pmid = models.PositiveIntegerField(
         blank=True,
         null=True,
-        unique=True,
+        unique=False,
         db_index=True,
         help_text='PubMed ID for the publication')
 
     doi = models.TextField(
         blank=True,
         null=True,
-        unique=True,
+        unique=False,
         db_index=True,
         help_text='Digital Object Identifier for the publication')
 

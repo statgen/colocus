@@ -203,6 +203,13 @@ class Publication(models.Model):
     A publication is a record of a scientific article that describes one or more analyses.
     """
 
+    uuid = models.TextField(
+        blank=False,
+        null=False,
+        unique=True,
+        db_index=True,
+        help_text='A stable unique identifier for this entity. Should be specified on ingest.')
+
     pmid = models.PositiveIntegerField(
         blank=True,
         null=True,

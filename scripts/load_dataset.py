@@ -9,6 +9,7 @@ This checks:
 """
 import argparse
 import gzip
+import hashlib
 import heapq
 import logging
 import os
@@ -21,6 +22,7 @@ from datetime import datetime
 from pathlib import Path
 from subprocess import PIPE, Popen, check_output
 
+import base58
 import django
 import numpy as np
 import polars as pl
@@ -104,6 +106,43 @@ def tabix(fpath):
         time.sleep(0.1)
 
     touch_if_exists(tbi)
+
+
+def flatten_data(data, parent_key='', sep='.'):
+    """
+    Recursively flattens dictionaries and lists of any depth.
+    """
+    items = []
+    if isinstance(data, dict):
+        for k, v in data.items():
+            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+            items.extend(flatten_data(v, new_key, sep=sep).items())
+    elif isinstance(data, list):
+        for i, v in enumerate(data):
+            new_key = f"{parent_key}{sep}{i}" if parent_key else str(i)
+            items.extend(flatten_data(v, new_key, sep=sep).items())
+    else:
+        items.append((parent_key, data))
+    return dict(items)
+
+
+def hash_objects(*args):
+    """
+    Hashes an arbitrary combination of deeply nested dictionaries and lists.
+    """
+    flat_args = []
+    for arg in args:
+        flat_args.append(flatten_data(arg))
+
+    # Create a string from the flattened arguments
+    s = "__".join(f"{k}={v}" for d in flat_args for k, v in d.items())
+
+    # Hash the string
+    h = hashlib.sha512()
+    h.update(s.encode('utf-8'))
+    b = h.digest()[:16]
+
+    return base58.b58encode(b).decode('utf-8')
 
 
 def merge_ld_files(out_path, *paths):
@@ -228,9 +267,15 @@ def init_model(model, attrs: dict):
     return model(**{k: v for k, v in attrs.items() if k in [f.name for f in model._meta.get_fields()]})
 
 
-def get_by_id_or_create(model, id_field, id_value, attrs: dict):
+def get_by_id_or_create(model, id_fields, attrs: dict):
+    """
+    Get a model by its ID fields, or create it if it does not exist
+    Can look up by multiple fields, for example:
+    > get_by_id_or_create(Publication, {'pmid': 12345, 'authors': 'Smith A'}, pub_object)
+    """
+
     try:
-        return model.objects.get(**{id_field: id_value})
+        return model.objects.get(**id_fields)
     except model.DoesNotExist:
         m = init_model(model, attrs)
         m.save()
@@ -346,10 +391,14 @@ def load_one_marginal(data_submission: DataSubmission, analysis_dir: pathlib.Pat
         if k == 'ld':
             marginal.ld = LDStats.objects.get(uuid=v)
         elif k == 'publication':
-            pub = get_by_id_or_create(Publication, 'pmid', v['pmid'], v)
+            pub_uuid = hash_objects(v)
+            pub = get_by_id_or_create(
+                Publication,
+                {'uuid': pub_uuid},
+                v)
             marginal.publication = pub
         elif k == 'study':
-            study = get_by_id_or_create(Study, 'uuid', v['uuid'], v)
+            study = get_by_id_or_create(Study, {'uuid': v['uuid']}, v)
             marginal.study = study
         elif k == 'trait':
             gene = v.pop('gene', None)
@@ -357,24 +406,24 @@ def load_one_marginal(data_submission: DataSubmission, analysis_dir: pathlib.Pat
             pheno = v.pop('phenotype', None)
 
             # trait, created = Trait.objects.get_or_create(**v)
-            trait = get_by_id_or_create(Trait, 'uuid', v['uuid'], v)
+            trait = get_by_id_or_create(Trait, {'uuid': v['uuid']}, v)
 
             if gene:
                 # gene, created = Gene.objects.get_or_create(**gene)
-                gene = get_by_id_or_create(Gene, 'ens_id', gene['ens_id'], gene)
+                gene = get_by_id_or_create(Gene, {'ens_id': gene['ens_id']}, gene)
                 trait.gene = gene
 
             if exon:
                 exon["gene"] = gene
                 # exon, created = Exon.objects.get_or_create(**exon)
-                exon = get_by_id_or_create(Exon, 'ens_id', exon['ens_id'], exon)
+                exon = get_by_id_or_create(Exon, {'ens_id': exon['ens_id']}, exon)
                 trait.exon = exon
 
             if pheno:
                 # pheno, created = Phenotype.objects.get_or_create(**pheno)
                 if "uuid" not in pheno:
                     pheno["uuid"] = v["uuid"]
-                pheno = get_by_id_or_create(Phenotype, 'uuid', pheno['uuid'], pheno)
+                pheno = get_by_id_or_create(Phenotype, {'uuid': pheno['uuid']}, pheno)
                 trait.phenotype = pheno
 
             trait.save()

@@ -392,6 +392,7 @@ def load_one_marginal(data_submission: DataSubmission, analysis_dir: pathlib.Pat
             marginal.ld = LDStats.objects.get(uuid=v)
         elif k == 'publication':
             pub_uuid = hash_objects(v)
+            v['uuid'] = pub_uuid
             pub = get_by_id_or_create(
                 Publication,
                 {'uuid': pub_uuid},

@@ -180,9 +180,15 @@ class FinemappedSignalSerializer(drf_serializers.ModelSerializer):
     neg_log_p = drf_serializers.SerializerMethodField(
         method_name='get_neg_log_p',
         read_only=True)
+    colocs = drf_serializers.SerializerMethodField(method_name='get_colocs', read_only=True)
 
     def get_neg_log_p(self, obj):
         return serialize_neg_log_pvalue(obj.neg_log_p)
+
+    def get_colocs(self, obj):
+        signal1_results = obj.coloc1.all()
+        signal2_results = obj.coloc2.all()
+        return ColocResultSimpleSignalSerializer(signal1_results | signal2_results, many=True).data
 
     class Meta:
         model = models.FineMappedSignal
@@ -193,8 +199,15 @@ class FinemappedSignalSerializer(drf_serializers.ModelSerializer):
             'neg_log_p',
             'effect_cond',
             'effect_marg',
-            'cond_minp_variant'
+            'cond_minp_variant',
+            'colocs'
         )
+
+
+class SimpleFinemappedSignalSerializer(drf_serializers.ModelSerializer):
+    class Meta:
+        model = models.FineMappedSignal
+        fields = ('uuid', 'analysis', 'lead_variant', 'neg_log_p', 'effect_cond', 'effect_marg')
 
 
 class MergedSignalRegionSerializer(drf_serializers.Serializer):
@@ -245,3 +258,24 @@ class ColocResultSerializer(drf_serializers.ModelSerializer):
         model = models.ColocResult
         fields = ('uuid', 'signal1', 'signal2', 'coloc_h3', 'coloc_h4', 'cross_signal',
                   'r2', 'n_coloc_between_traits', 'marg_cond_flip')
+
+
+class ColocResultSimpleSignalSerializer(drf_serializers.ModelSerializer):
+    """
+    Same as `ColocResultSerializer`, but without the signal1 and signal2 fields. This is useful when we want to
+    serialize coloc results without the full signal data.
+    """
+
+    signal1 = SimpleFinemappedSignalSerializer(read_only=True, label="Signal 1")
+    signal2 = SimpleFinemappedSignalSerializer(read_only=True, label="Signal 2")
+    coloc_h3 = ReducedPrecisionFloatField(read_only=True, label="Posterior probability of H3")
+    coloc_h4 = ReducedPrecisionFloatField(read_only=True, label="Posterior probability of H4")
+    r2 = ReducedPrecisionFloatField(read_only=True, label="r2 between lead variants")
+    n_coloc_between_traits = drf_serializers.IntegerField(
+        read_only=True,
+        label="Number of coloc results between signal1's trait and signal2's trait")
+
+    class Meta:
+        model = models.ColocResult
+        fields = ('uuid', 'signal1', 'signal2', 'coloc_h3', 'coloc_h4',
+                  'r2', 'n_coloc_between_traits')

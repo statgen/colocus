@@ -151,6 +151,15 @@ class TestLDStatsRegionView(APITestCase):
 
 
 @pytest.mark.django_db
+class TestFinemappedSignalListView(APITestCase):
+    def test_simple(self):
+        self.url = reverse('api:signals-all')
+        response = self.client.get(self.url, format="json")
+
+        assert response.status_code == HTTP_200_OK
+
+
+@pytest.mark.django_db
 class TestFinemappedSignalSummRegionView(APITestCase):
     def test_simple(self):
         self.params = {

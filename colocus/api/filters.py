@@ -24,6 +24,35 @@ def parse_region(region):
         return match.groups()
 
 
+class FinemappedSignalFilter(FilterSet):
+    def create_query(self, field, value):
+        if "," in value:
+            value = value.split(",")
+            query = Q(**{f'{field}__in': value})
+        else:
+            query = Q(**{f'{field}': value})
+        return query
+
+    # Create an `all_genes` filter that searches all available gene fields
+    genes = CharFilter(
+        method='gene_or',
+        label="Provide a list of comma-separated genes to filter by. Can be either Ensembl IDs or gene symbols.")
+
+    def gene_or(self, queryset, name, value):
+        query = self.create_query('analysis__trait__gene__symbol', value)
+        query |= self.create_query('analysis__trait__gene__ens_id', value)
+        query |= self.create_query('analysis__trait__gene__symbol', value)
+        query |= self.create_query('analysis__trait__gene__ens_id', value)
+        return queryset.filter(query)
+
+    class Meta:
+        model = models.FineMappedSignal
+        fields = (
+            'uuid',
+            'genes',
+        )
+
+
 class ColocResultFilter(FilterSet):
     """
     Default filtering behavior for coloc results.

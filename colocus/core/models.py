@@ -451,7 +451,7 @@ class ColocResult(models.Model):
 
     signal1 = models.ForeignKey(
         FineMappedSignal,
-        related_name="+",  # do not create reverse relation, not needed
+        related_name="coloc1",
         on_delete=models.CASCADE,
         null=False,
         help_text='The first signal (from trait 1)',
@@ -459,7 +459,7 @@ class ColocResult(models.Model):
 
     signal2 = models.ForeignKey(
         FineMappedSignal,
-        related_name="+",
+        related_name="coloc2",
         on_delete=models.CASCADE,
         null=False,
         help_text='The second signal (from trait 2)'

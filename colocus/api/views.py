@@ -156,9 +156,26 @@ class FinemappedSignalListView(generics.ListAPIView):
     is possible for there to be more than one lead variant (with equivalent posterior probability of being causal), but
     we only use one as the sentinel variant for the signal.
     """
-    queryset = models.FineMappedSignal.objects.select_related(
-        'analysis', 'analysis__trait', 'analysis__study', 'analysis__ld', 'lead_variant')
+    queryset = (
+        models.FineMappedSignal.objects
+        .select_related(
+            'analysis',
+            'analysis__trait',
+            'analysis__trait__phenotype',
+            'analysis__study',
+            'analysis__ld',
+            'analysis__publication',
+            'lead_variant')
+        .prefetch_related(
+            'coloc1',
+            'coloc1__signal1',
+            'coloc1__signal2',
+            'coloc2',
+            'coloc2__signal1',
+            'coloc2__signal2'))
+
     serializer_class = serializers.FinemappedSignalSerializer
+    filterset_class = filters.FinemappedSignalFilter
 
 
 class FinemappedSignalDetailView(generics.RetrieveAPIView):

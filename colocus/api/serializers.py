@@ -175,6 +175,15 @@ class FinemappedSignalSerializer(drf_serializers.ModelSerializer):
     - `effect_marg`: The effect size of the lead variant in the marginal analysis
     """
 
+    def __init__(self, *args, **kwargs):
+        # Extract the 'colocs' parameter if provided
+        colocs = kwargs.pop('colocs', True)
+        super(FinemappedSignalSerializer, self).__init__(*args, **kwargs)
+
+        # Dynamically remove the 'colocs' field if colocs=False
+        if not colocs:
+            self.fields.pop('colocs')
+
     analysis = MarginalAnalysisSerializer(read_only=True)
     lead_variant = LeadVariantSerializer(read_only=True)
     neg_log_p = drf_serializers.SerializerMethodField(
@@ -245,8 +254,8 @@ class ColocResultSerializer(drf_serializers.ModelSerializer):
     associated with the same causal variant.
     """
 
-    signal1 = FinemappedSignalSerializer(read_only=True, label="Signal 1")
-    signal2 = FinemappedSignalSerializer(read_only=True, label="Signal 2")
+    signal1 = FinemappedSignalSerializer(read_only=True, label="Signal 1", colocs=False)
+    signal2 = FinemappedSignalSerializer(read_only=True, label="Signal 2", colocs=False)
     coloc_h3 = ReducedPrecisionFloatField(read_only=True, label="Posterior probability of H3")
     coloc_h4 = ReducedPrecisionFloatField(read_only=True, label="Posterior probability of H4")
     r2 = ReducedPrecisionFloatField(read_only=True, label="r2 between lead variants")

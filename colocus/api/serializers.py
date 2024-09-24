@@ -197,7 +197,10 @@ class FinemappedSignalSerializer(drf_serializers.ModelSerializer):
     def get_colocs(self, obj):
         signal1_results = obj.coloc1.all()
         signal2_results = obj.coloc2.all()
-        return ColocResultSimpleSignalSerializer(signal1_results | signal2_results, many=True).data
+
+        combined = list(set(signal1_results) | set(signal2_results))
+
+        return ColocResultSimpleSignalSerializer(combined, many=True).data
 
     class Meta:
         model = models.FineMappedSignal

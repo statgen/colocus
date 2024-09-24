@@ -219,7 +219,7 @@ class FinemappedSignalSerializer(drf_serializers.ModelSerializer):
 class SimpleFinemappedSignalSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.FineMappedSignal
-        fields = ('uuid', 'analysis', 'lead_variant', 'neg_log_p', 'effect_cond', 'effect_marg')
+        fields = ('uuid', 'analysis', 'lead_variant')
 
 
 class MergedSignalRegionSerializer(drf_serializers.Serializer):
@@ -280,7 +280,6 @@ class ColocResultSimpleSignalSerializer(drf_serializers.ModelSerializer):
 
     signal1 = SimpleFinemappedSignalSerializer(read_only=True, label="Signal 1")
     signal2 = SimpleFinemappedSignalSerializer(read_only=True, label="Signal 2")
-    coloc_h3 = ReducedPrecisionFloatField(read_only=True, label="Posterior probability of H3")
     coloc_h4 = ReducedPrecisionFloatField(read_only=True, label="Posterior probability of H4")
     r2 = ReducedPrecisionFloatField(read_only=True, label="r2 between lead variants")
     n_coloc_between_traits = drf_serializers.IntegerField(
@@ -289,5 +288,5 @@ class ColocResultSimpleSignalSerializer(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.ColocResult
-        fields = ('uuid', 'signal1', 'signal2', 'coloc_h3', 'coloc_h4',
+        fields = ('uuid', 'signal1', 'signal2', 'coloc_h4',
                   'r2', 'n_coloc_between_traits')

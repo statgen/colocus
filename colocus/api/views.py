@@ -3,6 +3,7 @@ import typing as ty
 from typing import Union
 
 from django.conf import settings
+from django.db.models import Prefetch
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import exceptions as drf_exceptions
 from rest_framework import generics
@@ -167,12 +168,8 @@ class FinemappedSignalListView(generics.ListAPIView):
             'analysis__publication',
             'lead_variant')
         .prefetch_related(
-            'coloc1',
-            'coloc1__signal1',
-            'coloc1__signal2',
-            'coloc2',
-            'coloc2__signal1',
-            'coloc2__signal2'))
+            Prefetch('coloc1', queryset=models.ColocResult.objects.select_related('signal1', 'signal2')),
+            Prefetch('coloc2', queryset=models.ColocResult.objects.select_related('signal1', 'signal2'))))
 
     serializer_class = serializers.FinemappedSignalSerializer
     filterset_class = filters.FinemappedSignalFilter

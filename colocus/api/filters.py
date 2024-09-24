@@ -190,6 +190,7 @@ class ColocResultFilter(FilterSet):
     ordering = OrderingFilter(
         # fields(('model field name', 'parameter name used by API request / user'),)
         fields=(
+            ('coloc_h3', 'h3'),
             ('coloc_h4', 'h4'),
             ('r2', 'r2'),
             ('n_coloc_between_traits', 'n_coloc_between_traits'),

@@ -50,8 +50,25 @@ def search_page_metadata(request, *args, **kwargs):
         for m in qs_analysis
     ))
 
-    all_genes = models.Gene.objects.all()
-    genes = list(set([g.ens_id for g in all_genes] + [g.symbol for g in all_genes]))
+    # Extract the genes from both signal1 and signal2 traits
+    # This uses .values() to avoid pulling in a lot of unnecessary data and avoids issues with prefetching and
+    # customizing the serializer for this one case
+    fields = [
+        'signal1__analysis__trait__gene__ens_id',
+        'signal1__analysis__trait__gene__symbol',
+        'signal2__analysis__trait__gene__ens_id',
+        'signal2__analysis__trait__gene__symbol',
+    ]
+    coloc_results = models.ColocResult.objects.values(*fields)
+    genes = set()
+    for coloc in coloc_results:
+        for i in range(1, 3):
+            ens = coloc.get(f"signal{i}__analysis__trait__gene__ens_id")
+            symb = coloc.get(f"signal{i}__analysis__trait__gene__symbol")
+            if ens:
+                genes.add(ens)
+            if symb:
+                genes.add(symb)
 
     result = {
         'count_pairs': count_signal_pairs,
@@ -59,7 +76,7 @@ def search_page_metadata(request, *args, **kwargs):
         'analysis_types': analysis_types,
         'phenotypes': phenotypes,
         'studies': studies,
-        'genes': genes
+        'genes': list(genes)
     }
 
     # For debugging: Return data as HTML

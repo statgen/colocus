@@ -18,37 +18,33 @@ from colocus.core import constants, models
 
 def search_page_metadata(request, *args, **kwargs):
     # Apply analysis_uuid filter if provided, else use all objects
-    qs_analysis = models.MarginalAnalysis.objects.select_related("trait", "study")
-    qs_coloc = models.ColocResult.objects.all()
+    qs_analysis = models.MarginalAnalysis.objects.select_related(
+        "trait",
+        "trait__phenotype",
+        "study")
 
     """Return metadata required to power the "available categories" menus in the "search" page UI"""
-    count_signal_pairs = qs_coloc.count()
+    count_signal_pairs = models.ColocResult.objects.count()
 
-    # Trait types seen across all signals
-    analysis_types = list(set(
-        m.analysis_type
-        for m in
-        qs_analysis
-    ))
+    analysis_types = set()
+    tissues = set()
+    phenotypes = set()
+    studies = set()
 
-    # Get list of available tissues
-    tissues = list(set(
-        m.tissue
-        for m in
-        qs_analysis.filter(analysis_type=constants.EQTL)
-    ))
+    analysis_fields = ["analysis_type", "tissue", "trait__phenotype__name", "study__uuid"]
+    for obj in qs_analysis.values(*analysis_fields):
+        analysis_types.add(obj.get("analysis_type"))
+        tissues.add(obj.get("tissue"))
+        phenotypes.add(obj.get("trait__phenotype__name"))
+        studies.add(obj.get("study__uuid"))
 
-    # Get list of all possible GWAS phenotypes
-    phenotypes = list(set(
-        m.trait.phenotype.name
-        for m in
-        qs_analysis.filter(analysis_type=constants.GWAS)
-    ))
+    for s in [analysis_types, tissues, phenotypes, studies]:
+        s.discard(None)
 
-    studies = list(set(
-        m.study.uuid
-        for m in qs_analysis
-    ))
+    analysis_types = list(analysis_types)
+    tissues = list(tissues)
+    phenotypes = list(phenotypes)
+    studies = list(studies)
 
     # Extract the genes from both signal1 and signal2 traits
     # This uses .values() to avoid pulling in a lot of unnecessary data and avoids issues with prefetching and

@@ -3,6 +3,8 @@ import typing as ty
 from typing import Union
 
 from django.conf import settings
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import exceptions as drf_exceptions
 from rest_framework import generics
@@ -237,6 +239,7 @@ class StudyDetailView(generics.RetrieveAPIView):
 
 # Tabix-based "region view" endpoints
 # -------------------------------------
+@method_decorator(cache_page(None), name='get')
 class FinemappedSignalSummRegionView(TabixRegionView):
     """Provide all summary stats associated with a particular signal (marginal + conditional) in a given region"""
     lookup_field = 'uuid'
@@ -285,6 +288,7 @@ class FinemappedSignalSummRegionView(TabixRegionView):
         return list(joined)
 
 
+@method_decorator(cache_page(None), name='get')
 class LDPairsRegionView(TabixRegionView):
     lookup_field = 'uuid'
     queryset = models.LDStats.objects.all()

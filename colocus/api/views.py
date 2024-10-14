@@ -10,6 +10,7 @@ from zorp.readers import TabixReader
 from zorp.sniffers import guess_gwas_standard
 
 from colocus.core import models
+from colocus.utils.variants import parse_variant
 
 from . import filters, parsers, serializers, util
 
@@ -305,6 +306,8 @@ class LDPairsRegionView(TabixRegionView):
     def get_object(self):
         panel = super(LDPairsRegionView, self).get_object()  # External-facing GWAS id given as slug in url
         chrom, start, end, variant = self._query_params_variant()
+        vchrom, vpos, vref, valt, *rest = parse_variant(variant)
+        vpos = int(vpos)
 
         filename = os.path.join(settings.MEDIA_ROOT, panel.ld_data.name)
 
@@ -314,11 +317,21 @@ class LDPairsRegionView(TabixRegionView):
             raise drf_exceptions.NotFound
 
         # LD files might specify more than one reference variant.
-        reader = TabixReader(filename, parser=parsers.parse_plink)\
-            .add_filter('snp_a', variant)
+        reader = TabixReader(filename, parser=parsers.parse_plink) \
+            .add_filter('snp_a', variant) \
+            .add_filter('chr_b', chrom) \
+            # this does not work even though the library doc says it should # noqa
+            # .add_filter('pos_b', lambda x: start <= x <= end) # noqa
 
         try:
-            return list(reader.fetch(chrom, start, end))
+            results = []
+            # This pulls out all records that match the reference variant
+            for rec in reader.fetch(chrom, vpos - 1, vpos):
+                # This restricts to only those variants within the requested region
+                if (rec.bp_b >= start) and (rec.bp_b <= end):
+                    results.append(rec)
+
+            return results
         except ValueError:
             # PySAM will throw a ValueError when tabixing to a chrom not present in the file (but it's ok with an
             #   empty region in a known chromosome)

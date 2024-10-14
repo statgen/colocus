@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework.status import HTTP_200_OK
 from rest_framework.test import APITestCase
 
-from colocus.api.tests.util import is_variant, valid_alleles
+from colocus.utils.variants import is_variant, valid_alleles
 
 
 @pytest.mark.django_db

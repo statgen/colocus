@@ -124,7 +124,7 @@ class PublicationSerializer(drf_serializers.ModelSerializer):
     """
     class Meta:
         model = models.Publication
-        fields = ('pmid', 'doi', 'authors')
+        fields = ('pmid', 'doi', 'authors', 'title', 'year', 'journal')
 
 
 class MarginalAnalysisSerializer(drf_serializers.ModelSerializer):

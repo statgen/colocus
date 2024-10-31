@@ -335,7 +335,7 @@ def load_one_signal(
 
     # Create a signal. This should never have existed previously. If it did, the `unique=True` check on the model should
     # kick it back when we try to save it.
-    signal = FineMappedSignal(**metadata)
+    signal = get_by_id_or_create(FineMappedSignal, {'uuid': metadata['uuid']}, metadata)
 
     _save_file_to_file(signal.cond_analysis, signal_dir / 'results.harmonized.gz')
     _save_file_to_file(signal.cond_analysis_tbi, signal_dir / 'results.harmonized.gz.tbi')

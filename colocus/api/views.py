@@ -251,8 +251,8 @@ class FinemappedSignalSummRegionView(TabixRegionView):
         chrom, start, end = self._query_params()
 
         # Two files need to be joined
-        marg_fn = os.path.join(settings.MEDIA_ROOT, signal.analysis.summary_stats.name)
-        cond_fn = os.path.join(settings.MEDIA_ROOT, signal.cond_analysis.name)
+        marg_fn = signal.analysis.summary_stats
+        cond_fn = signal.cond_analysis
 
         if not os.path.isfile(marg_fn):
             raise drf_exceptions.NotFound(f"Could not find marginal analysis file for uuid {signal.uuid}")
@@ -313,7 +313,7 @@ class LDPairsRegionView(TabixRegionView):
         vchrom, vpos, vref, valt, *rest = parse_variant(variant)
         vpos = int(vpos)
 
-        filename = os.path.join(settings.MEDIA_ROOT, panel.ld_data.name)
+        filename = panel.ld_data
 
         if not os.path.isfile(filename):
             # FIXME: If LD panel is re-ingested, deduplication behavior may cause the index to have a hash appended

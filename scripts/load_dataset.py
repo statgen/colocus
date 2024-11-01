@@ -62,14 +62,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def _save_file_to_file(field, local_filename: pathlib.Path):
-    # NOTE: Django will automatically try to prevent overwriting files with same name, which might not be intended
-    # behavior given how controlled our scheme is
-    base_name = local_filename.name  # Most fields control save name, but provide one for clarity
-    with open(local_filename, 'rb') as f:
-        field.save(base_name, f)
-
-
 def load_submission(package_root: pathlib.Path) -> DataSubmission:
     meta_path = package_root / "metadata.yml"
     if not meta_path.exists():
@@ -193,45 +185,48 @@ def load_ld(data_sub, ld_dir: pathlib.Path) -> LDStats:
 
     found_ld = matching.exists()
 
-    if found_ld and len(matching) > 1:
+    if found_ld:
+        # Note: unlike below, we're not allowing multiple instances of the same LD panel / build / population and then
+        # merging them. We're assuming the colocus pipeline already did the merge since we process everything
+        # together now.
         raise Exception(f"Multiple LD files found for panel {metadata['panel']}, build {metadata['genome_build']}, "
                         f"population {metadata['population']}. There should only be a single entry in the database.")
 
-    db_ld_path = None
-    if found_ld:
-        # The first result is the currently existing LD file in the database
-        ld = matching[0]
-        db_ld_path = ld.ld_data.name
-        db_ld_full_path = os.path.join(settings.MEDIA_ROOT, db_ld_path)
+    # if found_ld and len(matching) > 1:
+    #     raise Exception(f"Multiple LD files found for panel {metadata['panel']}, build {metadata['genome_build']}, "
+    #                     f"population {metadata['population']}. There should only be a single entry in the database.")
 
-        # The LD data we are currently processing
-        cur_ld_path = ld_dir / 'ld.gz'
+    # db_ld_path = None
+    # if found_ld:
+    #     # The first result is the currently existing LD file in the database
+    #     ld = matching[0]
+    #     db_ld_path = ld.ld_data
 
-        # We are going to store the merged LD file in the same location as the existing LD file in the database
-        final_ld_path = db_ld_full_path
+    #     # The LD data we are currently processing
+    #     cur_ld_path = ld_dir / 'ld.gz'
 
-        # We need a temporary file to store the merged LD file, can't overwrite the existing file at the same time we
-        # read from it
-        temp_ld_path = db_ld_full_path + ".tmp"
+    #     # We need a temporary file to store the merged LD file, can't overwrite the existing file at the same time we
+    #     # read from it
+    #     temp_ld_path = db_ld_path + ".tmp"
 
-        # Perform the merge, including bgzip and tabixing the final LD file
-        logger.info(f"Previously seen LD found for "
-                    f"{metadata['panel']} {metadata['genome_build']} {metadata['population']}")
-        logger.info(f"Merging {db_ld_full_path} & {cur_ld_path} → {final_ld_path} using temporary file {temp_ld_path}")
-        merge_ld_files(
-            temp_ld_path,
-            db_ld_full_path,
-            cur_ld_path
-        )
+    #     # Perform the merge, including bgzip and tabixing the final LD file
+    #     logger.info(f"Previously seen LD found for "
+    #                 f"{metadata['panel']} {metadata['genome_build']} {metadata['population']}")
+    #     logger.info(f"Merging {db_ld_path} & {cur_ld_path} → {db_ld_path} using temporary file {temp_ld_path}")
+    #     merge_ld_files(
+    #         temp_ld_path,
+    #         db_ld_path,
+    #         cur_ld_path
+    #     )
 
-        # Move the temporary file to the final location and overwrite existing file
-        os.replace(temp_ld_path, final_ld_path)
+    #     # Move the temporary file to the final location and overwrite existing file
+    #     os.replace(temp_ld_path, db_ld_path)
 
-        # Tabix the final file in-place
-        tabix(final_ld_path)
+    #     # Tabix the final file in-place
+    #     tabix(db_ld_path)
 
-        logger.info(f"Final LD file saved to {final_ld_path} for "
-                    f"{metadata['panel']} {metadata['genome_build']} {metadata['population']}")
+    #     logger.info(f"Final LD file saved to {db_ld_path} for "
+    #                 f"{metadata['panel']} {metadata['genome_build']} {metadata['population']}")
 
     try:
         # Don't use get_or_create because additional non-null fields exist
@@ -247,11 +242,11 @@ def load_ld(data_sub, ld_dir: pathlib.Path) -> LDStats:
         # If we didn't find existing LD, then we need to go through the normal process of saving
         # the LD file, and storing the LD metadata/path in the database
         logger.info(f"Saving LD file for {metadata['panel']} {metadata['genome_build']} {metadata['population']}")
-        _save_file_to_file(ld.ld_data, ld_dir / 'ld.gz')
-        _save_file_to_file(ld.ld_data_tbi, ld_dir / 'ld.gz.tbi')
-    else:
-        ld.ld_data = db_ld_path
-        ld.ld_data_tbi = db_ld_path + ".tbi"
+        ld.ld_data = str(ld_dir / 'ld.gz')
+        ld.ld_data_tbi = str(ld_dir / 'ld.gz.tbi')
+    # else:
+    #     ld.ld_data = db_ld_path
+    #     ld.ld_data_tbi = db_ld_path + ".tbi"
 
     ld.save()
 
@@ -337,8 +332,8 @@ def load_one_signal(
     # kick it back when we try to save it.
     signal = get_by_id_or_create(FineMappedSignal, {'uuid': metadata['uuid']}, metadata)
 
-    _save_file_to_file(signal.cond_analysis, signal_dir / 'results.harmonized.gz')
-    _save_file_to_file(signal.cond_analysis_tbi, signal_dir / 'results.harmonized.gz.tbi')
+    signal.cond_analysis = str(signal_dir / 'results.harmonized.gz')
+    signal.cond_analysis_tbi = str(signal_dir / 'results.harmonized.gz.tbi')
 
     signal.save()
     return signal
@@ -434,19 +429,19 @@ def load_one_marginal(data_submission: DataSubmission, analysis_dir: pathlib.Pat
 
     marginal.data_submission = data_submission
 
-    _save_file_to_file(marginal.summary_stats, analysis_dir / 'summ_stats.harmonized.gz')
+    marginal.summary_stats = str(analysis_dir / 'summ_stats.harmonized.gz')
 
     manhattan_path = analysis_dir / 'manhattan.json'
     qq_path = analysis_dir / 'qq.json'
 
     # Only GWAS traits (not eQTLs!) have a manhattan plot file. Don't require it for QTLs.
     if manhattan_path.exists():
-        _save_file_to_file(marginal.manhattan_bins, manhattan_path)
+        marginal.manhattan_bins = str(manhattan_path)
 
     if qq_path.exists():
-        _save_file_to_file(marginal.qq_bins, qq_path)
+        marginal.qq_bins = str(qq_path)
 
-    _save_file_to_file(marginal.summary_stats_tbi, analysis_dir / 'summ_stats.harmonized.gz.tbi')
+    marginal.summary_stats_tbi = str(analysis_dir / 'summ_stats.harmonized.gz.tbi')
 
     marginal.save()
 

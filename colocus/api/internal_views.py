@@ -98,7 +98,7 @@ def analysis_manhattan(request, *args, **kwargs):
     except models.MarginalAnalysis.DoesNotExist:
         return http.HttpResponseNotFound("No record was found for the specified study + trait")
 
-    filename = model.manhattan_bins.path
+    filename = model.manhattan_bins
     if not model.analysis_type == constants.GWAS or not model.manhattan_bins or not os.path.exists(filename):
         return http.HttpResponseBadRequest("No manhattan data is available for the specified trait")
 
@@ -117,7 +117,7 @@ def analysis_qq(request, uuid):
     except models.MarginalAnalysis.DoesNotExist:
         return http.HttpResponseNotFound("No record was found for the specified study + trait")
 
-    filename = model.qq_bins.path
+    filename = model.qq_bins
     if not model.analysis_type == constants.GWAS or not model.qq_bins or not os.path.exists(filename):
         return http.HttpResponseBadRequest("No QQ data is available for the specified trait")
 

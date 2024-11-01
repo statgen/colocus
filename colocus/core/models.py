@@ -3,10 +3,8 @@ Core models describing key data entities
 """
 from django.db import models
 
-from colocus.utils.storages import OverwriteStorage
-
 from ..api.util import sign
-from . import constants, file_util
+from . import constants
 
 # from model_utils.models import SoftDeletableModel, TimeStampedModel
 
@@ -75,17 +73,13 @@ class LDStats(models.Model):
     population = models.TextField(help_text='Name of population (eg EUR)')
     genome_build = models.TextField(choices=constants.GENOME_BUILDS)
 
-    ld_data = models.FileField(
-        upload_to=file_util.get_ld_filename,
+    ld_data = models.TextField(
         verbose_name='LD data',
-        help_text='PLINK formatted LD data (relative to at least key signal SNPs). Must be compressed with bgzip',
-        storage=OverwriteStorage())
+        help_text='Absolute path to PLINK formatted LD data (relative to at least key signal SNPs). Must be compressed with bgzip')
 
-    ld_data_tbi = models.FileField(
-        upload_to=file_util.get_ld_filename_tbi,
+    ld_data_tbi = models.TextField(
         verbose_name='LD tabix index',
-        help_text='Tabix index for the LD data. Must match the bgzip file',
-        storage=OverwriteStorage())
+        help_text='Absolute path to Tabix index for the LD data. Must match the bgzip file')
 
 
 class Study(models.Model):
@@ -303,29 +297,21 @@ class MarginalAnalysis(models.Model):
     )
 
     # Files that must be present. All are generated during an ingest pipeline step.
-    summary_stats = models.FileField(
-        upload_to=file_util.get_marginal_summstats,
+    summary_stats = models.TextField(
         verbose_name='Marginal summary stats',
-        help_text='The marginal summary stats for this study. Must be compressed with bgzip',
-        storage=OverwriteStorage())
+        help_text='Absolute path to the marginal summary stats for this study. Must be compressed with bgzip')
 
-    summary_stats_tbi = models.FileField(
-        upload_to=file_util.get_marginal_summstats_tbi,
+    summary_stats_tbi = models.TextField(
         verbose_name='Tabix index for summary stats',
-        help_text='Tabix index for summary stats (.tbi file). Must match bgzip file.',
-        storage=OverwriteStorage())
+        help_text='Absolute path to Tabix index for summary stats (.tbi file). Must match bgzip file.')
 
-    manhattan_bins = models.FileField(
-        upload_to=file_util.get_manhattan,
+    manhattan_bins = models.TextField(
         verbose_name='Binned data for manhattan plots',
-        help_text='Results of manhattan plot binning process',
-        storage=OverwriteStorage())
+        help_text='Absolute path to results of manhattan plot binning process')
 
-    qq_bins = models.FileField(
-        upload_to=file_util.get_qq,
+    qq_bins = models.TextField(
         verbose_name='Binned data for QQ plots',
-        help_text='Results of manhattan plot binning process',
-        storage=OverwriteStorage())
+        help_text='Absolute path to results of manhattan plot binning process')
 
     description = models.TextField(
         help_text='Freetext with important info such as analysis parameters. In the future, some parameters might '
@@ -398,17 +384,13 @@ class FineMappedSignal(models.Model):
         null=False,
         help_text='The program used to perform the fine-mapping or conditional analysis')
 
-    cond_analysis = models.FileField(
-        upload_to=file_util.get_signals_cond,
-        verbose_name='Cond analysis results ',
-        help_text='Conditional (or "all but one") analysis of marginal results (rel to lead variant of this signal)',
-        storage=OverwriteStorage())
+    cond_analysis = models.TextField(
+        verbose_name='Cond analysis results',
+        help_text='Absolute path to conditional (or "all but one") analysis of marginal results (rel to lead variant of this signal)')
 
-    cond_analysis_tbi = models.FileField(
-        upload_to=file_util.get_signals_cond_tbi,
+    cond_analysis_tbi = models.TextField(
         verbose_name='tbi for cond results',
-        help_text='Tabix index; must match the conditional analysis file',
-        storage=OverwriteStorage())
+        help_text='Absolute path to Tabix index; must match the conditional analysis file')
 
     # Lead variant
     lead_variant = models.ForeignKey(

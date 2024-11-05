@@ -26,6 +26,9 @@ urls_v1 = [
     path("traits/", views.TraitListView.as_view(), name="traits-all"),
     path("traits/<uuid>/", views.TraitDetailView.as_view(), name="traits-detail"),
 
+    path("datasets/", views.DatasetListView.as_view(), name="datasets-all"),
+    path("datasets/<uuid>/", views.DatasetDetailView.as_view(), name="datasets-detail"),
+
     path("studies/", views.StudyListView.as_view(), name="studies-all"),
     path("studies/<uuid>/", views.StudyDetailView.as_view(), name="studies-detail"),
 

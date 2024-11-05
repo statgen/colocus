@@ -127,23 +127,13 @@ class PublicationSerializer(drf_serializers.ModelSerializer):
         fields = ('pmid', 'doi', 'authors', 'title', 'year', 'journal')
 
 
-class MarginalAnalysisSerializer(drf_serializers.ModelSerializer):
+class PersonSerializer(drf_serializers.ModelSerializer):
     """
-    A marginal analysis, sometimes shortened to just 'analysis', represents a marginal association scan
-    for a single trait. In other words, it is the output of GWAS or eQTL analysis for one trait or gene.
+    A person is an individual who contributed to an analysis or dataset. People have names and email addresses.
     """
-
-    trait = TraitSerializer(read_only=True)
-    ld = drf_serializers.CharField(source='ld.uuid', read_only=True)
-    study = StudySerializer(read_only=True)
-    publication = PublicationSerializer(read_only=True)
-
     class Meta:
-        model = models.MarginalAnalysis
-        fields = (
-            'uuid', 'analysis_type', 'genome_build', 'trait', 'tissue', 'description', 'ancestry',
-            'study', 'publication', 'ld', 'external_link'
-        )
+        model = models.Person
+        fields = ('name', 'orcid', 'institution')
 
 
 class MarginalAnalysisSerializerBrief(drf_serializers.ModelSerializer):
@@ -159,6 +149,61 @@ class MarginalAnalysisSerializerBrief(drf_serializers.ModelSerializer):
     class Meta:
         model = models.MarginalAnalysis
         fields = ('uuid', 'analysis_type', 'genome_build', 'trait', 'tissue', 'description', 'ancestry', 'study', 'ld')
+
+
+class DatasetSerializer(drf_serializers.ModelSerializer):
+    """
+    A dataset is a collection of analyses that are related in some way. For example, all analyses that were performed
+    on a single study or cohort would be grouped into a single dataset.
+    """
+    publication = PublicationSerializer(read_only=True)
+    submitter = PersonSerializer(read_only=True)
+
+    class Meta:
+        model = models.Dataset
+        fields = ('uuid', 'analysis_type', 'genome_build', 'tissue', 'ancestry', 'n_traits', 'n_traits_with_sig',
+                  'publication', 'external_link', 'submitter')
+
+
+class DatasetDetailSerializer(drf_serializers.ModelSerializer):
+    """
+    A dataset is a collection of analyses that are related in some way. For example, all analyses that were performed
+    on a single study or cohort would be grouped into a single dataset.
+    """
+    publication = PublicationSerializer(read_only=True)
+    submitter = PersonSerializer(read_only=True)
+    marginal_analyses = MarginalAnalysisSerializerBrief(many=True, read_only=True)
+
+    class Meta:
+        model = models.Dataset
+        fields = ('uuid', 'analysis_type', 'genome_build', 'tissue', 'ancestry', 'n_traits', 'n_traits_with_sig',
+                  'publication', 'external_link', 'submitter', 'marginal_analyses')
+
+
+class DatasetSerializerBrief(drf_serializers.ModelSerializer):
+    class Meta:
+        model = models.Dataset
+        fields = ('uuid',)
+
+
+class MarginalAnalysisSerializer(drf_serializers.ModelSerializer):
+    """
+    A marginal analysis, sometimes shortened to just 'analysis', represents a marginal association scan
+    for a single trait. In other words, it is the output of GWAS or eQTL analysis for one trait or gene.
+    """
+
+    dataset = DatasetSerializerBrief(read_only=True)
+    trait = TraitSerializer(read_only=True)
+    ld = drf_serializers.CharField(source='ld.uuid', read_only=True)
+    study = StudySerializer(read_only=True)
+    publication = PublicationSerializer(read_only=True)
+
+    class Meta:
+        model = models.MarginalAnalysis
+        fields = (
+            'uuid', 'dataset', 'analysis_type', 'genome_build', 'trait', 'tissue', 'description', 'ancestry',
+            'study', 'publication', 'ld', 'external_link'
+        )
 
 
 class FinemappedSignalSerializer(drf_serializers.ModelSerializer):

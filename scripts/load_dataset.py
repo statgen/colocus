@@ -27,7 +27,8 @@ import django
 import numpy as np
 import polars as pl
 import yaml
-from django.conf import settings
+
+# from django.conf import settings
 
 # Must configure standalone django usage before importing models
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
@@ -39,6 +40,7 @@ logger = logging.getLogger(__name__)
 
 from colocus.core.models import (  # noqa E402
     ColocResult,
+    Dataset,
     DataSubmission,
     Exon,
     FineMappedSignal,
@@ -47,6 +49,7 @@ from colocus.core.models import (  # noqa E402
     LDStats,
     LeadVariant,
     MarginalAnalysis,
+    Person,
     Phenotype,
     Publication,
     Study,
@@ -82,6 +85,50 @@ def load_submission(package_root: pathlib.Path) -> DataSubmission:
 
     ds.save()
     return ds
+
+
+def load_dataset(data_sub, dataset_dir):
+    meta_path = dataset_dir / "metadata.parquet"
+    if not meta_path.exists():
+        raise Exception(f'No dataset metadata.parquet found at {meta_path}')
+
+    metadata = pl.read_parquet(meta_path).to_dicts().pop()
+
+    # Get the object or create it first
+    dataset = get_by_id_or_create(
+        Dataset,
+        {'uuid': metadata['uuid']},
+        {
+            'submitter': get_by_id_or_create(Person, {'orcid': metadata['submitter']['orcid']}, metadata['submitter']),
+            'data_submission': data_sub
+        })
+
+    for k, v in metadata.items():
+        if k == "submitter":
+            continue
+        elif k == "analysts":
+            if not v:
+                continue
+            analysts = [get_by_id_or_create(Person, {'orcid': a['orcid']}, a) for a in v]
+            dataset.analysts.set(analysts)
+        elif k == "principal_investigators":
+            if not v:
+                continue
+            pis = [get_by_id_or_create(Person, {'orcid': pi['orcid']}, pi) for pi in v]
+            dataset.principal_investigators.set(pis)
+        elif k == "publication":
+            pub_uuid = hash_objects(v)
+            v['uuid'] = pub_uuid
+            pub = get_by_id_or_create(
+                Publication,
+                {'uuid': pub_uuid},
+                v)
+            dataset.publication = pub
+        else:
+            setattr(dataset, k, v)
+
+    dataset.save()
+    return dataset
 
 
 def touch_if_exists(path):
@@ -339,7 +386,8 @@ def load_one_signal(
     return signal
 
 
-def load_one_marginal(data_submission: DataSubmission, analysis_dir: pathlib.Path) -> MarginalAnalysis:
+def load_one_marginal(
+        data_submission: DataSubmission, dataset: Dataset, analysis_dir: pathlib.Path) -> MarginalAnalysis:
     """
     Load a single marginal analysis + all signals contained in subdirectories.
 
@@ -428,6 +476,7 @@ def load_one_marginal(data_submission: DataSubmission, analysis_dir: pathlib.Pat
             setattr(marginal, k, v)
 
     marginal.data_submission = data_submission
+    marginal.dataset = dataset
 
     marginal.summary_stats = str(analysis_dir / 'summ_stats.harmonized.gz')
 
@@ -511,11 +560,16 @@ def main(package_root: str):
     if not marg_dir.exists():
         raise Exception("No marginal trait information provided")
 
-    for analysis_dir in marg_dir.glob("*/*"):
-        if not analysis_dir.is_dir():
+    for dataset_dir in marg_dir.glob("*"):
+        if not dataset_dir.is_dir():
             continue
-        logger.info(f"Loading marginal analyses from {analysis_dir}")
-        load_one_marginal(data_sub, analysis_dir)
+        logger.info(f"Loading dataset {dataset_dir}")
+        dataset = load_dataset(data_sub, dataset_dir)
+
+        for analysis_dir in dataset_dir.glob("*"):
+            if not analysis_dir.is_dir():
+                continue
+            load_one_marginal(data_sub, dataset, analysis_dir)
 
     coloc_file = path / "coloc" / "coloc.parquet"
     if not coloc_file.exists():

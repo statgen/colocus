@@ -171,6 +171,25 @@ class FinemappedSignalDetailView(generics.RetrieveAPIView):
     serializer_class = serializers.FinemappedSignalSerializer
 
 
+class DatasetListView(generics.ListAPIView):
+    """
+    ## List of datasets
+
+    Each dataset is a collection of analyses that were conducted together. This is typically 1 trait, in the case of a
+    GWAS, or thousands of traits, in the case of QTLs.
+    """
+
+    ordering = ('uuid',)
+    queryset = models.Dataset.objects.select_related('publication', 'submitter')
+    serializer_class = serializers.DatasetSerializer
+
+
+class DatasetDetailView(generics.RetrieveAPIView):
+    lookup_field = 'uuid'
+    queryset = models.Dataset.objects.select_related('publication', 'submitter').prefetch_related('marginal_analyses')
+    serializer_class = serializers.DatasetSerializer
+
+
 class MarginalAnalysisListView(generics.ListAPIView):
     """
     ## List marginal analyses
@@ -188,7 +207,7 @@ class MarginalAnalysisListView(generics.ListAPIView):
     """
 
     queryset = models.MarginalAnalysis.objects.select_related(
-        'trait', 'trait__gene', 'trait__exon', 'trait__phenotype', 'study', 'publication', 'ld')
+        'dataset', 'trait', 'trait__gene', 'trait__exon', 'trait__phenotype', 'study', 'publication', 'ld')
     serializer_class = serializers.MarginalAnalysisSerializer
 
 

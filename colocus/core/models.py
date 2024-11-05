@@ -51,6 +51,114 @@ class DataSubmission(models.Model):
         return self.marginalanalysis_set.count()
 
 
+class Person(models.Model):
+    """
+    Model for a person. This can be used to track the analyst who actually created a dataset, or the person
+    who submitted the dataset to the site, or the PI of a study, etc.
+    """
+    orcid = models.TextField(
+        help_text='ORCID of the analyst',
+        null=False,
+        blank=False,
+        unique=True)
+
+    name = models.TextField(
+        help_text='Name of the analyst',
+        null=False,
+        blank=False,
+        unique=False)
+
+    email = models.EmailField(
+        help_text='Email address of the analyst',
+        null=False,
+        blank=False,
+        unique=False)
+
+    institution = models.TextField(
+        help_text='Institution of the analyst',
+        null=True,
+        blank=True,
+        unique=False)
+
+
+class Dataset(models.Model):
+    """
+    A dataset contains analyses on multiple traits from a single study. For example, METSIM may run a GWAS on 1 or 100
+    traits, or perform eQTL analysis on thousands of genes (traits).
+    """
+    uuid = models.TextField(
+        blank=False,
+        null=False,
+        unique=True,
+        help_text='A stable unique identifier for this dataset, should be specified on ingest')
+
+    data_submission = models.ForeignKey(
+        DataSubmission,
+        on_delete=models.CASCADE,
+        null=False,
+        help_text='Data submission that this dataset belongs to')
+
+    analysts = models.ManyToManyField(
+        Person,
+        help_text='Analysts who created this dataset',
+        related_name='datasets_as_analyst')
+
+    submitter = models.ForeignKey(
+        Person,
+        on_delete=models.CASCADE,
+        null=False,
+        help_text='Person who submitted this dataset to the site',
+        related_name='datasets_as_submitter')
+
+    principal_investigators = models.ManyToManyField(
+        Person,
+        help_text='Principal investigators of the study that produced this dataset',
+        related_name='datasets_as_pi')
+
+    publication = models.ForeignKey(
+        'Publication',
+        on_delete=models.CASCADE,
+        null=True,
+        help_text='Publication describing this overall dataset')
+
+    analysis_type = models.TextField(
+        choices=constants.ANALYSIS_TYPES,
+        help_text="Type of association analysis - GWAS, eQTL, pQTL, ATAC-seq, methylation, etc.")
+
+    genome_build = models.TextField(
+        choices=constants.GENOME_BUILDS,
+        help_text="Genome build used for all analyses in this dataset")
+
+    n_traits = models.PositiveIntegerField(
+        default=0,
+        help_text='Number of traits analyzed in this dataset')
+
+    n_traits_with_sig = models.PositiveIntegerField(
+        default=0,
+        help_text='Number of traits with at least one signal')
+
+    tissue = models.TextField(
+        help_text='Tissue type for all analyses in this dataset (if applicable), e.g. "adipose" or "liver"',
+        null=True,
+        blank=True,
+        unique=False)
+
+    ancestry = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Ancestry of the samples used for analyses in this dataset, e.g. "EUR"')
+
+    contact_email = models.EmailField(
+        blank=True,
+        null=True,
+        help_text='Contact of record to report problems / questions about this dataset')
+
+    external_link = models.URLField(
+        blank=True,
+        null=True,
+        help_text='URL for where the data was downloaded from. Used to track provenance.')
+
+
 class LDStats(models.Model):
     """
     Linkage disequilibrium (LD) statistics for a particular population / dataset / genome build.
@@ -75,7 +183,8 @@ class LDStats(models.Model):
 
     ld_data = models.TextField(
         verbose_name='LD data',
-        help_text='Absolute path to PLINK formatted LD data (relative to at least key signal SNPs). Must be compressed with bgzip')
+        help_text='Absolute path to PLINK formatted LD data (relative to at least key signal SNPs). '
+                  'Must be compressed with bgzip')
 
     ld_data_tbi = models.TextField(
         verbose_name='LD tabix index',
@@ -258,6 +367,13 @@ class MarginalAnalysis(models.Model):
         help_text='Analysis was part of this data submission'
     )
 
+    dataset = models.ForeignKey(
+        Dataset,
+        on_delete=models.CASCADE,
+        null=False,
+        related_name='marginal_analyses',
+        help_text='Analysis was part of this dataset')
+
     analysis_type = models.TextField(
         choices=constants.ANALYSIS_TYPES,
         help_text="Type of association analysis - GWAS, eQTL, pQTL, ATAC-seq, methylation, etc.")
@@ -386,7 +502,8 @@ class FineMappedSignal(models.Model):
 
     cond_analysis = models.TextField(
         verbose_name='Cond analysis results',
-        help_text='Absolute path to conditional (or "all but one") analysis of marginal results (rel to lead variant of this signal)')
+        help_text='Absolute path to conditional (or "all but one") analysis of marginal results '
+                  '(rel to lead variant of this signal)')
 
     cond_analysis_tbi = models.TextField(
         verbose_name='tbi for cond results',

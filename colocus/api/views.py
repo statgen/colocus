@@ -185,14 +185,19 @@ class DatasetListView(generics.ListAPIView):
     """
 
     ordering = ('uuid',)
-    queryset = models.Dataset.objects.select_related('publication', 'submitter')
+    queryset = (models.Dataset.objects
+                .select_related('publication', 'submitter')
+                .prefetch_related('analysts', 'principal_investigators'))
     serializer_class = serializers.DatasetSerializer
 
 
 @method_decorator(cache_page(None), name='get')
 class DatasetDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
-    queryset = models.Dataset.objects.select_related('publication', 'submitter').prefetch_related('marginal_analyses')
+    queryset = (models.Dataset.objects
+                .select_related('publication', 'submitter')
+                .prefetch_related('analysts', 'principal_investigators', 'marginal_analyses')
+                )
     serializer_class = serializers.DatasetDetailSerializer
 
 

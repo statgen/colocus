@@ -158,11 +158,13 @@ class DatasetSerializer(drf_serializers.ModelSerializer):
     """
     publication = PublicationSerializer(read_only=True)
     submitter = PersonSerializer(read_only=True)
+    analysts = PersonSerializer(many=True, read_only=True)
+    principal_investigators = PersonSerializer(many=True, read_only=True)
 
     class Meta:
         model = models.Dataset
         fields = ('uuid', 'analysis_type', 'genome_build', 'tissue', 'ancestry', 'n_traits', 'n_traits_with_sig',
-                  'publication', 'external_link', 'submitter')
+                  'publication', 'external_link', 'submitter', 'analysts', 'principal_investigators')
 
 
 class DatasetDetailSerializer(drf_serializers.ModelSerializer):
@@ -172,12 +174,14 @@ class DatasetDetailSerializer(drf_serializers.ModelSerializer):
     """
     publication = PublicationSerializer(read_only=True)
     submitter = PersonSerializer(read_only=True)
+    analysts = PersonSerializer(many=True, read_only=True)
+    principal_investigators = PersonSerializer(many=True, read_only=True)
     analysis = drf_serializers.SerializerMethodField()
 
     class Meta:
         model = models.Dataset
         fields = ('uuid', 'analysis_type', 'genome_build', 'tissue', 'ancestry', 'n_traits', 'n_traits_with_sig',
-                  'publication', 'external_link', 'submitter', 'analysis')
+                  'publication', 'external_link', 'submitter', 'analysts', 'principal_investigators', 'analysis')
 
     def get_analysis(self, obj):
         count = obj.marginal_analyses.count()

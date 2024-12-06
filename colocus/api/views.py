@@ -100,6 +100,7 @@ order_options = sorted([
         ),
     ]
 )
+@method_decorator(cache_page(None), name='get')
 class ColocResultListView(generics.ListAPIView):
     """
     ## List colocalization results
@@ -127,6 +128,7 @@ class ColocResultListView(generics.ListAPIView):
     filterset_class = filters.ColocResultFilter
 
 
+@method_decorator(cache_page(None), name='get')
 class ColocResultDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
     queryset = models.ColocResult.objects.select_related('signal1', 'signal2')
@@ -145,6 +147,7 @@ class LDStatsDetailView(generics.RetrieveAPIView):
     serializer_class = serializers.LDStatsSerializer
 
 
+@method_decorator(cache_page(None), name='get')
 class FinemappedSignalListView(generics.ListAPIView):
     """
     ## List fine-mapped signals
@@ -164,6 +167,7 @@ class FinemappedSignalListView(generics.ListAPIView):
     serializer_class = serializers.FinemappedSignalSerializer
 
 
+@method_decorator(cache_page(None), name='get')
 class FinemappedSignalDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
     queryset = models.FineMappedSignal.objects.select_related(
@@ -171,6 +175,7 @@ class FinemappedSignalDetailView(generics.RetrieveAPIView):
     serializer_class = serializers.FinemappedSignalSerializer
 
 
+@method_decorator(cache_page(None), name='get')
 class DatasetListView(generics.ListAPIView):
     """
     ## List of datasets
@@ -184,12 +189,14 @@ class DatasetListView(generics.ListAPIView):
     serializer_class = serializers.DatasetSerializer
 
 
+@method_decorator(cache_page(None), name='get')
 class DatasetDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
     queryset = models.Dataset.objects.select_related('publication', 'submitter').prefetch_related('marginal_analyses')
     serializer_class = serializers.DatasetSerializer
 
 
+@method_decorator(cache_page(None), name='get')
 class MarginalAnalysisListView(generics.ListAPIView):
     """
     ## List marginal analyses
@@ -211,6 +218,7 @@ class MarginalAnalysisListView(generics.ListAPIView):
     serializer_class = serializers.MarginalAnalysisSerializer
 
 
+@method_decorator(cache_page(None), name='get')
 class MarginalAnalysisDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
     queryset = models.MarginalAnalysis.objects.select_related('data_submission')

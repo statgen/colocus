@@ -193,7 +193,7 @@ class DatasetListView(generics.ListAPIView):
 class DatasetDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
     queryset = models.Dataset.objects.select_related('publication', 'submitter').prefetch_related('marginal_analyses')
-    serializer_class = serializers.DatasetSerializer
+    serializer_class = serializers.DatasetDetailSerializer
 
 
 @method_decorator(cache_page(None), name='get')

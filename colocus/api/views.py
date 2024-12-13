@@ -109,20 +109,18 @@ class ColocResultListView(generics.ListAPIView):
     the result of colocalizing two fine-mapped signals from a GWAS or eQTL analysis.
     """
 
-    queryset = (
-        models.ColocResult.objects
-        .select_related(
-            'signal1', 'signal2',
-            'signal1__analysis', 'signal2__analysis',
-            'signal1__analysis__trait', 'signal2__analysis__trait',
-            'signal1__lead_variant', 'signal2__lead_variant',
-            'signal1__analysis__trait__gene', 'signal2__analysis__trait__gene',
-            'signal1__analysis__trait__exon', 'signal2__analysis__trait__exon',
-            'signal1__analysis__trait__phenotype', 'signal2__analysis__trait__phenotype',
-            'signal1__analysis__study', 'signal2__analysis__study',
-            'signal1__analysis__publication', 'signal2__analysis__publication',)
-        .prefetch_related(
-            'signal1__analysis__ld', 'signal2__analysis__ld'))
+    queryset = models.ColocResult.objects.select_related(
+        'signal1', 'signal2',
+        'signal1__analysis', 'signal2__analysis',
+        'signal1__analysis__trait', 'signal2__analysis__trait',
+        'signal1__lead_variant', 'signal2__lead_variant',
+        'signal1__analysis__trait__gene', 'signal2__analysis__trait__gene',
+        'signal1__analysis__trait__exon', 'signal2__analysis__trait__exon',
+        'signal1__analysis__trait__phenotype', 'signal2__analysis__trait__phenotype',
+        'signal1__analysis__study', 'signal2__analysis__study',
+        'signal1__analysis__publication', 'signal2__analysis__publication',
+        'signal1__analysis__dataset', 'signal2__analysis__dataset',
+        'signal1__analysis__ld', 'signal2__analysis__ld')
 
     serializer_class = serializers.ColocResultSerializer
     filterset_class = filters.ColocResultFilter
@@ -131,7 +129,18 @@ class ColocResultListView(generics.ListAPIView):
 @method_decorator(cache_page(None), name='get')
 class ColocResultDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
-    queryset = models.ColocResult.objects.select_related('signal1', 'signal2')
+    queryset = models.ColocResult.objects.select_related(
+        'signal1', 'signal2',
+        'signal1__analysis', 'signal2__analysis',
+        'signal1__analysis__trait', 'signal2__analysis__trait',
+        'signal1__lead_variant', 'signal2__lead_variant',
+        'signal1__analysis__trait__gene', 'signal2__analysis__trait__gene',
+        'signal1__analysis__trait__exon', 'signal2__analysis__trait__exon',
+        'signal1__analysis__trait__phenotype', 'signal2__analysis__trait__phenotype',
+        'signal1__analysis__study', 'signal2__analysis__study',
+        'signal1__analysis__publication', 'signal2__analysis__publication',
+        'signal1__analysis__dataset', 'signal2__analysis__dataset',
+        'signal1__analysis__ld', 'signal2__analysis__ld')
     serializer_class = serializers.ColocResultSerializer
 
 
@@ -163,7 +172,9 @@ class FinemappedSignalListView(generics.ListAPIView):
     we only use one as the sentinel variant for the signal.
     """
     queryset = models.FineMappedSignal.objects.select_related(
-        'analysis', 'analysis__trait', 'analysis__study', 'analysis__ld', 'lead_variant')
+        'analysis', 'analysis__trait', 'analysis__trait__gene', 'analysis__trait__exon', 'analysis__study',
+        'analysis__ld', 'analysis__dataset', 'analysis__publication', 'analysis__trait__phenotype',
+        'lead_variant')
     serializer_class = serializers.FinemappedSignalSerializer
 
 
@@ -171,7 +182,8 @@ class FinemappedSignalListView(generics.ListAPIView):
 class FinemappedSignalDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
     queryset = models.FineMappedSignal.objects.select_related(
-        'analysis', 'analysis__trait', 'analysis__study', 'analysis__ld', 'lead_variant')
+        'analysis', 'analysis__trait', 'analysis__study', 'analysis__ld', 'analysis__dataset',
+        'analysis__trait__phenotype', 'analysis__publication', 'lead_variant')
     serializer_class = serializers.FinemappedSignalSerializer
 
 

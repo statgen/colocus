@@ -8,7 +8,7 @@ from rest_framework.pagination import PageNumberPagination
 class ResizablePageNumberPagination(PageNumberPagination):
     """Allow certain overview pages to show more data than otherwise would be allowed"""
     page_size_query_param = 'page_size'
-    max_page_size = 10000
+    max_page_size = 1_000
 
 
 class LargeResultsSetPagination(PageNumberPagination):

@@ -151,6 +151,7 @@ class ColocResultSlimListView(APIView):
     """
     API endpoint to return a fast and slimmed-down version of all colocalization results with pagination and caching.
     """
+    schema = None # hide from auto-generated docs # noqa
 
     def get(self, request, *args, **kwargs):
         fields = """
@@ -281,6 +282,8 @@ class FinemappedSignalSlimListView(APIView):
     """
     API endpoint to return a fast and slimmed-down version of all signals with pagination.
     """
+    schema = None # hide from auto-generated docs # noqa
+
     def get(self, request, *args, **kwargs):
         # Define fields
         fields = """

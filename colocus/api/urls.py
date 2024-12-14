@@ -42,6 +42,18 @@ urls_v1 = [
         internal_views.analysis_manhattan,
         name='analysis-manhattan'
     ),
+
+    path(
+        'internal/coloc-slim/',
+        views.ColocResultSlimListView.as_view(),
+        name="coloc-slim"
+    ),
+    path(
+        'internal/signals-slim/',
+        views.FinemappedSignalSlimListView.as_view(),
+        name="signals-slim"
+    ),
+
     path('ld/', views.LDStatsListView.as_view(), name='ld-all'),
     path('ld/<uuid>/', views.LDStatsDetailView.as_view(), name='ld-detail'),
     path('ld/<uuid>/region/', views.LDPairsRegionView.as_view(), name='ld-region'),

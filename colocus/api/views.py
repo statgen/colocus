@@ -8,10 +8,12 @@ from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import exceptions as drf_exceptions
 from rest_framework import generics
+from rest_framework.views import APIView
 from zorp.readers import TabixReader
 from zorp.sniffers import guess_gwas_standard
 
 from colocus.core import models
+from colocus.utils.paginators import LargeResultsSetPagination
 from colocus.utils.variants import parse_variant
 
 from . import filters, parsers, serializers, util
@@ -144,6 +146,89 @@ class ColocResultDetailView(generics.RetrieveAPIView):
     serializer_class = serializers.ColocResultSerializer
 
 
+@method_decorator(cache_page(None), name='dispatch')
+class ColocResultSlimListView(APIView):
+    """
+    API endpoint to return a fast and slimmed-down version of all colocalization results with pagination and caching.
+    """
+
+    def get(self, request, *args, **kwargs):
+        fields = """
+                uuid
+                signal1__analysis__uuid
+                signal1__analysis__analysis_type
+                signal1__analysis__trait__uuid
+                signal1__analysis__dataset__uuid
+                signal1__analysis__tissue
+                signal1__analysis__study__uuid
+                signal1__lead_variant__vid
+                signal2__analysis__uuid
+                signal2__analysis__analysis_type
+                signal2__analysis__trait__uuid
+                signal2__analysis__dataset__uuid
+                signal2__analysis__tissue
+                signal2__analysis__study__uuid
+                signal2__lead_variant__vid
+                coloc_h4
+                r2
+            """.split()
+
+        # Change objects into JSON response
+        objects = models.ColocResult.objects.values(*fields)
+        result = []
+        for obj in objects:
+            result.append({
+                "uuid": obj.get("uuid"),
+                "signal1": {
+                    "analysis": {
+                        "uuid": obj.get("signal1__analysis__uuid"),
+                        "dataset": {
+                            "uuid": obj.get("signal1__analysis__dataset__uuid"),
+                        },
+                        "analysis_type": obj.get("signal1__analysis__analysis_type"),
+                        "trait": {
+                            "uuid": obj.get("signal1__analysis__trait__uuid"),
+                        },
+                        "tissue": obj.get("signal1__analysis__tissue"),
+                        "study": {
+                            "uuid": obj.get("signal1__analysis__study__uuid"),
+                        }
+                    },
+                    "lead_variant": {
+                        "vid": obj.get("signal1__lead_variant__vid")
+                    }
+                },
+                "signal2": {
+                    "analysis": {
+                        "uuid": obj.get("signal2__analysis__uuid"),
+                        "dataset": {
+                            "uuid": obj.get("signal2__analysis__dataset__uuid"),
+                        },
+                        "analysis_type": obj.get("signal2__analysis__analysis_type"),
+                        "trait": {
+                            "uuid": obj.get("signal2__analysis__trait__uuid"),
+                        },
+                        "tissue": obj.get("signal2__analysis__tissue"),
+                        "study": {
+                            "uuid": obj.get("signal2__analysis__study__uuid"),
+                        }
+                    },
+                    "lead_variant": {
+                        "vid": obj.get("signal2__lead_variant__vid")
+                    }
+                },
+                "coloc_h4": float(format(obj.get("coloc_h4"), '.3g')),
+                "r2": float(format(obj.get("r2"), '.3g')),
+            })
+
+        # Apply pagination
+        paginator = LargeResultsSetPagination()
+        paginated_result = paginator.paginate_queryset(result, request)
+
+        # Return paginated response
+        return paginator.get_paginated_response(paginated_result)
+
+
 class LDStatsListView(generics.ListAPIView):
     ordering = ('panel', 'population')
     queryset = models.LDStats.objects.all()
@@ -185,6 +270,59 @@ class FinemappedSignalDetailView(generics.RetrieveAPIView):
         'analysis', 'analysis__trait', 'analysis__study', 'analysis__ld', 'analysis__dataset',
         'analysis__trait__phenotype', 'analysis__publication', 'lead_variant')
     serializer_class = serializers.FinemappedSignalSerializer
+
+
+@method_decorator(cache_page(None), name='dispatch')
+class FinemappedSignalSlimListView(APIView):
+    """
+    API endpoint to return a fast and slimmed-down version of all signals with pagination.
+    """
+    def get(self, request, *args, **kwargs):
+        # Define fields
+        fields = """
+            uuid
+            analysis__uuid
+            analysis__analysis_type
+            analysis__trait__uuid
+            analysis__dataset__uuid
+            analysis__tissue
+            analysis__study__uuid
+            lead_variant__vid
+        """.split()
+
+        # Fetch objects
+        objects = models.FineMappedSignal.objects.values(*fields)
+
+        # Transform objects
+        result = []
+        for obj in objects:
+            result.append({
+                "uuid": obj.get("uuid"),
+                "analysis": {
+                    "uuid": obj.get("analysis__uuid"),
+                    "dataset": {
+                        "uuid": obj.get("analysis__dataset__uuid"),
+                    },
+                    "analysis_type": obj.get("analysis__analysis_type"),
+                    "trait": {
+                        "uuid": obj.get("analysis__trait__uuid"),
+                    },
+                    "tissue": obj.get("analysis__tissue"),
+                    "study": {
+                        "uuid": obj.get("analysis__study__uuid"),
+                    }
+                },
+                "lead_variant": {
+                    "vid": obj.get("lead_variant__vid")
+                }
+            })
+
+        # Apply pagination
+        paginator = LargeResultsSetPagination()
+        paginated_result = paginator.paginate_queryset(result, request)
+
+        # Return paginated response
+        return paginator.get_paginated_response(paginated_result)
 
 
 @method_decorator(cache_page(None), name='get')

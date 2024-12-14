@@ -15,6 +15,135 @@ from colocus.core import constants, models
 
 # from django.db.models import CharField, F, Q, Value
 
+# Keeping the two examples below for future reference. They are extremely fast, but do not allow pagination or caching,
+# which could be a problem for much larger datasets in the future. The current implementation is slower, but allows
+# for pagination and caching, and are only marginally slower.
+
+# def signals_slim(request, *args, **kwargs):
+#     """
+#     Return a slimmed down version all signals, with only the fields required for making QC figures
+#     """
+#
+#     fields = """
+#         uuid
+#         analysis__uuid
+#         analysis__analysis_type
+#         analysis__trait__uuid
+#         analysis__dataset__uuid
+#         analysis__tissue
+#         analysis__study__uuid
+#         lead_variant__vid
+#     """.split()
+#
+#     # Change objects into JSON response
+#     objects = models.FineMappedSignal.objects.values(*fields)
+#     result = []
+#     for obj in objects:
+#         result.append({
+#             "uuid": obj.get("uuid"),
+#             "analysis": {
+#                 "uuid": obj.get("analysis__uuid"),
+#                 "dataset": {
+#                     "uuid": obj.get("analysis__dataset__uuid"),
+#                 },
+#                 "analysis_type": obj.get("analysis__analysis_type"),
+#                 "trait": {
+#                     "uuid": obj.get("analysis__trait__uuid"),
+#                 },
+#                 "tissue": obj.get("analysis__tissue"),
+#                 "study": {
+#                     "uuid": obj.get("analysis__study__uuid"),
+#                 }
+#             },
+#             "lead_variant": {
+#                 "vid": obj.get("lead_variant__vid")
+#             }
+#         })
+#
+#     return http.JsonResponse({
+#         "count": len(result),
+#         "results": result
+#     })
+#
+#
+# def coloc_slim(request, *args, **kwargs):
+#     """
+#     Return a slimmed down version of the coloc results, with only the fields required for making QC figures
+#     """
+#
+#     fields = """
+#         uuid
+#         signal1__analysis__uuid
+#         signal1__analysis__analysis_type
+#         signal1__analysis__trait__uuid
+#         signal1__analysis__dataset__uuid
+#         signal1__analysis__tissue
+#         signal1__analysis__study__uuid
+#         signal1__lead_variant__vid
+#         signal2__analysis__uuid
+#         signal2__analysis__analysis_type
+#         signal2__analysis__trait__uuid
+#         signal2__analysis__dataset__uuid
+#         signal2__analysis__tissue
+#         signal2__analysis__study__uuid
+#         signal2__lead_variant__vid
+#         coloc_h4
+#         r2
+#     """.split()
+#
+#     # Change objects into JSON response
+#     objects = models.ColocResult.objects.values(*fields)
+#     result = []
+#     for obj in objects:
+#         result.append({
+#             "uuid": obj.get("uuid"),
+#             "signal1": {
+#                 "analysis": {
+#                     "uuid": obj.get("signal1__analysis__uuid"),
+#                     "dataset": {
+#                         "uuid": obj.get("signal1__analysis__dataset__uuid"),
+#                     },
+#                     "analysis_type": obj.get("signal1__analysis__analysis_type"),
+#                     "trait": {
+#                         "uuid": obj.get("signal1__analysis__trait__uuid"),
+#                     },
+#                     "tissue": obj.get("signal1__analysis__tissue"),
+#                     "study": {
+#                         "uuid": obj.get("signal1__analysis__study__uuid"),
+#                     }
+#                 },
+#                 "lead_variant": {
+#                     "vid": obj.get("signal1__lead_variant__vid")
+#                 }
+#             },
+#             "signal2": {
+#                 "analysis": {
+#                     "uuid": obj.get("signal2__analysis__uuid"),
+#                     "dataset": {
+#                         "uuid": obj.get("signal2__analysis__dataset__uuid"),
+#                     },
+#                     "analysis_type": obj.get("signal2__analysis__analysis_type"),
+#                     "trait": {
+#                         "uuid": obj.get("signal2__analysis__trait__uuid"),
+#                     },
+#                     "tissue": obj.get("signal2__analysis__tissue"),
+#                     "study": {
+#                         "uuid": obj.get("signal2__analysis__study__uuid"),
+#                     }
+#                 },
+#                 "lead_variant": {
+#                     "vid": obj.get("signal2__lead_variant__vid")
+#                 }
+#             },
+#             "coloc_h4": float(format(obj.get("coloc_h4"), '.3g')),
+#             "r2": float(format(obj.get("r2"), '.3g')),
+#         })
+#
+#     return http.JsonResponse({
+#         "count": len(result),
+#         "results": result
+#     })
+
 
 def search_page_metadata(request, *args, **kwargs):
     # Apply analysis_uuid filter if provided, else use all objects

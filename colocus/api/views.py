@@ -155,6 +155,7 @@ class ColocResultSlimListView(APIView):
     def get(self, request, *args, **kwargs):
         fields = """
                 uuid
+                signal1__uuid
                 signal1__analysis__uuid
                 signal1__analysis__analysis_type
                 signal1__analysis__trait__uuid
@@ -162,6 +163,7 @@ class ColocResultSlimListView(APIView):
                 signal1__analysis__tissue
                 signal1__analysis__study__uuid
                 signal1__lead_variant__vid
+                signal2__uuid
                 signal2__analysis__uuid
                 signal2__analysis__analysis_type
                 signal2__analysis__trait__uuid
@@ -180,6 +182,7 @@ class ColocResultSlimListView(APIView):
             result.append({
                 "uuid": obj.get("uuid"),
                 "signal1": {
+                    "uuid": obj.get("signal1__uuid"),
                     "analysis": {
                         "uuid": obj.get("signal1__analysis__uuid"),
                         "dataset": {
@@ -199,6 +202,7 @@ class ColocResultSlimListView(APIView):
                     }
                 },
                 "signal2": {
+                    "uuid": obj.get("signal2__uuid"),
                     "analysis": {
                         "uuid": obj.get("signal2__analysis__uuid"),
                         "dataset": {

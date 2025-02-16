@@ -223,7 +223,7 @@ class ColocResultSlimListView(APIView):
                     }
                 },
                 "coloc_h4": float(format(obj.get("coloc_h4"), '.3g')),
-                "r2": float(format(obj.get("r2"), '.3g')),
+                "r2": float(format(obj.get("r2"), '.3g')) if obj.get("r2") else None,
             })
 
         # Apply pagination

@@ -19,7 +19,7 @@ if os.getenv("READTHEDOCS", default=False) == "True":
     os.environ["DJANGO_READ_DOT_ENV_FILE"] = "True"
     os.environ["USE_DOCKER"] = "no"
 else:
-    sys.path.insert(0, os.path.abspath("/app"))
+    sys.path.insert(0, os.path.abspath(".."))
 os.environ["DATABASE_URL"] = "sqlite:///readthedocs.db"
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
 django.setup()
@@ -27,8 +27,8 @@ django.setup()
 # -- Project information -----------------------------------------------------
 
 project = "colocus"
-copyright = """2022, Andy Boughton"""
-author = "Andy Boughton"
+copyright = """2022, Regents of the University of Michigan"""
+author = "Colocus Team"
 
 
 # -- General configuration ---------------------------------------------------

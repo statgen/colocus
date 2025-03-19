@@ -19,7 +19,8 @@ ROOT_DIR = Path(__file__).resolve(strict=True).parent.parent
 sys.path.append(str(ROOT_DIR / "colocus"))
 
 # If DJANGO_SETTINGS_MODULE is unset, default to the local settings
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
+if not os.environ.get("DJANGO_SETTINGS_MODULE"):
+    raise RuntimeError("DJANGO_SETTINGS_MODULE is not set")
 
 # This application object is used by any ASGI server configured to use this file.
 django_application = get_asgi_application()

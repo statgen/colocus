@@ -332,6 +332,7 @@ database/**
 .pytest_cache/
 .ipython/
 .env
+.env*
 .envs/*
 
 # Private settings

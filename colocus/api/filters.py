@@ -227,6 +227,8 @@ class ColocResultFilter(FilterSet):
             'analyses',
             'signals',
             'studies',
+            'signal1_trait',
+            'signal2_trait',
             'signal1_region',
             'signal2_region',
             'signal1_analysis',

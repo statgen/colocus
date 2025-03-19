@@ -1,7 +1,7 @@
 import pytest
 from django.urls import reverse
 
-pytestmark = pytest.mark.django_db
+pytestmark = pytest.mark.django_db(databases=["default", "core"])
 
 
 def test_swagger_accessible_by_admin(admin_client):

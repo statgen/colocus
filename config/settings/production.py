@@ -7,18 +7,42 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 from .base import *  # noqa
 from .base import env
 
+# Read env file
+env.read_env(str(ROOT_DIR / ".env.production"), overwrite=True)
+
 # GENERAL
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#secret-key
 SECRET_KEY = env("DJANGO_SECRET_KEY")
+
 # https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["amp.colocus.app"])
 
 # DATABASES
 # ------------------------------------------------------------------------------
-DATABASES["default"] = env.db("DATABASE_URL")  # noqa F405
-DATABASES["default"]["ATOMIC_REQUESTS"] = True  # noqa F405
-DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=60)  # noqa F405
+DATABASES = {
+  "default": {
+    "ENGINE": "django.db.backends.postgresql",
+    "NAME": env("DJANGO_DB_DEFAULT_URL"),
+    "USER": env("POSTGRES_USER"),
+    "PASSWORD": env("POSTGRES_PASSWORD"),
+    "HOST": env("POSTGRES_HOST"),
+    "PORT": env("POSTGRES_PORT"),
+    "ATOMIC_REQUESTS": True,
+    "CONN_MAX_AGE": env.int("CONN_MAX_AGE", default=60),
+  },
+  "core": {
+    "ENGINE": "django.db.backends.postgresql",
+    "NAME": env("DJANGO_DB_CORE_URL"),
+    "USER": env("POSTGRES_USER"),
+    "PASSWORD": env("POSTGRES_PASSWORD"),
+    "HOST": env("POSTGRES_HOST"),
+    "PORT": env("POSTGRES_PORT"),
+    "ATOMIC_REQUESTS": True,
+    "CONN_MAX_AGE": env.int("CONN_MAX_AGE", default=60),
+  },
+  
+}
 
 # CACHES
 # ------------------------------------------------------------------------------

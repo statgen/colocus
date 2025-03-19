@@ -11,6 +11,7 @@ from colocus.api.tests.util import check_media_dir
 from colocus.users.models import User
 from colocus.users.tests.factories import UserFactory
 
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.test")
 
 @pytest.fixture(scope='session', autouse=True)
 def django_logger():
@@ -39,6 +40,7 @@ def django_db_setup(django_db_blocker, django_logger):
         # under colocus/api/management/commands/load_data.py
         print("Loading database for testing...")
         run(['python', 'manage.py', 'migrate'])
+        run(['python', 'manage.py', 'migrate', '--database=core'])
         # run(['python', 'scripts/load_dataset.py', 'colocus/tests/data/adipoexpress'])
         run(['python', 'scripts/load_dataset.py', 'colocus/tests/data/all-amp-datasets'])
 

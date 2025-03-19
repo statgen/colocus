@@ -1,15 +1,17 @@
 from .base import *  # noqa
 from .base import env
 
+# Read env file
+env.read_env(str(ROOT_DIR / ".env.local"), overwrite=True)
+
 # GENERAL
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#debug
 DEBUG = True
+
 # https://docs.djangoproject.com/en/dev/ref/settings/#secret-key
-SECRET_KEY = env(
-    "DJANGO_SECRET_KEY",
-    default="yr88d15wvLQCiaHMly3IWCS29EyzJFAfz1V2GQJwIlBU2t3iuamh3wJx32GBFDDf",
-)
+SECRET_KEY = env("DJANGO_SECRET_KEY")
+
 # https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
 ALLOWED_HOSTS = ["localhost", "0.0.0.0", "127.0.0.1"]
 
@@ -41,8 +43,10 @@ EMAIL_BACKEND = env(
 # ------------------------------------------------------------------------------
 # https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#prerequisites
 INSTALLED_APPS += ["debug_toolbar"]  # noqa F405
+
 # https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#middleware
 MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]  # noqa F405
+
 # https://django-debug-toolbar.readthedocs.io/en/latest/configuration.html#debug-toolbar-config
 DEBUG_TOOLBAR_CONFIG = {
     "DISABLE_PANELS": [
@@ -51,6 +55,7 @@ DEBUG_TOOLBAR_CONFIG = {
     ],
     "SHOW_TEMPLATE_CONTEXT": True,
 }
+
 # https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#internal-ips
 INTERNAL_IPS = ["127.0.0.1", "10.0.2.2"]
 if env("USE_DOCKER", default=False) == "yes":

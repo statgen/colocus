@@ -10,10 +10,8 @@ ROOT_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 APPS_DIR = ROOT_DIR / "colocus"
 env = environ.Env()
 
-READ_DOT_ENV_FILE = env.bool("DJANGO_READ_DOT_ENV_FILE", default=False)
-if READ_DOT_ENV_FILE:
-    # OS environment variables take precedence over variables from .env
-    env.read_env(str(ROOT_DIR / ".env"))
+# OS environment variables take precedence over variables from .env
+env.read_env(str(ROOT_DIR / ".env"))
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -40,9 +38,21 @@ LOCALE_PATHS = [str(ROOT_DIR / "locale")]
 # DATABASES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
-db_path = ROOT_DIR / "database/local.sqlite3"
-DATABASES = {"default": env.db("DATABASE_URL", default=f"sqlite:///{db_path}")}   # env.db("DATABASE_URL")}
-DATABASES["default"]["ATOMIC_REQUESTS"] = True
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": str(ROOT_DIR / "database/django.sqlite3"),
+        "ATOMIC_REQUESTS": True,
+    },
+    "core": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": str(ROOT_DIR / "database/core.sqlite3"),
+        "ATOMIC_REQUESTS": True,
+    },
+}
+
+DATABASE_ROUTERS = ['config.db_router.CoreRouter']
+
 # https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-DEFAULT_AUTO_FIELD
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

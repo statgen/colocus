@@ -8,9 +8,11 @@ from rest_framework.test import APITestCase
 
 from colocus.utils.variants import is_variant, valid_alleles
 
+class ColocusAPITestCase(APITestCase):
+    databases = ['default', 'core']
 
-@pytest.mark.django_db
-class TestColocResultListView(APITestCase):
+@pytest.mark.django_db(databases=['core'])
+class TestColocResultListView(ColocusAPITestCase):
     def test_simple(self):
         self.url = reverse('api:coloc-all')
         response = self.client.get(self.url, format="json")
@@ -89,8 +91,8 @@ class TestColocResultListView(APITestCase):
         assert response.status_code == HTTP_200_OK
 
 
-@pytest.mark.django_db
-class TestColocResultDetailView(APITestCase):
+@pytest.mark.django_db(databases=['core'])
+class TestColocResultDetailView(ColocusAPITestCase):
     def test_simple(self):
         self.params = {
             'uuid': "6MxwbaHqiX4cffxGy6ux3H",
@@ -123,8 +125,8 @@ class TestColocResultDetailView(APITestCase):
         assert response.status_code == HTTP_200_OK
 
 
-@pytest.mark.django_db
-class TestLDStatsRegionView(APITestCase):
+@pytest.mark.django_db(databases=['core'])
+class TestLDStatsRegionView(ColocusAPITestCase):
     def test_simple(self):
         self.params = {
             'uuid': "UKBB_GRCh37_ALL",
@@ -150,8 +152,8 @@ class TestLDStatsRegionView(APITestCase):
         assert response.status_code == HTTP_200_OK
 
 
-@pytest.mark.django_db
-class TestFinemappedSignalSummRegionView(APITestCase):
+@pytest.mark.django_db(databases=['core'])
+class TestFinemappedSignalSummRegionView(ColocusAPITestCase):
     def test_simple(self):
         self.params = {
             'uuid': "ExDdZgc17zypsGPt7sEeEz",
@@ -180,8 +182,8 @@ class TestFinemappedSignalSummRegionView(APITestCase):
         assert response.status_code == HTTP_200_OK
 
 
-@pytest.mark.django_db
-class TestInternalTraitManhattanView(APITestCase):
+@pytest.mark.django_db(databases=['core'])
+class TestInternalTraitManhattanView(ColocusAPITestCase):
     def test_simple(self):
         self.params = {
             'uuid': "gwas_BMI_GIANT_2018_hg19_KAB_BMI",
@@ -214,9 +216,22 @@ class TestInternalTraitManhattanView(APITestCase):
         assert response.status_code == HTTP_200_OK
 
 
-@pytest.mark.django_db
-class TestInternalSearchMetadata(APITestCase):
+@pytest.mark.django_db(databases=['core'])
+class TestInternalSearchMetadata(ColocusAPITestCase):
     def test_simple(self):
         self.url = reverse('api:search-metadata')
         response = self.client.get(self.url, format="json")
+        assert response.status_code == HTTP_200_OK
+
+
+@pytest.mark.django_db(databases=['core'])
+class TestColocSlimView(ColocusAPITestCase):
+    def test_simple(self):
+        self.url = reverse('api:coloc-slim')
+        response = self.client.get(self.url, format="json")
+
+        expected_keys = "uuid signal1 signal2 coloc_h4 r2".split()
+        for key in expected_keys:
+            assert key in response.data['results'][0]
+
         assert response.status_code == HTTP_200_OK

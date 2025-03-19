@@ -3,10 +3,12 @@ from django.urls import reverse
 
 from colocus.users.models import User
 
-pytestmark = pytest.mark.django_db
+pytestmark = pytest.mark.django_db(databases=["default", "core"])
 
 
 class TestUserAdmin:
+    databases = ["default", "core"]
+
     def test_changelist(self, admin_client):
         url = reverse("admin:users_user_changelist")
         response = admin_client.get(url)

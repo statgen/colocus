@@ -19,7 +19,7 @@ def django_logger():
 
 
 @pytest.fixture(scope='session', autouse=True)
-def django_db_setup(django_db_setup, django_db_blocker, django_logger):
+def django_db_setup(django_db_blocker, django_logger):
     # The database loading script will create some files the media directory, which we need to make sure have been
     # cleared out first
     if os.path.isdir(settings.MEDIA_ROOT):

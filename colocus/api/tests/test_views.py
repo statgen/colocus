@@ -23,6 +23,35 @@ class TestColocResultListView(ColocusAPITestCase):
 
         assert response.status_code == HTTP_200_OK
 
+    def test_sorting(self):
+        self.url = reverse('api:coloc-all')
+
+        response = self.client.get(self.url, data={"ordering": "-h3"}, format="json")
+        for i, row in enumerate(response.data["results"]):
+            if i == 0:
+                continue
+            assert row["coloc_h3"] <= response.data["results"][i - 1]["coloc_h3"]
+
+        response = self.client.get(self.url, data={"ordering": "h3"}, format="json")
+        for i, row in enumerate(response.data["results"]):
+            if i == 0:
+                continue
+            assert row["coloc_h3"] >= response.data["results"][i - 1]["coloc_h3"]
+
+        response = self.client.get(self.url, data={"ordering": "-signal2_logp"}, format="json")
+        for i, row in enumerate(response.data["results"]):
+            if i == 0:
+                continue
+            assert row["signal2"]["neg_log_p"] <= response.data["results"][i - 1]["signal2"]["neg_log_p"]
+
+        response = self.client.get(self.url, data={"ordering": "signal2_logp"}, format="json")
+        for i, row in enumerate(response.data["results"]):
+            if i == 0:
+                continue
+            assert row["signal2"]["neg_log_p"] >= response.data["results"][i - 1]["signal2"]["neg_log_p"]
+
+        assert response.status_code == HTTP_200_OK
+
     def test_gene(self):
         self.url = reverse('api:coloc-all')
         response = self.client.get(self.url, data={"genes": "SLC39A8"}, format="json")

@@ -1,0 +1,70 @@
+networks:
+  colocus-network:
+    driver: bridge
+
+services:
+  db:
+    image: postgres:15
+    container_name: colocus-db
+    restart: always
+    env_file: 
+      - .env
+      - .env.local
+      - .env.production
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - colocus-network
+
+  redis:
+    image: redis:6
+    container_name: colocus-redis
+    restart: always
+    env_file: 
+      - .env
+      - .env.local
+      - .env.production
+    ports:
+      - "${REDIS_PORT}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - colocus-network
+
+  django:
+    image: colocus:latest
+    container_name: colocus-django
+    restart: always
+    env_file: 
+      - .env
+      - .env.local
+      - .env.production
+    volumes:
+      - /mnt/devbox/projects/colocus-pipeline/data/processed/:/data:ro
+    ports:
+      - "${UVICORN_PORT}:${UVICORN_PORT}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${UVICORN_PORT}/api/v1/datasets/?page_size=1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - colocus-network
+    
+volumes:
+  postgres_data:

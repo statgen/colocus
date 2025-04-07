@@ -1,0 +1,32 @@
+# Ignore everything by default
+*
+
+# Allow files and directories
+!/colocus
+!/config
+
+# We need a database directory to get created but be empty
+# see below where db files are ignored
+!/database
+
+!/docs
+!/pytest.ini
+!/pyproject.toml
+!/uv.lock
+!/setup.cfg
+!/manage.py
+!/scripts
+!/sqlite3
+!/requirements
+
+# Ignore unnecessary files inside allowed directories
+# This should go after the allowed directories
+**/*~
+**/*.log
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/*.pyc
+**/.DS_Store
+**/Thumbs.db
+**/colocus/media

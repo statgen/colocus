@@ -530,8 +530,8 @@ class FineMappedSignal(models.Model):
         default=False,
         null=False,
         help_text="True if this signal's summary statistics are from the marginal analysis, not a conditional analysis."
-            "This can happen in cases where the marginal analysis is the only analysis (no conditional analysis was needed),"
-            " or if there was a problem in fine-mapping at this particular locus")
+                  " This can happen in cases where the marginal analysis is the only analysis (no conditional analysis"
+                  " was needed) or if there was a problem in fine-mapping at this particular locus")
 
 
 class ColocResult(models.Model):

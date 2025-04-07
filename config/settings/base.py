@@ -283,7 +283,7 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "API documentation for colocus",
     "VERSION": "1.0.0",
     "SERVERS": [
-        {"url": "http://127.0.0.1:8000", "description": "Local Development server"},
+        {"url": "http://localhost:8000", "description": "Local Development server"},
         {"url": "https://test.amp.colocus.app", "description": "Test server"},
         {"url": "https://staging.amp.colocus.app", "description": "Staging server"},
         {"url": "https://amp.colocus.app", "description": "Production server"},

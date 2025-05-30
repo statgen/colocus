@@ -96,6 +96,15 @@ class ColocResultFilter(FilterSet):
         query |= self.create_query('signal2__analysis__tissue', value)
         return queryset.filter(query)
 
+    cell_types = CharFilter(
+        method='cell_type_or',
+        label="Provide a list of comma-separated cell types to filter by.")
+
+    def cell_type_or(self, queryset, name, value):
+        query = self.create_query('signal1__analysis__cell_type', value)
+        query |= self.create_query('signal2__analysis__cell_type', value)
+        return queryset.filter(query)
+
     analyses = CharFilter(
         method='analysis_uuid_or',
         label="Provide a list of comma-separated marginal analysis UUIDs to filter by.")
@@ -205,10 +214,12 @@ class ColocResultFilter(FilterSet):
             ('signal1__analysis__trait__gene__ens_id', 'signal1_gene_ens_id'),
             ('signal1__analysis__trait__gene__symbol', 'signal1_gene_symbol'),
             ('signal1__analysis__tissue', 'signal1_tissue'),
+            ('signal1__analysis__cell_type', 'signal1_cell_type'),
             ('signal1__analysis__trait__exon__ens_id', 'signal1_exon_ens_id'),
             ('signal2__analysis__trait__gene__ens_id', 'signal2_gene_ens_id'),
             ('signal2__analysis__trait__gene__symbol', 'signal2_gene_symbol'),
             ('signal2__analysis__tissue', 'signal2_tissue'),
+            ('signal2__analysis__cell_type', 'signal2_cell_type'),
             ('signal2__analysis__trait__exon__ens_id', 'signal2_exon_ens_id'),
             ('signal1__analysis__study__uuid', 'signal1_study'),
             ('signal2__analysis__study__uuid', 'signal2_study')
@@ -224,6 +235,7 @@ class ColocResultFilter(FilterSet):
             'traits',
             'phenotypes',
             'tissues',
+            'cell_types',
             'analyses',
             'signals',
             'studies',

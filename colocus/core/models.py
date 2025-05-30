@@ -143,6 +143,12 @@ class Dataset(models.Model):
         blank=True,
         unique=False)
 
+    cell_type = models.TextField(
+        help_text='Cell type for all analyses in this dataset (if applicable), e.g. "adipocytes" or "hepatocytes"',
+        null=True,
+        blank=True,
+        unique=False)
+
     ancestry = models.TextField(
         null=True,
         blank=True,
@@ -389,10 +395,17 @@ class MarginalAnalysis(models.Model):
         help_text='The trait analyzed in this analysis')
 
     tissue = models.TextField(
-        help_text='Tissue or cell type in which this analysis\' trait was analyzed, e.g. "adipose" or "liver"',
+        help_text='Tissue in which this analysis\' trait was analyzed, e.g. "adipose" or "liver"',
         null=True,
         blank=True,
         unique=False)
+
+    cell_type = models.TextField(
+        help_text='Cell type in which this analysis\' trait was analyzed, e.g. "adipocytes" or "hepatocytes"',
+        null=True,
+        blank=True,
+        unique=False
+    )
 
     study = models.ForeignKey(
         Study,

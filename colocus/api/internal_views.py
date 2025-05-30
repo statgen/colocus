@@ -157,21 +157,24 @@ def search_page_metadata(request, *args, **kwargs):
 
     analysis_types = set()
     tissues = set()
+    cell_types = set()
     phenotypes = set()
     studies = set()
 
-    analysis_fields = ["analysis_type", "tissue", "trait__phenotype__name", "study__uuid"]
+    analysis_fields = ["analysis_type", "tissue", "cell_type", "trait__phenotype__name", "study__uuid"]
     for obj in qs_analysis.values(*analysis_fields):
         analysis_types.add(obj.get("analysis_type"))
         tissues.add(obj.get("tissue"))
+        cell_types.add(obj.get("cell_type"))
         phenotypes.add(obj.get("trait__phenotype__name"))
         studies.add(obj.get("study__uuid"))
 
-    for s in [analysis_types, tissues, phenotypes, studies]:
+    for s in [analysis_types, tissues, cell_types, phenotypes, studies]:
         s.discard(None)
 
     analysis_types = list(analysis_types)
     tissues = list(tissues)
+    cell_types = list(cell_types)
     phenotypes = list(phenotypes)
     studies = list(studies)
 
@@ -198,6 +201,7 @@ def search_page_metadata(request, *args, **kwargs):
     result = {
         'count_pairs': count_signal_pairs,
         'tissues': tissues,
+        'cell_types': cell_types,
         'analysis_types': analysis_types,
         'phenotypes': phenotypes,
         'studies': studies,

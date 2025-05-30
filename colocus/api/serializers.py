@@ -148,7 +148,8 @@ class MarginalAnalysisSerializerBrief(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.MarginalAnalysis
-        fields = ('uuid', 'analysis_type', 'genome_build', 'trait', 'tissue', 'description', 'ancestry', 'study', 'ld')
+        fields = ('uuid', 'analysis_type', 'genome_build', 'trait', 'tissue', 'cell_type', 'description', 'ancestry',
+                  'study', 'ld')
 
 
 class DatasetSerializer(drf_serializers.ModelSerializer):
@@ -163,8 +164,9 @@ class DatasetSerializer(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.Dataset
-        fields = ('uuid', 'analysis_type', 'genome_build', 'tissue', 'ancestry', 'n_traits', 'n_traits_with_sig',
-                  'publication', 'external_link', 'submitter', 'analysts', 'principal_investigators')
+        fields = ('uuid', 'analysis_type', 'genome_build', 'tissue', 'cell_type', 'ancestry', 'n_traits',
+                  'n_traits_with_sig', 'publication', 'external_link', 'submitter', 'analysts',
+                  'principal_investigators')
 
 
 class DatasetDetailSerializer(drf_serializers.ModelSerializer):
@@ -180,8 +182,9 @@ class DatasetDetailSerializer(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.Dataset
-        fields = ('uuid', 'analysis_type', 'genome_build', 'tissue', 'ancestry', 'n_traits', 'n_traits_with_sig',
-                  'publication', 'external_link', 'submitter', 'analysts', 'principal_investigators', 'analysis')
+        fields = ('uuid', 'analysis_type', 'genome_build', 'tissue', 'cell_type', 'ancestry', 'n_traits',
+                  'n_traits_with_sig', 'publication', 'external_link', 'submitter', 'analysts',
+                  'principal_investigators', 'analysis')
 
     def get_analysis(self, obj):
         count = obj.marginal_analyses.count()
@@ -212,8 +215,8 @@ class MarginalAnalysisSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.MarginalAnalysis
         fields = (
-            'uuid', 'dataset', 'analysis_type', 'genome_build', 'trait', 'tissue', 'description', 'ancestry',
-            'study', 'publication', 'ld', 'external_link'
+            'uuid', 'dataset', 'analysis_type', 'genome_build', 'trait', 'tissue', 'cell_type', 'description',
+            'ancestry', 'study', 'publication', 'ld', 'external_link'
         )
 
 

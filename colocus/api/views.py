@@ -162,6 +162,7 @@ class ColocResultSlimListView(APIView):
                 signal1__analysis__trait__uuid
                 signal1__analysis__dataset__uuid
                 signal1__analysis__tissue
+                signal1__analysis__cell_type
                 signal1__analysis__study__uuid
                 signal1__lead_variant__vid
                 signal2__uuid
@@ -170,6 +171,7 @@ class ColocResultSlimListView(APIView):
                 signal2__analysis__trait__uuid
                 signal2__analysis__dataset__uuid
                 signal2__analysis__tissue
+                signal2__analysis__cell_type
                 signal2__analysis__study__uuid
                 signal2__lead_variant__vid
                 coloc_h4
@@ -194,6 +196,7 @@ class ColocResultSlimListView(APIView):
                             "uuid": obj.get("signal1__analysis__trait__uuid"),
                         },
                         "tissue": obj.get("signal1__analysis__tissue"),
+                        "cell_type": obj.get("signal1__analysis__cell_type"),
                         "study": {
                             "uuid": obj.get("signal1__analysis__study__uuid"),
                         }
@@ -214,6 +217,7 @@ class ColocResultSlimListView(APIView):
                             "uuid": obj.get("signal2__analysis__trait__uuid"),
                         },
                         "tissue": obj.get("signal2__analysis__tissue"),
+                        "cell_type": obj.get("signal2__analysis__cell_type"),
                         "study": {
                             "uuid": obj.get("signal2__analysis__study__uuid"),
                         }
@@ -293,6 +297,7 @@ class FinemappedSignalSlimListView(APIView):
             analysis__trait__uuid
             analysis__dataset__uuid
             analysis__tissue
+            analysis__cell_type
             analysis__study__uuid
             lead_variant__vid
         """.split()
@@ -315,6 +320,7 @@ class FinemappedSignalSlimListView(APIView):
                         "uuid": obj.get("analysis__trait__uuid"),
                     },
                     "tissue": obj.get("analysis__tissue"),
+                    "cell_type": obj.get("analysis__cell_type"),
                     "study": {
                         "uuid": obj.get("analysis__study__uuid"),
                     }

@@ -546,9 +546,14 @@ def load_colocalizations(data_submission: DataSubmission, coloc_file: pathlib.Pa
 
         coloc.data_submission = data_submission
 
-        # An external validation step should have already verified that signal1 and signal2 exist
-        coloc.signal1 = FineMappedSignal.objects.get(uuid=meta_dict['signal1'])
-        coloc.signal2 = FineMappedSignal.objects.get(uuid=meta_dict['signal2'])
+        def get_signal(uuid):
+            try:
+                return FineMappedSignal.objects.get(uuid=uuid)
+            except FineMappedSignal.DoesNotExist as e:
+                raise ValueError(f"Signal with UUID {uuid} not found in database") from e
+
+        coloc.signal1 = get_signal(meta_dict['signal1'])
+        coloc.signal2 = get_signal(meta_dict['signal2'])
 
         coloc.save()
 

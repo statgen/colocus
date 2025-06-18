@@ -2,6 +2,7 @@
 Core models describing key data entities
 """
 from django.db import models
+from django.core.validators import RegexValidator
 
 from ..api.util import sign
 from . import constants
@@ -42,6 +43,53 @@ class DataSubmission(models.Model):
         on_delete=models.CASCADE,
         null=True,
         help_text='Publication describing this overall data submission')
+
+    data_version = models.CharField(
+        max_length=32,
+        help_text="Version of the data, should be vX.X.X format.",
+        null=False,
+        blank=False,
+        unique=False,
+        validators=[
+            RegexValidator(
+                regex=r'^v\d+\.\d+\.\d+(-\w+)?$',
+                message='Version must be in vX.X.X format (e.g., v1.2.3 or v1.2.3-beta)'
+            )
+        ])
+
+    data_hash = models.CharField(
+        max_length=64,
+        help_text="A hash of the data files used to generate this submission, used to verify data integrity.",
+        null=False,
+        blank=False,
+        unique=True)
+
+    data_hash_type = models.CharField(
+        max_length=16,
+        choices=constants.DATA_HASH_TYPES,
+        help_text="Type of hash used to generate the data_hash, e.g., 'b3sum'",
+        null=False,
+        blank=False,
+        unique=False)
+
+    pipeline_version = models.CharField(
+        max_length=32,
+        help_text="Version of the pipeline used to generate this data, should be vX.X.X format.",
+        null=False,
+        blank=False,
+        unique=False,
+        validators=[
+            RegexValidator(
+                regex=r'^v\d+\.\d+\.\d+(-\w+)?$',
+                message='Version must be in vX.X.X format (e.g., v1.2.3 or v1.2.3-beta)'
+            )
+        ])
+
+    pipeline_remote = models.TextField(
+        help_text="Git remote URL of the pipeline used to generate this data",
+        null=False,
+        blank=False,
+        unique=False)
 
     # Computed properties used by serializers
     @property

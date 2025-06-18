@@ -70,8 +70,21 @@ def load_submission(package_root: pathlib.Path) -> DataSubmission:
     if not meta_path.exists():
         raise Exception('No analysis package found')
 
-    with open(meta_path, 'r') as f:
+    with open(meta_path, 'r', encoding='utf-8') as f:
         metadata = yaml.safe_load(f)
+
+    # Load additional fields from `version.yml`
+    version_path = package_root / "version.yml"
+    if not version_path.exists():
+        raise FileNotFoundError('No version.yml found')
+
+    with open(version_path, 'r', encoding='utf-8') as f:
+        version_metadata = yaml.safe_load(f)
+        metadata["data_version"] = version_metadata["data-version"]
+        metadata["data_hash"] = version_metadata["data-hash"]
+        metadata["data_hash_type"] = version_metadata["data-hash-type"]
+        metadata["pipeline_version"] = version_metadata["pipeline-version"]
+        metadata["pipeline_remote"] = version_metadata["pipeline-remote"]
 
     try:
         # We don't use get_or_create because additional NOT NULL fields may be required

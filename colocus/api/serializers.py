@@ -22,13 +22,14 @@ class NonNullModelSerializer(drf_serializers.ModelSerializer):
 class DataSubmissionSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.DataSubmission
-        fields = ('uuid', 'authors', 'contact_email', 'pmid', 'description')
+        fields = ('uuid', 'description', 'contact_email', 'ingest_date', 'data_version', 'data_hash')
 
 
 class DataSubmissionDetailSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.DataSubmission
-        fields = ('uuid', 'authors', 'contact_email', 'pmid', 'trait_count', 'description')
+        fields = ('uuid', 'description', 'contact_email', 'ingest_date', 'publication', 'trait_count', 'data_version',
+                  'data_hash')
 
 
 class LDStatsSerializer(drf_serializers.ModelSerializer):

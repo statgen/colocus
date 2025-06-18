@@ -339,6 +339,28 @@ class FinemappedSignalSlimListView(APIView):
 
 
 @method_decorator(cache_page(None), name='get')
+class DataSubmissionListView(generics.ListAPIView):
+    """
+    ## List of data submissions
+
+    Each data submission is a collection of datasets & analyses that were submitted together. This would be for example
+    a set of QTL analyses and GWAS analyses that were submitted together along with their fine-mapping and
+    colocalization results.
+    """
+
+    ordering = ('uuid',)
+    queryset = models.DataSubmission.objects.prefetch_related('publication')
+    serializer_class = serializers.DataSubmissionSerializer
+
+
+@method_decorator(cache_page(None), name='get')
+class DataSubmissionDetailView(generics.RetrieveAPIView):
+    lookup_field = 'uuid'
+    queryset = models.DataSubmission.objects.prefetch_related('publication')
+    serializer_class = serializers.DataSubmissionDetailSerializer
+
+
+@method_decorator(cache_page(None), name='get')
 class DatasetListView(generics.ListAPIView):
     """
     ## List of datasets

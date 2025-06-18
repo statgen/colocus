@@ -10,3 +10,7 @@ ANALYSIS_TYPES = (
     (GWAS, 'GWAS'),
     (EQTL, 'eQTL')
 )
+
+DATA_HASH_TYPES = (
+    ('B3SUM', 'b3sum'),
+)

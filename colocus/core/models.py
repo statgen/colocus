@@ -1,8 +1,8 @@
 """
 Core models describing key data entities
 """
-from django.db import models
 from django.core.validators import RegexValidator
+from django.db import models
 
 from ..api.util import sign
 from . import constants

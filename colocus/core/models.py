@@ -594,6 +594,17 @@ class FineMappedSignal(models.Model):
                   " This can happen in cases where the marginal analysis is the only analysis (no conditional analysis"
                   " was needed) or if there was a problem in fine-mapping at this particular locus")
 
+    cs_variants = models.JSONField(
+        default=list,
+        help_text="List of variants in this signal's credible set."
+    )
+
+    cs_alpha = models.JSONField(
+        default=list,
+        help_text="List of posterior inclusion probabilities (conditional on this signal) for each variant in the " \
+                  "credible set."
+    )
+
 
 class ColocResult(models.Model):
     """

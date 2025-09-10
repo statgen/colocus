@@ -262,7 +262,9 @@ class FinemappedSignalSerializer(drf_serializers.ModelSerializer):
             'effect_cond',
             'effect_marg',
             'cond_minp_variant',
-            'is_marg'
+            'is_marg',
+            'cs_variants',
+            'cs_alpha'
         )
 
 

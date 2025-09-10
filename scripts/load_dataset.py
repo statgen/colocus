@@ -388,6 +388,11 @@ def load_one_signal(
     metadata["analysis"] = analysis
     metadata["program"] = program
 
+    if not metadata.get("cs_variants"):
+        metadata["cs_variants"] = []
+    if not metadata.get("cs_alpha"):
+        metadata["cs_alpha"] = []
+
     # Create a signal. This should never have existed previously. If it did, the `unique=True` check on the model should
     # kick it back when we try to save it.
     signal = get_by_id_or_create(FineMappedSignal, {'uuid': metadata['uuid']}, metadata)

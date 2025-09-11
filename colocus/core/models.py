@@ -601,7 +601,7 @@ class FineMappedSignal(models.Model):
 
     cs_alpha = models.JSONField(
         default=list,
-        help_text="List of posterior inclusion probabilities (conditional on this signal) for each variant in the " \
+        help_text="List of posterior inclusion probabilities (conditional on this signal) for each variant in the "
                   "credible set."
     )
 

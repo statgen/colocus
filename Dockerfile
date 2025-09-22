@@ -13,7 +13,7 @@ ENV DEBIAN_FRONTEND="noninteractive"
 RUN apt-get update && apt-get install -y --no-install-recommends \
   git vim curl gnupg lsb-release ca-certificates apt-transport-https \
   nginx sqlite3 libsqlite3-dev python3-virtualenv python3-dev python3-certbot-dns-google \
-  build-essential gfortran python3-certbot-nginx locales iputils-ping net-tools \
+  build-essential gfortran python3-certbot-nginx locales iputils-ping net-tools postgresql-client \
   && rm -rf /var/lib/apt/lists/* \
   && locale-gen en_US.UTF-8
 
@@ -71,9 +71,5 @@ LABEL org.label-schema.version=$COLOCUS_VERSION \
       org.label-schema.vcs-ref=$GIT_SHA \
       org.label-schema.build-date=$BUILD_DATE
 
-# Expose the port that the server will run on
-EXPOSE 8000
-
 # Entry point
-ENTRYPOINT ["/opt/colocus/.venv/bin/uvicorn"]
-CMD ["config.asgi:application"]
+ENTRYPOINT ["/opt/colocus/bin/entrypoint-colocus.sh"]

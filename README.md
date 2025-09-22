@@ -1,4 +1,4 @@
-# colocus [![Built with Cookiecutter Django](https://img.shields.io/badge/built%20with-Cookiecutter%20Django-ff69b4.svg?logo=cookiecutter)](https://github.com/cookiecutter/cookiecutter-django/)
+# colocus
 
 Visualize and explore colocalization
 
@@ -20,6 +20,11 @@ Visualize and explore colocalization
     * [Linkage disequilibrium (LD)](#linkage-disequilibrium-ld)
     * [Colocalization](#colocalization)
 <!-- TOC -->
+
+This repository contains the code for the backend server component of Colocus, as well as a docker compose stack to help
+deploy it. 
+
+To see an example of a running instance of Colocus, try: https://amp.colocus.app/. 
 
 ## Setup
 
@@ -107,43 +112,68 @@ This is the same command our Github Actions CI will run when you push a commit.
 pytest
 ```
 
-### Live reloading and Sass CSS compilation
-
-Moved to [Live reloading and SASS compilation](https://cookiecutter-django.readthedocs.io/en/latest/developing-locally.html#sass-compilation-live-reloading).
-
 ### Sentry
 
-Sentry is an error logging aggregator service. You can sign up for a free account
-at <https://sentry.io/signup/?code=cookiecutter> or download and host it yourself.
-The system is set up with reasonable defaults, including 404 logging and integration with the WSGI application.
+Sentry is an error logging aggregator service. You can sign up for a free account at <https://sentry.io/signup/> or download and host it yourself. The system is set up with reasonable defaults, including 404 logging and integration with the WSGI application.
 
-You must set the DSN url in production.
+You must set the DSN url in `SENTRY_DSN` in your `.env` file.
 
 ## Deployment
 
-### General deployment
+### Docker
 
-See detailed [cookiecutter-django documentation](https://cookiecutter-django.readthedocs.io/en/latest/index.html)
-for general information on how to deploy either with docker or local install on a server.
+A `.env` file must be created before starting the services via docker compose. There are examples in the `envs/` directory for a local deployment (`env.local`), and for a production one (`env.production`). Copy one, modify it, and save it to the root of the directory as `.env`. You will only need to change a few values, such as the postgres password and django secret key.
+
+Inside the `.env` file, be sure to set your `DATA_PATH`, which points to the location on disk where your data is located. This path must have permissions set such that the container is able to read it. You will need to either make all files world readable, or set them to a group of ID 1001 with read permissions (and execute on directories). Alternatively you could use ACL permissions as well. For example:
+
+```bash
+# Make world readable
+chmod o+rX -R /path/to/data
+
+# Alternatively, make all files GID 1001
+chgrp -R 1001 /path/to/data
+chmod g+rX -R /path/to/data
+```
+
+Now you can start the docker compose stack:
+
+```bash
+docker compose up -d
+```
+
+When the `colocus-django` container starts, it will begin applying django migrations and then load the data located at the `DATA_PATH` specified in your `.env` file. 
+
+In the future, if you wish to start over and load a new dataset, do the following:
+
+```bash
+docker compose exec db bash -c 'psql -U colocus -c "DROP DATABASE core WITH (FORCE)"'
+docker compose exec db bash /docker-entrypoint-initdb.d/init-db.sh
+docker compose exec django bash -c 'source .venv/bin/activate && python3 manage.py migrate --database=core'
+docker compose exec django bash -c 'source .venv/bin/activate && python3 scripts/load_dataset.py /data'
+```
 
 ### CSG
 
-We have our own deployment and terraform instructions for CSG. There is currently only one site deployed, for an
-[adipose eQTL meta-analysis study](https://github.com/statgen/colocus-gcp-adipose).
-
-## Settings
-
-See the [cookie-cutter-django settings documentation](http://cookiecutter-django.readthedocs.io/en/latest/settings.html).
+We have our own deployment and terraform instructions for CSG. There is currently one site deployed, for the
+[Accelerating Medicines Parternship (AMP) group](https://github.com/statgen/colocus-gcp-amp).
 
 ## Required data
 
-### Marginal and conditional analyses
+Colocus requires a fair number of pieces of data together to function. You will need: 
+
+* Marginal association analysis (GWAS, eQTLs)
+* Fine-mapping or conditional analysis at loci of interest in your GWAS or eQTL study
+* Colocalization analysis results for the signals identified from fine-mapping
+* LD that was used to perform the fine-mapping (this is only used for coloring LD on LocusZoom plots and need not be perfect, but ideally will be as close as possible to the fine-mapping LD.)
+
+### Marginal and conditional / fine-mapping analyses
 
 Colocus requires two types of input summary statistics/results. These can come from a GWAS study of one or more
 traits, or an eQTL study.
 
 1. The marginal analysis for one or more traits. This is the analysis performed where each variant is tested
    for association with the trait without adjusting for any other variant (only study-specific covariates, if any).
+
 2. Conditional analysis, per locus, per "signal". At each locus, the number of independent signals must be identified,
    either through iterative conditional analysis or a fine-mapping approach
    like [SuSiE](https://stephenslab.github.io/susieR/). Each signal is represented by its lead variant. For each lead
@@ -160,57 +190,108 @@ association results are tab-delimited files with the usual columns:
 * Standard error of effect size
 * Alternate allele frequency
 
-Layout on disk looks like the following:
+Directory structure on disk looks like the following:
 
-```bash
+```
 marginal
-├── <trait-uuid>
-│   ├── metadata.yml
-│   ├── signals
-│   │   └── <signal-uuid>
-│   │       ├── metadata.yml
-│   │       ├── results.harmonized.gz
-│   │       └── results.harmonized.gz.tbi
-│   ├── summ_stats.harmonized.gz
-│   └── summ_stats.harmonized.gz.tbi
+├── <dataset UUID>
+│  ├── metadata.parquet
+│  ├── <trait UUID>
+│  │  ├── metadata.parquet
+│  │  ├── signals
+│  │  │  └── <signal UUID>
+│  │  │     ├── metadata.parquet
+│  │  │     ├── results.harmonized.gz
+│  │  │     └── results.harmonized.gz.tbi
+│  │  ├── summ_stats.harmonized.gz
+│  │  └── summ_stats.harmonized.gz.tbi
+signals.parquet
+coloc
+└── coloc.parquet
+ld
+└── UKBB_GRCh37_ALL
+   ├── ld.gz
+   ├── ld.gz.tbi
+   └── metadata.yml
 ```
 
-Each trait has its own directory, which should be named with a unique identifier. An example `metadata.yml` file
-for a GWAS result contains:
+Each trait has its own directory, which should be named with a unique identifier (UUID). An example `metadata.parquet` file for a GWAS result contains:
 
-```yaml
-uuid: 'T2D_DIAGRAM_2018_hg19'                                   # this must be unique to the trait/study
-trait_type: 'gwas'                                              # can be either 'gwas' or 'eQTL'
-study_name: 'DIAGRAM'                                           # name of the study
-authors: 'DIAGRAM consortium (Mahajan et al. 2018)'             # authors of the study
-label: 'T2D Meta-analysis'                                      # label for the analysis
-description: 'Latest DIAGRAM T2D meta-analysis as of 2018'      # description of the analysis / where it came from
-pmid: '30297969'                                                # PubmedID of the study (if the study is published)
-external_link: 'https://diagram-consortium.org/'                # external url for the study if available
-genome_build: 'GRCh37'                                          # genome build this study used for positions/alleles
-ld_panel: 'ukbb_grch37_all'                                     # the uuid for the LD panel to be used
-metadata:
-  trait: 'Type 2 Diabetes'                                      # full name of the trait
-  trait_abbrev: 'T2D'                                           # an abbreviation for the trait to be used in browser
+```json
+{
+│   'uuid': 'gwas_diamante_t2d_eur',
+│   'study': {
+│   │   'uuid': 'DIAMANTE',
+│   │   'description': 'Diabetes Meta-Analysis of Trans-Ethnic Association Studies'
+│   },
+│   'tissue': None,
+│   'ancestry': 'EUR',
+│   'publication': {
+│   │   'authors': 'Mahajan et al.',
+│   │   'journal': 'Nature Genetics',
+│   │   'year': 2022,
+│   │   'pmid': 35551307,
+│   │   'doi': None
+│   },
+│   'analysts': None,
+│   'submitter': {
+│   │   'name': 'Varshney, Arushi',
+│   │   'abbrev': 'AV',
+│   │   'institution': 'University of Michigan'
+│   },
+│   'principal_investigators': None,
+│   'genome_build': 'GRCh37',
+│   'ld': 'UKBB_GRCh37_ALL',
+│   'external_link': 'https://diagram-consortium.org/downloads.html',
+│   'analysis_type': 'GWAS',
+│   'n_traits': 1,
+│   'n_traits_with_sig': 1
+}
 ```
 
-For an eQTL trait, an example `metadata.yml` file looks like:
+The parquet file above was rendered in JSON format to make it easier to read, but note that parquet is a columnar data
+frame format. The metadata file has only a single row above.
 
-```yaml
-uuid: ENSG00000273398_eqtl_adipose
-trait_type: eQTL
-study_name: Adipose eQTLs
-authors: Authors et al
-label: Adipose eQTL meta-analysis
-description: Provided by collaborators <link>
-pmid: 'pmid if published'
-external_link: ''
-genome_build: GRCh37
-ld_panel: ukbb_grch37_all
-metadata:
-  gene: RP11-474G23.1                                           # gene symbol
-  gene_ensg: ENSG00000273398                                    # ensembl gene id
-  tissue: adipose                                               # tissue in which this eQTL study was performed
+For an eQTL trait, an example `metadata.parquet` file looks like:
+
+```json
+{
+│   'uuid': 'eqtl_inspire_islet',
+│   'study': {
+│   │   'uuid': 'INSPIRE',
+│   │   'description': 'INSPIRE islet eQTL meta-analysis consortium'
+│   },
+│   'tissue': 'islet',
+│   'ancestry': 'EUR',
+│   'publication': {
+│   │   'authors': 'Viñuela et al.',
+│   │   'pmid': 32999275,
+│   │   'journal': 'Nature Communications',
+│   │   'year': 2020,
+│   │   'doi': None
+│   },
+│   'analysts': [
+│   │   {
+│   │   │   'name': 'Varshney, Arushi',
+│   │   │   'abbrev': 'AV',
+│   │   │   'institution': 'University of Michigan'
+│   │   }
+│   ],
+│   'submitter': {
+│   │   'name': 'Varshney, Arushi',
+│   │   'abbrev': 'AV',
+│   │   'email': 'arushiv@umich.edu',
+│   │   'orcid': '0000-0001-9177-9707',
+│   │   'institution': 'University of Michigan'
+│   },
+│   'principal_investigators': None,
+│   'genome_build': 'GRCh37',
+│   'ld': 'UKBB_GRCh37_ALL',
+│   'external_link': None,
+│   'analysis_type': 'eQTL',
+│   'n_traits': 236,
+│   'n_traits_with_sig': 236
+}
 ```
 
 The file `summ_stats.harmonized.gz` contains the marginal association results for the trait. It looks like the
@@ -226,25 +307,101 @@ The file must be [bgzipped](http://www.htslib.org/doc/bgzip.html) and [tabix](ht
 
 Underneath each trait is a `signals` directory, which contains one subdirectory per signal. Each signal subdirectory
 should be named with a unique identifier or uuid. This uuid **must be unique across all signals for all traits**.
-The `metadata.yml` file for a signal looks like the following:
+The `metadata.parquet` file for a signal looks like the following:
 
-```yaml
-uuid: '99'
-lead_variant_marker: 11_2372356_T_C
-lead_variant_chrom: '11'
-lead_variant_pos: 2372356
-lead_variant_ref: T
-lead_variant_alt: C
-lead_variant_effect: 0.02942                       # this is the effect size after adjusting for all other signals
-lead_variant_effect_marg: 0.029                    # this is the effect size in the marginal analysis
-lead_variant_nearest_gene: CD81
-lead_variant_nearest_gene_ensg: ENSG00000110651
-lead_variant_neg_log_p: 4.05
-lead_variant_se: 0.0075
+```json
+{
+│   'uuid': 'Lc7hEWyp24Nco8j97GXrfr',
+│   'lead_variant': {
+│   │   'chrom': '9',
+│   │   'pos': 136241189,
+│   │   'ref': 'C',
+│   │   'alt': 'T'
+│   },
+│   'neg_log_p': 51.647,
+│   'effect_cond': -15.196,
+│   'se_cond': 0.998,
+│   'effect_marg': -0.307,
+│   'is_marg': False,
+│   'cs_variants': [
+│   │   '9_136218590_C_A',
+│   │   '9_136238509_G_A',
+│   │   '9_136241189_C_T',
+│   │   '9_136241639_C_T',
+│   │   '9_136249929_G_A',
+│   │   '9_136264493_C_T',
+│   │   '9_136267371_G_T'
+│   ],
+│   'cs_alpha': [
+│   │   0.0665931,
+│   │   0.037789,
+│   │   0.4947666,
+│   │   0.0755713,
+│   │   0.1302856,
+│   │   0.1038847,
+│   │   0.0618499
+│   ],
+│   'finemap_program': {
+│   │   'name': 'susieR',
+│   │   'version': 'v0.0.0'
+│   }
+}
 ```
+
+The fields above are mostly self explanatory. Some require a bit of clarification: 
+
+* `neg_log_p`: This is the p-value from conditional analysis or fine-mapping
+
+* `effect_cond` and `effect_marg`: The effect size from the conditional analysis or fine-mapping, and the marginal effect size. 
+
+* `is_marg`: This denotes whether this particular signal was taken from the marginal association statistics directly. Sometimes it is the case that no fine-mapping is done at a particular locus, for example in the event there is only a single association signal, or if fine-mapping fails.
+
+* `cs_alpha`: This field is only present if the fine-mapping was done with SuSiE. In that case, the alphas are the posterior inclusion probabilities (conditional on the signal) for each credible set variant. The marginal inclusion probabilities can be found in the `results.harmonized.gz` file.
+
+* `cs_variants`: This field contains the list of each variant in the credible set. The values in `cs_alpha` correspond in order to each variant in this list. 
 
 In each signal directory is the conditional association results file `results.harmonized.gz` for that signal. It is
 identical in format to the `summ_stats.harmonized.gz` file.
+
+There is also a master `signals.parquet` file that contains the information about all signals across all datasets. This file is *NOT REQUIRED*, however it may be useful for debugging. Each record in the file looks like the following (rendered as JSON for easier reading):
+
+```json
+{
+│   'sig_uuid': 'UXPTfTuQtfikGyjD2hHKmh',
+│   'study_uuid': 'gwas_diamante_t2d_eur',
+│   'lead_variant': '4_1784403_C_T',
+│   'susie_idx': 1,
+│   'susie_cs': 1,
+│   'susie_cs_variants': [
+│   │   '4_1784403_C_T',
+│   │   '4_1784605_G_C'
+│   ],
+│   'susie_cs_alpha': [
+│   │   0.7572763,
+│   │   0.1992575
+│   ],
+│   'path': 'data/orig/muscislet/t2d_gwas_susie/diamante_T2D-European__MAEA__rs56337234__P__chr4-1534402-2034403__250kb.selected.Rda',
+│   'extract_marginal': False,
+│   'study_type': 'GWAS',
+│   'trait': 'T2D',
+│   'gene': None,
+│   'exon': None,
+│   'feature': 'T2D',
+│   'tissue': None,
+│   'cell_type': None,
+│   'trust_alleles': True,
+│   'finemap_program': 'susieR',
+│   'finemap_version': 'v0.0.0',
+│   'genome_build': 'GRCh37'
+}
+```
+
+Fields that require some explanation: 
+
+* `susie_idx`: If this record is for a fine-mapped signal that came from SuSiE, this field will contain the row index of the SuSiE matrices (such as alpha, mu, mu2, lbf_variable, etc.) to extract. 
+* `susie_cs`: This is index into the SuSiE credible sets list
+* `extract_marginal`: Same as `extract_marg` in the individual metadata files for each signal. Denotes whether this signal was extracted from the marginal association data, perhaps because fine-mapping was not run or failed.
+* `trust_alleles`: Setting denotes whether we can trust the alleles provided by the study. If we cannot trust the alleles, they have been remapped using dbSNP and/or the LD reference to identify which variant is the ref and which is the alt. 
 
 ### Linkage disequilibrium (LD)
 
@@ -269,7 +426,7 @@ The `ld-panel-uuid` is a unique identifier for the LD panel used to calculate LD
 `metadata.yml` file that provides information about the panel. As an example:
 
 ```yaml
-uuid: 'ukbb_grch37_all'
+uuid: 'UKBB_GRCh37_ALL'
 panel: 'UKBB'
 population: 'ALL'
 genome_build: 'GRCh37'
@@ -295,56 +452,88 @@ tabix indexed.
 
 ### Colocalization
 
-Colocalization results are stored on disk in the following format:
+Colocalization results are stored on disk in a single file: 
 
 ```
-coloc/
-├── <coloc-uuid>
-    └── metadata.yml
+coloc
+└── coloc.parquet
 ```
 
-Each colocalization result for a pair of signals is stored in a separate directory and given its own unique uuid.
-These ids must be unique across all colocalization results for all traits.
+Each colocalization result for a pair of signals is stored in a separate directory and given its own unique UUID.
+These UUIDs must be unique across all colocalization results for all traits.
 
-The `metadata.yml` file has the following information:
+The `metadata.parquet` file has the following information:
 
-```yaml
-uuid: 4293814906                          # unique identifier for this colocalization result
-
-signal1: 3258419243                       # uuid of the first signal
-signal2: 3508799139                       # uuid of the second signal
-
-study1: 2hGlu_MAGIC_2021_hg19             # first signal's study uuid
-study2: brotman_eqtl                      # second signal's study uuid
-
-trait1_variant: 2_27730940_T_C            # lead variant for the first signal
-trait2_variant: 2_27734972_G_A            # lead variant for the second signal
-
-coloc_h3: 0.25
-coloc_h4: 0.75                            # posterior probability of colocalization
-
-cross_signal:                             # cross signal information; each subfield 'effect', 'se', etc.
-  effect:                                 # is a list of lists (a matrix), where:
-  - - -0.0486                             #   row 1 is the first trait's variant,
-    - -0.0594                             #   row 2 is the second trait's variant,
-  - - -0.0338                             #   col 1 is the first trait's data (effect in marginal summary statistics)
-    - -0.0636                             #   col 2 is the second trait's data (effect in marginal summary statistics)
-  log_pval:
-  - - 11.2
-    - 6.44
-  - - 5.93
-    - 7.54
-  se:
-  - - 0.0078
-    - 0.0116
-  - - 0.0077
-    - 0.0114
-
-n_coloc_between_traits: 1                 # number of total colocalizations found between the two traits; this is used
-                                          # in the web UI
-
-qtl_gene: ENSG00000163795                 # if trait 2 comes from an eQTL study, this is the gene's ENSG ID
-qtl_symb: ZNF513                          # if trait 2 comes from an eQTL study, this is the gene's symbol
-
-r2: 0.778088                              # this is the LD between the two lead variants
+```json
+{
+│   'uuid': '7yCjsigpyW9AWVgcqM7SkF',
+│   'signal1': '918mCCrkd6US8F8qbyLDoi',
+│   'signal2': 'EuaY2JFmhPH7fAUEduozHz',
+│   'coloc_h3': 0.904439412729006,
+│   'coloc_h4': 0.0034383473563195,
+│   'dataset1': 'gwas_diamante_t2d_eur',
+│   'dataset2': 'eqtl_inspire_islet',
+│   'trait1': 'T2D',
+│   'trait2': 'ENSG00000114770_183645118_183645231',
+│   'trait2_symb': None,
+│   'trait1_variant': '3_183738626_T_A',
+│   'trait2_variant': '3_183683124_G_A',
+│   'cross_signal': {
+│   │   'effect': [
+│   │   │   [
+│   │   │   │   -0.036,
+│   │   │   │   0.0468
+│   │   │   ],
+│   │   │   [
+│   │   │   │   -0.018,
+│   │   │   │   0.35
+│   │   │   ]
+│   │   ],
+│   │   'se': [
+│   │   │   [
+│   │   │   │   0.0063,
+│   │   │   │   0.0322
+│   │   │   ],
+│   │   │   [
+│   │   │   │   0.013,
+│   │   │   │   0.0667
+│   │   │   ]
+│   │   ],
+│   │   'log_pval': [
+│   │   │   [
+│   │   │   │   7.7,
+│   │   │   │   0.835
+│   │   │   ],
+│   │   │   [
+│   │   │   │   0.796,
+│   │   │   │   6.59
+│   │   │   ]
+│   │   ]
+│   },
+│   'r2': 0.0564906,
+│   'n_coloc_between_traits': 0
+}
 ```
+
+The fields are:
+
+* uuid: unique identifier for this colocalization result
+* signal1: uuid of the first signal
+* signal2: uuid of the second signal
+* dataset1: first signal's study uuid
+* dataset2: second signal's study uuid
+* trait1: uuid of the first trait
+* trait2: uuid of the second trait
+* trait2_symb: gene symbol of trait 2 if applicable
+* trait1_variant: lead variant for the first signal
+* trait2_variant: lead variant for the second signal
+* coloc_h3: Posterior probability of H3 from coloc
+* coloc_h4: Posterior probability of H4 from coloc
+* cross_signal: cross signal information; each subfield 'effect', 'se', etc. is a list of lists (a matrix), where: 
+  * row 1 is the first trait's variant,
+  * row 2 is the second trait's variant,
+  * col 1 is the first trait's data (effect in marginal summary statistics)
+  * col 2 is the second trait's data (effect in marginal summary statistics)
+* n_coloc_between_traits: number of total colocalizations found between the two traits; this is used in the web UI
+* r2: the LD between trait1_variant and trait2_variant
+

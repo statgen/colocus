@@ -2,19 +2,18 @@ networks:
   colocus-network:
     driver: bridge
 
+volumes:
+  postgres_data:
+
 services:
   db:
-    image: postgres:15
+    image: postgres:16
     container_name: colocus-db
+    env_file: .env
     restart: always
-    env_file: 
-      - .env
-      - .env.local
-      - .env.production
-    ports:
-      - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./bin/init-postgres.sh:/docker-entrypoint-initdb.d/init-db.sh
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
@@ -24,15 +23,10 @@ services:
       - colocus-network
 
   redis:
-    image: redis:6
+    image: redis:8
     container_name: colocus-redis
+    env_file: .env
     restart: always
-    env_file: 
-      - .env
-      - .env.local
-      - .env.production
-    ports:
-      - "${REDIS_PORT}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -45,19 +39,16 @@ services:
     image: colocus:latest
     container_name: colocus-django
     restart: always
-    env_file: 
-      - .env
-      - .env.local
-      - .env.production
+    env_file: .env
     volumes:
-      - /mnt/devbox/projects/colocus-pipeline/data/processed/:/data:ro
+      - "${DATA_PATH}:/data:ro"
     ports:
       - "${UVICORN_PORT}:${UVICORN_PORT}"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${UVICORN_PORT}/api/v1/datasets/?page_size=1"]
-      interval: 15s
+      interval: 5s
       timeout: 5s
-      retries: 3
+      retries: 5
     depends_on:
       db:
         condition: service_healthy
@@ -65,6 +56,25 @@ services:
         condition: service_healthy
     networks:
       - colocus-network
-    
-volumes:
-  postgres_data:
+
+  ui:
+    image: colocus-ui:latest
+    container_name: colocus-ui
+    restart: always
+    env_file: .env
+    volumes:
+      - ./etc/nginx/colocus.conf.template:/etc/nginx/templates/colocus.conf.template
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${UI_PORT}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "${UI_PORT}:${UI_PORT}"
+    depends_on:
+      django:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - colocus-network

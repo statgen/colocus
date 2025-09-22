@@ -38,18 +38,43 @@ LOCALE_PATHS = [str(ROOT_DIR / "locale")]
 # DATABASES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": str(ROOT_DIR / "database/django.sqlite3"),
-        "ATOMIC_REQUESTS": True,
-    },
-    "core": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": str(ROOT_DIR / "database/core.sqlite3"),
-        "ATOMIC_REQUESTS": True,
-    },
-}
+if env("POSTGRES_HOST", default=None):
+    # This means we've got a local Postgres instance running, so use that
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": env("POSTGRES_DB_DEFAULT"),
+            "USER": env("POSTGRES_USER"),
+            "PASSWORD": env("POSTGRES_PASSWORD"),
+            "HOST": env("POSTGRES_HOST"),
+            "PORT": env("POSTGRES_PORT"),
+            "ATOMIC_REQUESTS": True,
+            "CONN_MAX_AGE": env.int("CONN_MAX_AGE", default=60),
+        },
+        "core": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": env("POSTGRES_DB_CORE"),
+            "USER": env("POSTGRES_USER"),
+            "PASSWORD": env("POSTGRES_PASSWORD"),
+            "HOST": env("POSTGRES_HOST"),
+            "PORT": env("POSTGRES_PORT"),
+            "ATOMIC_REQUESTS": True,
+            "CONN_MAX_AGE": env.int("CONN_MAX_AGE", default=60),
+        }
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": str(ROOT_DIR / "database/django.sqlite3"),
+            "ATOMIC_REQUESTS": True,
+        },
+        "core": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": str(ROOT_DIR / "database/core.sqlite3"),
+            "ATOMIC_REQUESTS": True,
+        },
+    }
 
 DATABASE_ROUTERS = ['config.db_router.CoreRouter']
 

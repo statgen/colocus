@@ -18,32 +18,6 @@ SECRET_KEY = env("DJANGO_SECRET_KEY")
 # https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["amp.colocus.app"])
 
-# DATABASES
-# ------------------------------------------------------------------------------
-DATABASES = {
-  "default": {
-    "ENGINE": "django.db.backends.postgresql",
-    "NAME": env("DJANGO_DB_DEFAULT_URL"),
-    "USER": env("POSTGRES_USER"),
-    "PASSWORD": env("POSTGRES_PASSWORD"),
-    "HOST": env("POSTGRES_HOST"),
-    "PORT": env("POSTGRES_PORT"),
-    "ATOMIC_REQUESTS": True,
-    "CONN_MAX_AGE": env.int("CONN_MAX_AGE", default=60),
-  },
-  "core": {
-    "ENGINE": "django.db.backends.postgresql",
-    "NAME": env("DJANGO_DB_CORE_URL"),
-    "USER": env("POSTGRES_USER"),
-    "PASSWORD": env("POSTGRES_PASSWORD"),
-    "HOST": env("POSTGRES_HOST"),
-    "PORT": env("POSTGRES_PORT"),
-    "ATOMIC_REQUESTS": True,
-    "CONN_MAX_AGE": env.int("CONN_MAX_AGE", default=60),
-  },
-  
-}
-
 # CACHES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#caches

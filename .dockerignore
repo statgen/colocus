@@ -18,6 +18,7 @@
 !/scripts
 !/sqlite3
 !/requirements
+!/bin/entrypoint-colocus.sh
 
 # Ignore unnecessary files inside allowed directories
 # This should go after the allowed directories

@@ -18,17 +18,17 @@ jobs:
       - name: Checkout Code Repository
         uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
       - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-          cache-dependency-path: |
-            requirements/base.txt
-            requirements/local.txt
+        run: uv python install 3.10
+
+      - name: Install dependencies
+        run: uv sync
 
       - name: Run pre-commit
-        uses: pre-commit/action@v3.0.0
+        run: uv run pre-commit run --all-files
 
   # With no caching at all the entire ci process takes 4m 30s to complete!
   pytest:
@@ -37,19 +37,17 @@ jobs:
       - name: Checkout Code Repository
         uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
       - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-          cache: pip
-          cache-dependency-path: |
-            requirements/base.txt
-            requirements/local.txt
+        run: uv python install 3.10
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements/base.txt
-          pip install -r requirements/local.txt
+        run: uv sync
 
       - name: Run pytest
-        run: pytest
+        run: uv run pytest
+        env:
+          DJANGO_SECRET_KEY: 1234
+          DJANGO_SETTINGS_MODULE: config.settings.test

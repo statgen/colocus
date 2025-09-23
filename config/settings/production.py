@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -8,6 +9,7 @@ from .base import *  # noqa
 from .base import env
 
 # Read env file
+ROOT_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 env.read_env(str(ROOT_DIR / ".env.production"), overwrite=True)
 
 # GENERAL

@@ -43,7 +43,7 @@ WORKDIR /opt/colocus
 # Data that should persist
 VOLUME /data
 VOLUME /opt/colocus/database
-  
+
 # Install uv for managing python packages
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/home/colocus/.local/bin:${PATH}"
@@ -52,7 +52,7 @@ ENV PATH="/home/colocus/.local/bin:${PATH}"
 # This way packages are only installed if uv.lock changes
 COPY --chown=colocus:colocus pyproject.toml uv.lock /opt/colocus/
 RUN \
-  uv sync --frozen && \ 
+  uv sync --frozen && \
   chown -R colocus:colocus /opt/colocus/
 
 # Copy the source code into the container

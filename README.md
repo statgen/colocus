@@ -22,9 +22,9 @@ Visualize and explore colocalization
 <!-- TOC -->
 
 This repository contains the code for the backend server component of Colocus, as well as a docker compose stack to help
-deploy it. 
+deploy it.
 
-To see an example of a running instance of Colocus, try: https://amp.colocus.app/. 
+To see an example of a running instance of Colocus, try: https://amp.colocus.app/.
 
 ## Setup
 
@@ -141,7 +141,7 @@ Now you can start the docker compose stack:
 docker compose up -d
 ```
 
-When the `colocus-django` container starts, it will begin applying django migrations and then load the data located at the `DATA_PATH` specified in your `.env` file. 
+When the `colocus-django` container starts, it will begin applying django migrations and then load the data located at the `DATA_PATH` specified in your `.env` file.
 
 In the future, if you wish to start over and load a new dataset, do the following:
 
@@ -159,7 +159,7 @@ We have our own deployment and terraform instructions for CSG. There is currentl
 
 ## Required data
 
-Colocus requires a fair number of pieces of data together to function. You will need: 
+Colocus requires a fair number of pieces of data together to function. You will need:
 
 * Marginal association analysis (GWAS, eQTLs)
 * Fine-mapping or conditional analysis at loci of interest in your GWAS or eQTL study
@@ -348,17 +348,17 @@ The `metadata.parquet` file for a signal looks like the following:
 }
 ```
 
-The fields above are mostly self explanatory. Some require a bit of clarification: 
+The fields above are mostly self explanatory. Some require a bit of clarification:
 
 * `neg_log_p`: This is the p-value from conditional analysis or fine-mapping
 
-* `effect_cond` and `effect_marg`: The effect size from the conditional analysis or fine-mapping, and the marginal effect size. 
+* `effect_cond` and `effect_marg`: The effect size from the conditional analysis or fine-mapping, and the marginal effect size.
 
 * `is_marg`: This denotes whether this particular signal was taken from the marginal association statistics directly. Sometimes it is the case that no fine-mapping is done at a particular locus, for example in the event there is only a single association signal, or if fine-mapping fails.
 
 * `cs_alpha`: This field is only present if the fine-mapping was done with SuSiE. In that case, the alphas are the posterior inclusion probabilities (conditional on the signal) for each credible set variant. The marginal inclusion probabilities can be found in the `results.harmonized.gz` file.
 
-* `cs_variants`: This field contains the list of each variant in the credible set. The values in `cs_alpha` correspond in order to each variant in this list. 
+* `cs_variants`: This field contains the list of each variant in the credible set. The values in `cs_alpha` correspond in order to each variant in this list.
 
 In each signal directory is the conditional association results file `results.harmonized.gz` for that signal. It is
 identical in format to the `summ_stats.harmonized.gz` file.
@@ -396,12 +396,12 @@ There is also a master `signals.parquet` file that contains the information abou
 }
 ```
 
-Fields that require some explanation: 
+Fields that require some explanation:
 
-* `susie_idx`: If this record is for a fine-mapped signal that came from SuSiE, this field will contain the row index of the SuSiE matrices (such as alpha, mu, mu2, lbf_variable, etc.) to extract. 
+* `susie_idx`: If this record is for a fine-mapped signal that came from SuSiE, this field will contain the row index of the SuSiE matrices (such as alpha, mu, mu2, lbf_variable, etc.) to extract.
 * `susie_cs`: This is index into the SuSiE credible sets list
 * `extract_marginal`: Same as `extract_marg` in the individual metadata files for each signal. Denotes whether this signal was extracted from the marginal association data, perhaps because fine-mapping was not run or failed.
-* `trust_alleles`: Setting denotes whether we can trust the alleles provided by the study. If we cannot trust the alleles, they have been remapped using dbSNP and/or the LD reference to identify which variant is the ref and which is the alt. 
+* `trust_alleles`: Setting denotes whether we can trust the alleles provided by the study. If we cannot trust the alleles, they have been remapped using dbSNP and/or the LD reference to identify which variant is the ref and which is the alt.
 
 ### Linkage disequilibrium (LD)
 
@@ -452,7 +452,7 @@ tabix indexed.
 
 ### Colocalization
 
-Colocalization results are stored on disk in a single file: 
+Colocalization results are stored on disk in a single file:
 
 ```
 coloc
@@ -529,7 +529,7 @@ The fields are:
 * trait2_variant: lead variant for the second signal
 * coloc_h3: Posterior probability of H3 from coloc
 * coloc_h4: Posterior probability of H4 from coloc
-* cross_signal: cross signal information; each subfield 'effect', 'se', etc. is a list of lists (a matrix), where: 
+* cross_signal: cross signal information; each subfield 'effect', 'se', etc. is a list of lists (a matrix), where:
   * row 1 is the first trait's variant,
   * row 2 is the second trait's variant,
   * col 1 is the first trait's data (effect in marginal summary statistics)

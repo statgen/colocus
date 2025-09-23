@@ -8,8 +8,10 @@ from rest_framework.test import APITestCase
 
 from colocus.utils.variants import is_variant, valid_alleles
 
+
 class ColocusAPITestCase(APITestCase):
     databases = ['default', 'core']
+
 
 @pytest.mark.django_db(databases=['core'])
 class TestColocResultListView(ColocusAPITestCase):

@@ -13,6 +13,7 @@ from colocus.users.tests.factories import UserFactory
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.test")
 
+
 @pytest.fixture(scope='session', autouse=True)
 def django_logger():
     logger = logging.getLogger('django')

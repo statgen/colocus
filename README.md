@@ -9,7 +9,6 @@ Visualize and explore colocalization
   * [Development](#development)
     * [Running all code checks](#running-all-code-checks)
     * [Running tests](#running-tests)
-    * [Live reloading and Sass CSS compilation](#live-reloading-and-sass-css-compilation)
     * [Sentry](#sentry)
   * [Deployment](#deployment)
     * [General deployment](#general-deployment)

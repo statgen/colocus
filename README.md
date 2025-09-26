@@ -1,121 +1,25 @@
 # colocus
 
-Visualize and explore colocalization
-
-<!-- TOC -->
-  * [Setup](#setup)
-    * [Database setup](#database-setup)
-    * [Running the django server](#running-the-django-server)
-  * [Development](#development)
-    * [Running all code checks](#running-all-code-checks)
-    * [Running tests](#running-tests)
-    * [Sentry](#sentry)
-  * [Deployment](#deployment)
-    * [General deployment](#general-deployment)
-    * [CSG](#csg)
-  * [Settings](#settings)
-  * [Required data](#required-data)
-    * [Marginal and conditional analyses](#marginal-and-conditional-analyses)
-    * [Linkage disequilibrium (LD)](#linkage-disequilibrium-ld)
-    * [Colocalization](#colocalization)
-<!-- TOC -->
-
-This repository contains the code for the backend server component of Colocus, as well as a docker compose stack to help
-deploy it.
+Visualize and explore fine-mapped signals and their colocalizations
 
 To see an example of a running instance of Colocus, try: https://amp.colocus.app/.
 
-## Setup
+- [Development](#development)
+  - [Database setup](#database-setup)
+  - [Running the django server](#running-the-django-server)
+  - [Running all code checks](#running-all-code-checks)
+  - [Running tests](#running-tests)
+  - [Sentry](#sentry)
+- [Deployment](#deployment)
+  - [Docker](#docker)
+  - [CSG](#csg)
+- [Required data](#required-data)
+  - [Marginal and conditional / fine-mapping analyses](#marginal-and-conditional--fine-mapping-analyses)
+  - [Linkage disequilibrium (LD)](#linkage-disequilibrium-ld)
+  - [Colocalization](#colocalization)
 
-### Database setup
-
-The database can be created by applying relevant migrations, and then loading a pre-packaged dataset (not provided in
-this repo, though subsets of data may be provided in the future).
-
-```bash
-$ python3 -m venv venv/  # first time, only
-$ source venv/bin/activate
-$ pip3 install -r requirements/local.txt
-$ mkdir database
-$ python manage.py migrate
-$ python scripts/load_dataset.py <path/to/dataset> # see below for datasets
-```
-
-<details>
-  <summary><b>Datasets for CSG users</b></summary>
-
-  There is an existing dataset on our cluster at
-  `/net/dumbo/home/welchr/projects/amp-cmd/colocus-pipeline-brotman/data/processed/`. The required files are
-  approximately 13GB in total. You can quickly sync the required files to your development environment with:
-
-  ```bash
-  rsync -avimHP \
-    user@dumbo.sph.umich.edu:/home/welchr/projects/amp-cmd/colocus-pipeline-brotman/ \
-    /path/on/your/machine/colocus-pipeline-brotman/ \
-    --exclude 'data/processed/ld/ukbb_grch37_all/variants' \
-    --exclude 'data/original-copy' \
-    --exclude 'data/ukbb/' \
-    --exclude 'venv' \
-    --exclude '.snakemake' \
-    --exclude 'logs'
-  ```
-
-  Then give the path to the `data/processed` directory as the argument to `load_dataset.py`:
-
-  ```bash
-  $ python scripts/load_dataset.py /path/on/your/machine/colocus-pipeline-brotman/data/processed/
-  ```
-</details>
-
-
-
-If you have already tried to load the data previously and want a fresh start, you can delete the database and start over:
-
-```bash
-rm -f "./database/local.sqlite3"
-rm -rf "./colocus/media"
-source venv/bin/activate
-python3 manage.py migrate
-python3 scripts/load_dataset.py <path/to/dataset>
-```
-
-More information on the required types of data can be found below under [required data](#required-data).
-
-### Running the django server
-
-This will start uvicorn to serve the django app and REST API. By default, the server runs on port 8000.
-
-```bash
-source venv/bin/activate
-uvicorn config.asgi:application --host 0.0.0.0 --reload
-```
-
-## Development
-
-### Running all code checks
-
-The project is setup to use [pre-commit](https://pre-commit.com/) to run all checks at once. You can either install
-the pre-commit git hooks, or run pre-commit yourself manually before committing.
-
-To run pre-commit manually:
-
-```bash
-pre-commit run --all-files -v
-```
-
-This is the same command our Github Actions CI will run when you push a commit.
-
-### Running tests
-
-```bash
-pytest
-```
-
-### Sentry
-
-Sentry is an error logging aggregator service. You can sign up for a free account at <https://sentry.io/signup/> or download and host it yourself. The system is set up with reasonable defaults, including 404 logging and integration with the WSGI application.
-
-You must set the DSN url in `SENTRY_DSN` in your `.env` file.
+This repository contains the code for the backend server component of Colocus, as well as a docker compose stack to help
+deploy it.
 
 ## Deployment
 
@@ -536,3 +440,91 @@ The fields are:
 * n_coloc_between_traits: number of total colocalizations found between the two traits; this is used in the web UI
 * r2: the LD between trait1_variant and trait2_variant
 
+## Development
+
+### Database setup
+
+We use `uv` to manage packages and dependencies. [Follow these instructions](https://docs.astral.sh/uv/getting-started/installation/) to install `uv` on your system. 
+
+The database can be created by applying relevant migrations, and then loading a pre-packaged dataset (not provided in
+this repo, though subsets of data may be provided in the future).
+
+```bash
+$ cd /path/to/colocus
+$ uv sync
+$ mkdir database
+$ uv run python manage.py migrate
+$ uv run python scripts/load_dataset.py <path/to/dataset> # see below for datasets
+```
+
+<details>
+  <summary><b>Datasets for CSG users</b></summary>
+
+  There is an existing dataset on our cluster at
+  `/net/dumbo/home/welchr/projects/amp-cmd/colocus-pipeline-brotman/data/processed/`. The required files are
+  approximately 13GB in total. You can quickly sync the required files to your development environment with:
+
+  ```bash
+  rsync -avimHP \
+    user@dumbo.sph.umich.edu:/home/welchr/projects/amp-cmd/colocus-pipeline-brotman/ \
+    /path/on/your/machine/colocus-pipeline-brotman/ \
+    --exclude 'data/processed/ld/ukbb_grch37_all/variants' \
+    --exclude 'data/original-copy' \
+    --exclude 'data/ukbb/' \
+    --exclude 'venv' \
+    --exclude '.snakemake' \
+    --exclude 'logs'
+  ```
+
+  Then give the path to the `data/processed` directory as the argument to `load_dataset.py`:
+
+  ```bash
+  $ uv run python scripts/load_dataset.py /path/on/your/machine/colocus-pipeline-brotman/data/processed/
+  ```
+</details>
+
+
+
+If you have already tried to load the data previously and want a fresh start, you can delete the database and start over:
+
+```bash
+rm -f "./database/local.sqlite3"
+rm -rf "./colocus/media"
+uv run python manage.py migrate
+uv run python scripts/load_dataset.py <path/to/dataset>
+```
+
+More information on the required types of data can be found below under [required data](#required-data).
+
+### Running the django server
+
+This will start uvicorn to serve the django app and REST API. By default, the server runs on port 8000.
+
+```bash
+uv run uvicorn config.asgi:application --host 0.0.0.0 --reload
+```
+
+### Running all code checks
+
+The project is setup to use [pre-commit](https://pre-commit.com/) to run all checks at once. You can either install
+the pre-commit git hooks, or run pre-commit yourself manually before committing.
+
+To run pre-commit manually:
+
+```bash
+uv run pre-commit run --all-files -v
+```
+
+This is the same command our Github Actions CI will run when you push a commit.
+
+### Running tests
+
+```bash
+uv run pytest
+```
+
+### Sentry
+
+Sentry is an error logging aggregator service. You can sign up for a free account at <https://sentry.io/signup/> or download and host it yourself. The system is set up with reasonable defaults, including 404 logging and integration with the WSGI application.
+
+You must set the DSN url in `SENTRY_DSN` in your `.env` file.

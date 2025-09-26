@@ -362,8 +362,7 @@ coloc
 └── coloc.parquet
 ```
 
-Each colocalization result for a pair of signals is stored in a separate directory and given its own unique UUID.
-These UUIDs must be unique across all colocalization results for all traits.
+Each colocalization result for a pair of signals is given its own unique UUID. These UUIDs must be unique across all colocalization results for all traits.
 
 The `metadata.parquet` file has the following information:
 

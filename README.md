@@ -444,7 +444,7 @@ The fields are:
 
 ### Database setup
 
-We use `uv` to manage packages and dependencies. [Follow these instructions](https://docs.astral.sh/uv/getting-started/installation/) to install `uv` on your system. 
+We use `uv` to manage packages and dependencies. [Follow these instructions](https://docs.astral.sh/uv/getting-started/installation/) to install `uv` on your system.
 
 The database can be created by applying relevant migrations, and then loading a pre-packaged dataset (not provided in
 this repo, though subsets of data may be provided in the future).

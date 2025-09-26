@@ -36,7 +36,7 @@ services:
       - colocus-network
 
   django:
-    image: colocus:latest
+    image: ghcr.io/statgen/colocus:latest
     container_name: colocus-django
     restart: always
     env_file: .env
@@ -58,7 +58,7 @@ services:
       - colocus-network
 
   ui:
-    image: colocus-ui:latest
+    image: ghcr.io/statgen/colocus-ui-vue3:latest
     container_name: colocus-ui
     restart: always
     env_file: .env

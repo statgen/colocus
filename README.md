@@ -218,33 +218,33 @@ Each trait has its own directory, which should be named with a unique identifier
 
 ```json
 {
-│   'uuid': 'gwas_diamante_t2d_eur',
-│   'study': {
-│   │   'uuid': 'DIAMANTE',
-│   │   'description': 'Diabetes Meta-Analysis of Trans-Ethnic Association Studies'
-│   },
-│   'tissue': None,
-│   'ancestry': 'EUR',
-│   'publication': {
-│   │   'authors': 'Mahajan et al.',
-│   │   'journal': 'Nature Genetics',
-│   │   'year': 2022,
-│   │   'pmid': 35551307,
-│   │   'doi': None
-│   },
-│   'analysts': None,
-│   'submitter': {
-│   │   'name': 'Varshney, Arushi',
-│   │   'abbrev': 'AV',
-│   │   'institution': 'University of Michigan'
-│   },
-│   'principal_investigators': None,
-│   'genome_build': 'GRCh37',
-│   'ld': 'UKBB_GRCh37_ALL',
-│   'external_link': 'https://diagram-consortium.org/downloads.html',
-│   'analysis_type': 'GWAS',
-│   'n_traits': 1,
-│   'n_traits_with_sig': 1
+  "uuid": "gwas_diamante_t2d_eur",
+  "study": {
+    "uuid": "DIAMANTE",
+    "description": "Diabetes Meta-Analysis of Trans-Ethnic Association Studies"
+  },
+  "tissue": null,
+  "ancestry": "EUR",
+  "publication": {
+    "authors": "Mahajan et al.",
+    "journal": "Nature Genetics",
+    "year": 2022,
+    "pmid": 35551307,
+    "doi": null
+  },
+  "analysts": null,
+  "submitter": {
+    "name": "Varshney, Arushi",
+    "abbrev": "AV",
+    "institution": "University of Michigan"
+  },
+  "principal_investigators": null,
+  "genome_build": "GRCh37",
+  "ld": "UKBB_GRCh37_ALL",
+  "external_link": "https://diagram-consortium.org/downloads.html",
+  "analysis_type": "GWAS",
+  "n_traits": 1,
+  "n_traits_with_sig": 1
 }
 ```
 
@@ -255,41 +255,41 @@ For an eQTL trait, an example `metadata.parquet` file looks like:
 
 ```json
 {
-│   'uuid': 'eqtl_inspire_islet',
-│   'study': {
-│   │   'uuid': 'INSPIRE',
-│   │   'description': 'INSPIRE islet eQTL meta-analysis consortium'
-│   },
-│   'tissue': 'islet',
-│   'ancestry': 'EUR',
-│   'publication': {
-│   │   'authors': 'Viñuela et al.',
-│   │   'pmid': 32999275,
-│   │   'journal': 'Nature Communications',
-│   │   'year': 2020,
-│   │   'doi': None
-│   },
-│   'analysts': [
-│   │   {
-│   │   │   'name': 'Varshney, Arushi',
-│   │   │   'abbrev': 'AV',
-│   │   │   'institution': 'University of Michigan'
-│   │   }
-│   ],
-│   'submitter': {
-│   │   'name': 'Varshney, Arushi',
-│   │   'abbrev': 'AV',
-│   │   'email': 'arushiv@umich.edu',
-│   │   'orcid': '0000-0001-9177-9707',
-│   │   'institution': 'University of Michigan'
-│   },
-│   'principal_investigators': None,
-│   'genome_build': 'GRCh37',
-│   'ld': 'UKBB_GRCh37_ALL',
-│   'external_link': None,
-│   'analysis_type': 'eQTL',
-│   'n_traits': 236,
-│   'n_traits_with_sig': 236
+  "uuid": "eqtl_inspire_islet",
+  "study": {
+    "uuid": "INSPIRE",
+    "description": "INSPIRE islet eQTL meta-analysis consortium"
+  },
+  "tissue": "islet",
+  "ancestry": "EUR",
+  "publication": {
+    "authors": "Viñuela et al.",
+    "pmid": 32999275,
+    "journal": "Nature Communications",
+    "year": 2020,
+    "doi": null
+  },
+  "analysts": [
+    {
+      "name": "Varshney, Arushi",
+      "abbrev": "AV",
+      "institution": "University of Michigan"
+    }
+  ],
+  "submitter": {
+    "name": "Varshney, Arushi",
+    "abbrev": "AV",
+    "email": "arushiv@umich.edu",
+    "orcid": "0000-0001-9177-9707",
+    "institution": "University of Michigan"
+  },
+  "principal_investigators": null,
+  "genome_build": "GRCh37",
+  "ld": "UKBB_GRCh37_ALL",
+  "external_link": null,
+  "analysis_type": "eQTL",
+  "n_traits": 236,
+  "n_traits_with_sig": 236
 }
 ```
 
@@ -310,40 +310,40 @@ The `metadata.parquet` file for a signal looks like the following:
 
 ```json
 {
-│   'uuid': 'Lc7hEWyp24Nco8j97GXrfr',
-│   'lead_variant': {
-│   │   'chrom': '9',
-│   │   'pos': 136241189,
-│   │   'ref': 'C',
-│   │   'alt': 'T'
-│   },
-│   'neg_log_p': 51.647,
-│   'effect_cond': -15.196,
-│   'se_cond': 0.998,
-│   'effect_marg': -0.307,
-│   'is_marg': False,
-│   'cs_variants': [
-│   │   '9_136218590_C_A',
-│   │   '9_136238509_G_A',
-│   │   '9_136241189_C_T',
-│   │   '9_136241639_C_T',
-│   │   '9_136249929_G_A',
-│   │   '9_136264493_C_T',
-│   │   '9_136267371_G_T'
-│   ],
-│   'cs_alpha': [
-│   │   0.0665931,
-│   │   0.037789,
-│   │   0.4947666,
-│   │   0.0755713,
-│   │   0.1302856,
-│   │   0.1038847,
-│   │   0.0618499
-│   ],
-│   'finemap_program': {
-│   │   'name': 'susieR',
-│   │   'version': 'v0.0.0'
-│   }
+  "uuid": "Lc7hEWyp24Nco8j97GXrfr",
+  "lead_variant": {
+    "chrom": "9",
+    "pos": 136241189,
+    "ref": "C",
+    "alt": "T"
+  },
+  "neg_log_p": 51.647,
+  "effect_cond": -15.196,
+  "se_cond": 0.998,
+  "effect_marg": -0.307,
+  "is_marg": false,
+  "cs_variants": [
+    "9_136218590_C_A",
+    "9_136238509_G_A",
+    "9_136241189_C_T",
+    "9_136241639_C_T",
+    "9_136249929_G_A",
+    "9_136264493_C_T",
+    "9_136267371_G_T"
+  ],
+  "cs_alpha": [
+    0.0665931,
+    0.037789,
+    0.4947666,
+    0.0755713,
+    0.1302856,
+    0.1038847,
+    0.0618499
+  ],
+  "finemap_program": {
+    "name": "susieR",
+    "version": "v0.0.0"
+  }
 }
 ```
 
@@ -366,32 +366,32 @@ There is also a master `signals.parquet` file that contains the information abou
 
 ```json
 {
-│   'sig_uuid': 'UXPTfTuQtfikGyjD2hHKmh',
-│   'study_uuid': 'gwas_diamante_t2d_eur',
-│   'lead_variant': '4_1784403_C_T',
-│   'susie_idx': 1,
-│   'susie_cs': 1,
-│   'susie_cs_variants': [
-│   │   '4_1784403_C_T',
-│   │   '4_1784605_G_C'
-│   ],
-│   'susie_cs_alpha': [
-│   │   0.7572763,
-│   │   0.1992575
-│   ],
-│   'path': 'data/orig/muscislet/t2d_gwas_susie/diamante_T2D-European__MAEA__rs56337234__P__chr4-1534402-2034403__250kb.selected.Rda',
-│   'extract_marginal': False,
-│   'study_type': 'GWAS',
-│   'trait': 'T2D',
-│   'gene': None,
-│   'exon': None,
-│   'feature': 'T2D',
-│   'tissue': None,
-│   'cell_type': None,
-│   'trust_alleles': True,
-│   'finemap_program': 'susieR',
-│   'finemap_version': 'v0.0.0',
-│   'genome_build': 'GRCh37'
+  "sig_uuid": "UXPTfTuQtfikGyjD2hHKmh",
+  "study_uuid": "gwas_diamante_t2d_eur",
+  "lead_variant": "4_1784403_C_T",
+  "susie_idx": 1,
+  "susie_cs": 1,
+  "susie_cs_variants": [
+    "4_1784403_C_T",
+    "4_1784605_G_C"
+  ],
+  "susie_cs_alpha": [
+    0.7572763,
+    0.1992575
+  ],
+  "path": "data/orig/muscislet/t2d_gwas_susie/diamante_T2D-European__MAEA__rs56337234__P__chr4-1534402-2034403__250kb.selected.Rda",
+  "extract_marginal": false,
+  "study_type": "GWAS",
+  "trait": "T2D",
+  "gene": null,
+  "exon": null,
+  "feature": "T2D",
+  "tissue": null,
+  "cell_type": null,
+  "trust_alleles": true,
+  "finemap_program": "susieR",
+  "finemap_version": "v0.0.0",
+  "genome_build": "GRCh37"
 }
 ```
 
@@ -465,52 +465,52 @@ The `metadata.parquet` file has the following information:
 
 ```json
 {
-│   'uuid': '7yCjsigpyW9AWVgcqM7SkF',
-│   'signal1': '918mCCrkd6US8F8qbyLDoi',
-│   'signal2': 'EuaY2JFmhPH7fAUEduozHz',
-│   'coloc_h3': 0.904439412729006,
-│   'coloc_h4': 0.0034383473563195,
-│   'dataset1': 'gwas_diamante_t2d_eur',
-│   'dataset2': 'eqtl_inspire_islet',
-│   'trait1': 'T2D',
-│   'trait2': 'ENSG00000114770_183645118_183645231',
-│   'trait2_symb': None,
-│   'trait1_variant': '3_183738626_T_A',
-│   'trait2_variant': '3_183683124_G_A',
-│   'cross_signal': {
-│   │   'effect': [
-│   │   │   [
-│   │   │   │   -0.036,
-│   │   │   │   0.0468
-│   │   │   ],
-│   │   │   [
-│   │   │   │   -0.018,
-│   │   │   │   0.35
-│   │   │   ]
-│   │   ],
-│   │   'se': [
-│   │   │   [
-│   │   │   │   0.0063,
-│   │   │   │   0.0322
-│   │   │   ],
-│   │   │   [
-│   │   │   │   0.013,
-│   │   │   │   0.0667
-│   │   │   ]
-│   │   ],
-│   │   'log_pval': [
-│   │   │   [
-│   │   │   │   7.7,
-│   │   │   │   0.835
-│   │   │   ],
-│   │   │   [
-│   │   │   │   0.796,
-│   │   │   │   6.59
-│   │   │   ]
-│   │   ]
-│   },
-│   'r2': 0.0564906,
-│   'n_coloc_between_traits': 0
+  "uuid": "7yCjsigpyW9AWVgcqM7SkF",
+  "signal1": "918mCCrkd6US8F8qbyLDoi",
+  "signal2": "EuaY2JFmhPH7fAUEduozHz",
+  "coloc_h3": 0.904439412729006,
+  "coloc_h4": 0.0034383473563195,
+  "dataset1": "gwas_diamante_t2d_eur",
+  "dataset2": "eqtl_inspire_islet",
+  "trait1": "T2D",
+  "trait2": "ENSG00000114770_183645118_183645231",
+  "trait2_symb": null,
+  "trait1_variant": "3_183738626_T_A",
+  "trait2_variant": "3_183683124_G_A",
+  "cross_signal": {
+    "effect": [
+      [
+        -0.036,
+        0.0468
+      ],
+      [
+        -0.018,
+        0.35
+      ]
+    ],
+    "se": [
+      [
+        0.0063,
+        0.0322
+      ],
+      [
+        0.013,
+        0.0667
+      ]
+    ],
+    "log_pval": [
+      [
+        7.7,
+        0.835
+      ],
+      [
+        0.796,
+        6.59
+      ]
+    ]
+  },
+  "r2": 0.0564906,
+  "n_coloc_between_traits": 0
 }
 ```
 

@@ -270,6 +270,7 @@ class FinemappedSignalListView(generics.ListAPIView):
         'analysis__ld', 'analysis__dataset', 'analysis__publication', 'analysis__trait__phenotype',
         'lead_variant')
     serializer_class = serializers.FinemappedSignalSerializer
+    filterset_class = filters.FinemappedSignalResultFilter
 
 
 @method_decorator(cache_page(None), name='get')

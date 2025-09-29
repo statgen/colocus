@@ -250,3 +250,181 @@ class ColocResultFilter(FilterSet):
             'min_h4',
             'min_r2',
         )
+
+
+class FinemappedSignalResultFilter(FilterSet):
+    """
+    Default filtering behavior for fine-mapped signal results.
+    """
+
+    def create_query(self, field, value):
+        if "," in value:
+            value = value.split(",")
+        else:
+            value = [value]
+
+        query = Q(**{f'{field}__in': value})
+        return query
+
+    # Create an `all_genes` filter that searches all available gene fields
+    genes = CharFilter(
+        method='gene_or',
+        label="Provide a list of comma-separated genes to filter by. Can be either Ensembl IDs or gene symbols.")
+
+    def gene_or(self, queryset, name, value):
+        query = self.create_query('analysis__trait__gene__symbol', value)
+        query |= self.create_query('analysis__trait__gene__ens_id', value)
+        return queryset.filter(query)
+
+    variants = CharFilter(
+        method='variant_or',
+        label="Provide a list of comma-separated variant IDs to filter by.")
+
+    def variant_or(self, queryset, name, value):
+        query = self.create_query('lead_variant__vid', value)
+        return queryset.filter(query)
+
+    cs_variants = CharFilter(
+        method='cs_variant_or',
+        label="Provide a list of comma-separated credible set variant IDs to filter by.")
+
+    def cs_variant_or(self, queryset, name, value):
+        if "," in value:
+            variants = value.split(",")
+            # For multiple variants, create OR conditions
+            query = Q()
+            for variant in variants:
+                query |= Q(**{'cs_variants__contains': variant})
+        else:
+            # For single variant
+            query = Q(**{'cs_variants__contains': value})
+        return queryset.filter(query)
+
+    traits = CharFilter(
+        method='trait_or',
+        label="Provide a list of comma-separated traits to filter by.")
+
+    def trait_or(self, queryset, name, value):
+        """
+        Filter on traits.
+        """
+        query = self.create_query('analysis__trait__uuid', value)
+        return queryset.filter(query)
+
+    phenotypes = CharFilter(
+        method='phenotype_or',
+        label="Provide a list of comma-separated phenotypes to filter by.")
+
+    def phenotype_or(self, queryset, name, value):
+        """
+        Filter on phenotypes.
+        """
+        query = self.create_query('analysis__trait__phenotype__name', value)
+        return queryset.filter(query)
+
+    tissues = CharFilter(
+        method='tissue_or',
+        label="Provide a list of comma-separated tissues to filter by.")
+
+    def tissue_or(self, queryset, name, value):
+        query = self.create_query('analysis__tissue', value)
+        return queryset.filter(query)
+
+    cell_types = CharFilter(
+        method='cell_type_or',
+        label="Provide a list of comma-separated cell types to filter by.")
+
+    def cell_type_or(self, queryset, name, value):
+        query = self.create_query('analysis__cell_type', value)
+        return queryset.filter(query)
+
+    analyses = CharFilter(
+        method='analysis_uuid_or',
+        label="Provide a list of comma-separated marginal analysis UUIDs to filter by.")
+
+    def analysis_uuid_or(self, queryset, name, value):
+        query = self.create_query('analysis__uuid', value)
+        return queryset.filter(query)
+
+    signals = CharFilter(
+        method='signal_or',
+        label="Provide a list of comma-separated fine-mapped signal UUIDs to filter by.")
+
+    def signal_or(self, queryset, name, value):
+        query = self.create_query('uuid', value)
+        return queryset.filter(query)
+
+    studies = CharFilter(
+        method='study_or',
+        label="Provide a list of comma-separated study UUIDs to filter by.")
+
+    def study_or(self, queryset, name, value):
+        query = self.create_query('analysis__study__uuid', value)
+        return queryset.filter(query)
+
+    def filter_region(self, queryset, name, value):
+        """
+        Filter results within a specified chromosome & position range.
+
+        The expected format of the input is 'chr:start-end', e.g., '4:10000-20000'.
+
+        :param queryset: The base queryset.
+        :param name: The name of the requested filter field in the API, here 'signal1_region' or 'signal2_region'.
+        :param value: The value provided for the filter, expected in 'chr:start-end' format.
+        :return: A filtered QuerySet.
+        """
+        match = parse_region(value)
+
+        if match:
+            chrom, start_pos, end_pos = match
+
+            pos_field = "lead_variant__pos"
+            chrom_field = "lead_variant__chrom"
+
+            return queryset.filter(
+                Q(**{f'{chrom_field}': chrom})
+                & Q(**{f'{pos_field}__gte': start_pos})
+                & Q(**{f'{pos_field}__lte': end_pos})
+            )
+
+        return queryset
+
+    region = CharFilter(
+        method='filter_region',
+        label="Only retrieve signal results within a specified region given as chr:start-end")
+
+    min_logp = NumberFilter(field_name='neg_log_p', lookup_expr='gte', label="Minimum -log10 p-value")
+
+    order_by_field = 'ordering'
+    ordering = OrderingFilter(
+        fields=(
+            ('neg_log_p', 'logp'),
+            ('lead_variant__chrom', 'chrom'),
+            ('lead_variant__pos', 'pos'),
+            ('analysis__trait__uuid', 'trait'),
+            ('analysis__trait__gene__ens_id', 'gene_ens_id'),
+            ('analysis__trait__exon__ens_id', 'exon_ens_id'),
+            ('analysis__trait__gene__symbol', 'gene_symbol'),
+            ('analysis__tissue', 'tissue'),
+            ('analysis__cell_type', 'cell_type'),
+            ('analysis__study__uuid', 'study'),
+        )
+    )
+
+    class Meta:
+        model = models.FineMappedSignal
+        fields = (
+            'uuid',
+            'genes',
+            'variants',
+            'cs_variants',
+            'traits',
+            'phenotypes',
+            'tissues',
+            'cell_types',
+            'analyses',
+            'signals',
+            'studies',
+            'region',
+            'min_logp',
+        )

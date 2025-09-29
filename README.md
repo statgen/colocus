@@ -138,8 +138,10 @@ Each trait has its own directory, which should be named with a unique identifier
   },
   "analysts": null,
   "submitter": {
-    "name": "Varshney, Arushi",
-    "abbrev": "AV",
+    "name": "<last name, first name>",
+    "abbrev": "<abbrev>",
+    "email": "<email>",
+    "orcid": "<orcid>",
     "institution": "University of Michigan"
   },
   "principal_investigators": null,
@@ -175,16 +177,18 @@ For an eQTL trait, an example `metadata.parquet` file looks like:
   },
   "analysts": [
     {
-      "name": "Varshney, Arushi",
-      "abbrev": "AV",
+      "name": "<last name, first name>",
+      "abbrev": "<initials>",
+      "email": "<email>",
+      "orcid": "<orcid>",
       "institution": "University of Michigan"
     }
   ],
   "submitter": {
-    "name": "Varshney, Arushi",
-    "abbrev": "AV",
-    "email": "arushiv@umich.edu",
-    "orcid": "0000-0001-9177-9707",
+    "name": "<last name, first name>",
+    "abbrev": "<initials>",
+    "email": "<email>",
+    "orcid": "<orcid>",
     "institution": "University of Michigan"
   },
   "principal_investigators": null,

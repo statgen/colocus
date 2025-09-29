@@ -4,12 +4,6 @@ Visualize and explore fine-mapped signals and their colocalizations
 
 To see an example of a running instance of Colocus, try: https://amp.colocus.app/.
 
-- [Development](#development)
-  - [Database setup](#database-setup)
-  - [Running the django server](#running-the-django-server)
-  - [Running all code checks](#running-all-code-checks)
-  - [Running tests](#running-tests)
-  - [Sentry](#sentry)
 - [Deployment](#deployment)
   - [Docker](#docker)
   - [CSG](#csg)
@@ -17,6 +11,12 @@ To see an example of a running instance of Colocus, try: https://amp.colocus.app
   - [Marginal and conditional / fine-mapping analyses](#marginal-and-conditional--fine-mapping-analyses)
   - [Linkage disequilibrium (LD)](#linkage-disequilibrium-ld)
   - [Colocalization](#colocalization)
+- [Development](#development)
+  - [Database setup](#database-setup)
+  - [Running the django server](#running-the-django-server)
+  - [Running all code checks](#running-all-code-checks)
+  - [Running tests](#running-tests)
+  - [Sentry](#sentry)
 
 This repository contains the code for the backend server component of Colocus, as well as a docker compose stack to help
 deploy it.

@@ -4,19 +4,7 @@ Visualize and explore fine-mapped signals and their colocalizations
 
 To see an example of a running instance of Colocus, try: https://amp.colocus.app/.
 
-- [Deployment](#deployment)
-  - [Docker](#docker)
-  - [CSG](#csg)
-- [Required data](#required-data)
-  - [Marginal and conditional / fine-mapping analyses](#marginal-and-conditional--fine-mapping-analyses)
-  - [Linkage disequilibrium (LD)](#linkage-disequilibrium-ld)
-  - [Colocalization](#colocalization)
-- [Development](#development)
-  - [Database setup](#database-setup)
-  - [Running the django server](#running-the-django-server)
-  - [Running all code checks](#running-all-code-checks)
-  - [Running tests](#running-tests)
-  - [Sentry](#sentry)
+<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
 
 This repository contains the code for the backend server component of Colocus, as well as a docker compose stack to help
 deploy it.
@@ -445,7 +433,11 @@ The fields are:
 
 ## Development
 
-### Database setup
+### Bare metal
+
+This development setup deploys the colocus server directly to your VM or local machine. For a docker based setup, see below.
+
+#### Database setup
 
 We use `uv` to manage packages and dependencies. [Follow these instructions](https://docs.astral.sh/uv/getting-started/installation/) to install `uv` on your system.
 
@@ -499,7 +491,7 @@ uv run python scripts/load_dataset.py <path/to/dataset>
 
 More information on the required types of data can be found below under [required data](#required-data).
 
-### Running the django server
+#### Running the django server
 
 This will start uvicorn to serve the django app and REST API. By default, the server runs on port 8000.
 
@@ -507,7 +499,7 @@ This will start uvicorn to serve the django app and REST API. By default, the se
 uv run uvicorn config.asgi:application --host 0.0.0.0 --reload
 ```
 
-### Running all code checks
+#### Running all code checks
 
 The project is setup to use [pre-commit](https://pre-commit.com/) to run all checks at once. You can either install
 the pre-commit git hooks, or run pre-commit yourself manually before committing.
@@ -520,14 +512,57 @@ uv run pre-commit run --all-files -v
 
 This is the same command our Github Actions CI will run when you push a commit.
 
-### Running tests
+#### Running tests
 
 ```bash
 uv run pytest
 ```
 
-### Sentry
+#### Sentry
 
 Sentry is an error logging aggregator service. You can sign up for a free account at <https://sentry.io/signup/> or download and host it yourself. The system is set up with reasonable defaults, including 404 logging and integration with the WSGI application.
 
 You must set the DSN url in `SENTRY_DSN` in your `.env` file.
+
+### Docker
+
+Make a docker compose override that enables watching files and rebuilding container images as needed: 
+
+```yml
+services:
+  django:
+    build: .
+    command: --reload
+    develop:
+      watch:
+        - action: sync
+          path: ./colocus
+          target: /opt/colocus/colocus
+
+  ui:
+    build:
+      context: ../colocus-ui-vue3
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: ../colocus-ui-vue3/package.json
+        - action: rebuild
+          path: ../colocus-ui-vue3/src
+```
+
+To use this, you will need the `colocus-ui-vue3` repository checked out next to colocus. For example, your directory tree should look like this: 
+
+```
+root
+| - colocus-ui-vue3
+| - colocus
+```
+
+Now you can run: 
+
+```bash
+docker compose up --build --watch
+```
+
+This will bring up the containers, building them as needed, and watch to see if source code files change. If any of the source changes, the container image will be rebuilt if necessary, and restarted. In the case of the Django container, it will instead just sync the new source files into the container, and then the uvicorn server will reload them.

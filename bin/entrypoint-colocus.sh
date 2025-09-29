@@ -50,4 +50,4 @@ fi
 HOST=${UVICORN_HOST:-127.0.0.1}
 PORT=${UVICORN_PORT:-8000}
 WORKERS=${WEB_CONCURRENCY:-1}
-/opt/colocus/.venv/bin/uvicorn config.asgi:application --host $HOST --port $PORT --workers $WORKERS
+/opt/colocus/.venv/bin/uvicorn config.asgi:application --host $HOST --port $PORT --workers $WORKERS "$@"

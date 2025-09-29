@@ -526,7 +526,7 @@ You must set the DSN url in `SENTRY_DSN` in your `.env` file.
 
 ### Docker
 
-Make a docker compose override that enables watching files and rebuilding container images as needed: 
+Make a docker compose override that enables watching files and rebuilding container images as needed:
 
 ```yml
 services:
@@ -551,7 +551,7 @@ services:
           path: ../colocus-ui-vue3/src
 ```
 
-To use this, you will need the `colocus-ui-vue3` repository checked out next to colocus. For example, your directory tree should look like this: 
+To use this, you will need the `colocus-ui-vue3` repository checked out next to colocus. For example, your directory tree should look like this:
 
 ```
 root
@@ -559,7 +559,7 @@ root
 | - colocus
 ```
 
-Now you can run: 
+Now you can run:
 
 ```bash
 docker compose up --build --watch

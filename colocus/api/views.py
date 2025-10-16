@@ -94,6 +94,16 @@ class ColocResultQueryParamsSerializer(drf_serializers.Serializer):
             type=str
         ),
         OpenApiParameter(
+            name='analysis_type_priority',
+            description=(
+                'Comma-separated list of analysis types to prioritize when assigning signals to signal1 and signal2. '
+                'For example: "eQTL,GWAS" will prioritize eQTL signals as signal1 and GWAS signals as signal2. '
+                'Analysis types earlier in the list have higher priority.'
+            ),
+            required=False,
+            type=str
+        ),
+        OpenApiParameter(
             name='include_orphans',
             description='Include colocalization results where one signal has no other colocalizations',
             required=False,

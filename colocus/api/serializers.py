@@ -303,14 +303,102 @@ class ColocResultSerializer(drf_serializers.ModelSerializer):
     associated with the same causal variant.
     """
 
-    signal1 = FinemappedSignalSerializer(read_only=True, label="Signal 1")
-    signal2 = FinemappedSignalSerializer(read_only=True, label="Signal 2")
+    signal1 = drf_serializers.SerializerMethodField(method_name='get_signal1', label="Signal 1")
+    signal2 = drf_serializers.SerializerMethodField(method_name='get_signal2', label="Signal 2")
     coloc_h3 = ReducedPrecisionFloatField(read_only=True, label="Posterior probability of H3")
     coloc_h4 = ReducedPrecisionFloatField(read_only=True, label="Posterior probability of H4")
     r2 = ReducedPrecisionFloatField(read_only=True, label="r2 between lead variants")
     n_coloc_between_traits = drf_serializers.IntegerField(
         read_only=True,
         label="Number of coloc results between signal1's trait and signal2's trait")
+
+    def get_signal1(self, obj):
+        request = self.context.get('request')
+        analysis_type_priority = request and request.query_params.get('analysis_type_priority')
+
+        if analysis_type_priority:
+            order = analysis_type_priority.split(",")
+
+            try:
+                order1 = order.index(obj.signal1.analysis.analysis_type) if obj.signal1.analysis.analysis_type in order else None
+            except (ValueError, AttributeError):
+                order1 = None
+
+            try:
+                order2 = order.index(obj.signal2.analysis.analysis_type) if obj.signal2.analysis.analysis_type in order else None
+            except (ValueError, AttributeError):
+                order2 = None
+
+            if order1 is None and order2 is None:
+                signal = obj.signal1
+
+            elif order1 is not None:
+                if order1 == 0:
+                    signal = obj.signal1
+                elif order1 == 1:
+                    signal = obj.signal2
+
+            elif order2 is not None:
+                if order2 == 0:
+                    signal = obj.signal2
+                elif order2 == 1:
+                    signal = obj.signal1
+
+            elif order1 == order2:
+                return obj.signal1
+            elif order1 < order2:
+                signal = obj.signal1
+            elif order1 > order2:
+                signal = obj.signal2
+
+        else:
+            signal = obj.signal1
+
+        return FinemappedSignalSerializer(signal, context=self.context).data
+
+    def get_signal2(self, obj):
+        request = self.context.get('request')
+        analysis_type_priority = request and request.query_params.get('analysis_type_priority')
+
+        if analysis_type_priority:
+            order = analysis_type_priority.split(",")
+
+            try:
+                order1 = order.index(obj.signal1.analysis.analysis_type) if obj.signal1.analysis.analysis_type in order else None
+            except (ValueError, AttributeError):
+                order1 = None
+
+            try:
+                order2 = order.index(obj.signal2.analysis.analysis_type) if obj.signal2.analysis.analysis_type in order else None
+            except (ValueError, AttributeError):
+                order2 = None
+
+            if order1 is None and order2 is None:
+                signal = obj.signal2
+
+            elif order1 is not None:
+                if order1 == 0:
+                    signal = obj.signal2
+                elif order1 == 1:
+                    signal = obj.signal1
+
+            elif order2 is not None:
+                if order2 == 0:
+                    signal = obj.signal1
+                elif order2 == 1:
+                    signal = obj.signal2
+
+            elif order1 == order2:
+                return obj.signal2
+            elif order1 < order2:
+                signal = obj.signal2
+            elif order1 > order2:
+                signal = obj.signal1
+
+        else:
+            signal = obj.signal2
+
+        return FinemappedSignalSerializer(signal, context=self.context).data
 
     class Meta:
         model = models.ColocResult

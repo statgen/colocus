@@ -5,10 +5,16 @@ GENOME_BUILDS = (
 
 GWAS = 'GWAS'
 EQTL = 'eQTL'
+MEQTL = 'mQTL'
+METABQTL = 'metabQTL'
+PQTL = 'pQTL'
 
 ANALYSIS_TYPES = (
     (GWAS, 'GWAS'),
-    (EQTL, 'eQTL')
+    (EQTL, 'eQTL'),
+    (MEQTL, 'mQTL'),
+    (METABQTL, 'metabQTL'),
+    (PQTL, 'pQTL'),
 )
 
 DATA_HASH_TYPES = (

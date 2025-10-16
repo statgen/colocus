@@ -6,7 +6,8 @@ https://django-filter.readthedocs.io/en/stable/ref/filterset.html#fields
 
 import re
 
-from django.db.models import Q
+from django.db.models import Q, F, Case, When, Value
+from django.db.models.functions import Greatest
 from django_filters.rest_framework import (
     CharFilter,
     FilterSet,
@@ -15,6 +16,7 @@ from django_filters.rest_framework import (
 )
 
 from colocus.core import models
+from colocus.core.constants import ANALYSIS_TYPES, GWAS, EQTL, MEQTL, METABQTL, PQTL
 
 
 def parse_region(region):
@@ -24,7 +26,7 @@ def parse_region(region):
         return match.groups()
 
 
-class ColocResultFilter(FilterSet):
+class BaseColocResultFilter(FilterSet):
     """
     Default filtering behavior for coloc results.
 
@@ -34,6 +36,52 @@ class ColocResultFilter(FilterSet):
       We allow filters to be applied for either signal 1 (usually a GWAS) or signal 2 (some sort of QTL), because
         people might have a particular interest in the line of biological evidence
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Dynamically create min_logp_{analysis_type} filters
+        for _, analysis_type_name in ANALYSIS_TYPES:
+            filter_name = f'min_logp_{analysis_type_name.lower()}'     # filter name convention requires min_logp_*
+            field_name = f'logp_max_over_{analysis_type_name.lower()}' # field created in filter_queryset
+
+            # Only add if not already defined as a class attribute
+            if filter_name not in self.filters:
+                self.filters[filter_name] = NumberFilter(
+                    field_name=field_name,
+                    lookup_expr='gte',
+                    label=(
+                        f"Minimum -log10 p-value for {analysis_type_name} signals "
+                        f"(only colocalizations with at least 1 {analysis_type_name} signal will be returned)"
+                    )
+                )
+
+    def filter_queryset(self, queryset):
+        # Add some fields that are useful for filtering/sorting but not stored directly in the DB
+        # Dynamically create logp_max_over_{analysis_type} for each analysis type
+        for _, analysis_type_name in ANALYSIS_TYPES:
+            field_name = f'logp_max_over_{analysis_type_name.lower()}'
+            queryset = queryset.annotate(**{
+                field_name: Greatest(
+                    Case(
+                        When(signal1__analysis__analysis_type=analysis_type_name, then=F('signal1__neg_log_p')),
+                        default=Value(float('-inf'))
+                    ),
+                    Case(
+                        When(signal2__analysis__analysis_type=analysis_type_name, then=F('signal2__neg_log_p')),
+                        default=Value(float('-inf'))
+                    )
+                )
+            })
+
+            # If the corresponding filter is applied, exclude records with no valid signal of that type
+            filter_param = f'min_logp_{analysis_type_name.lower()}'
+            if self.data.get(filter_param):
+                queryset = queryset.exclude(
+                    Q(**{f'{field_name}': float('-inf')}) | Q(**{f'{field_name}__isnull': True})
+                )
+
+        return super().filter_queryset(queryset)
+
     def create_query(self, field, value):
         if "," in value:
             value = value.split(",")
@@ -213,6 +261,7 @@ class ColocResultFilter(FilterSet):
             ('coloc_h4', 'h4'),
             ('r2', 'r2'),
             ('n_coloc_between_traits', 'n_coloc_between_traits'),
+            *(f"logp_max_over_{e[0].lower()}" for e in ANALYSIS_TYPES),
             ('signal1__neg_log_p', 'signal1_logp'),
             ('signal2__neg_log_p', 'signal2_logp'),
             ('signal1__lead_variant__chrom', 'signal1_chrom'),

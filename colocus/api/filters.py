@@ -114,6 +114,16 @@ class ColocResultFilter(FilterSet):
         query |= self.create_query('signal2__analysis__uuid', value)
         return queryset.filter(query)
 
+    analysis_types = CharFilter(
+        method="analysis_types_or",
+        label="Provide a list of comma-separated analysis types to filter by."
+    )
+
+    def analysis_types_or(self, queryset, name, value):
+        query = self.create_query('signal1__analysis__analysis_type', value)
+        query |= self.create_query('signal2__analysis__analysis_type', value)
+        return queryset.filter(query)
+
     signals = CharFilter(
         method='signal_or',
         label="Provide a list of comma-separated fine-mapped signal UUIDs to filter by.")
@@ -247,6 +257,7 @@ class ColocResultFilter(FilterSet):
             'signal2_analysis',
             'signal1_min_logp',
             'signal2_min_logp',
+            'analysis_types',
             'min_h4',
             'min_r2',
         )

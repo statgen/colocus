@@ -606,7 +606,7 @@ class FineMappedSignal(models.Model):
     )
 
 
-class ColocResult(models.Model):
+class BaseColocResult(models.Model):
     """
     Colocalization results for one specific pair of signals across two traits
     """
@@ -674,3 +674,33 @@ class ColocResult(models.Model):
     def marg_cond_flip(self):
         return (sign(self.signal1.effect_cond) != sign(self.signal1.effect_marg)) or \
             (sign(self.signal2.effect_cond) != sign(self.signal2.effect_marg))
+
+    class Meta:
+        abstract = True
+
+class ColocResult(BaseColocResult):
+    """
+    Colocalization results for one specific pair of signals across two traits
+    """
+    pass
+
+class ColocResultWithOrphans(BaseColocResult):
+    """
+    A view that includes all colocalization results, plus any fine-mapped signals that do not appear in any
+    colocalization results (i.e. "orphan" signals).
+
+    This is implemented as a database view; a migration exists to create the view in the DB. Do not delete the migration
+    that creates this view unless you also delete this model.
+    """
+
+    signal2 = models.ForeignKey(
+        FineMappedSignal,
+        related_name="+",
+        on_delete=models.DO_NOTHING,
+        null=True,
+        help_text='The second signal (from trait 2)'
+    )
+
+    class Meta:
+        managed = False # No migrations will be created for this model (this is a view, not an actual table)
+        db_table = 'core_colocresult_with_orphans'

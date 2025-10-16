@@ -7,6 +7,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import exceptions as drf_exceptions
+from rest_framework import serializers as drf_serializers
 from rest_framework import generics
 from rest_framework.views import APIView
 from zorp.readers import TabixReader
@@ -69,6 +70,10 @@ order_options = sorted([
 ])
 
 
+class ColocResultQueryParamsSerializer(drf_serializers.Serializer):
+    include_orphans = drf_serializers.BooleanField(required=False, default=False)
+
+
 @extend_schema(
     parameters=[
         OpenApiParameter(
@@ -87,6 +92,12 @@ order_options = sorted([
             description='Filter results by coloc result UUID',
             required=False,
             type=str
+        ),
+        OpenApiParameter(
+            name='include_orphans',
+            description='Include colocalization results where one signal has no other colocalizations',
+            required=False,
+            type=bool,
         ),
     ],
     examples=[
@@ -111,21 +122,45 @@ class ColocResultListView(generics.ListAPIView):
     the result of colocalizing two fine-mapped signals from a GWAS or eQTL analysis.
     """
 
-    queryset = models.ColocResult.objects.select_related(
-        'signal1', 'signal2',
-        'signal1__analysis', 'signal2__analysis',
-        'signal1__analysis__trait', 'signal2__analysis__trait',
-        'signal1__lead_variant', 'signal2__lead_variant',
-        'signal1__analysis__trait__gene', 'signal2__analysis__trait__gene',
-        'signal1__analysis__trait__exon', 'signal2__analysis__trait__exon',
-        'signal1__analysis__trait__phenotype', 'signal2__analysis__trait__phenotype',
-        'signal1__analysis__study', 'signal2__analysis__study',
-        'signal1__analysis__publication', 'signal2__analysis__publication',
-        'signal1__analysis__dataset', 'signal2__analysis__dataset',
-        'signal1__analysis__ld', 'signal2__analysis__ld')
+    def get_queryset(self):
+        fields = (
+            'signal1', 'signal2',
+            'signal1__analysis', 'signal2__analysis',
+            'signal1__analysis__trait', 'signal2__analysis__trait',
+            'signal1__lead_variant', 'signal2__lead_variant',
+            'signal1__analysis__trait__gene', 'signal2__analysis__trait__gene',
+            'signal1__analysis__trait__exon', 'signal2__analysis__trait__exon',
+            'signal1__analysis__trait__phenotype', 'signal2__analysis__trait__phenotype',
+            'signal1__analysis__study', 'signal2__analysis__study',
+            'signal1__analysis__publication', 'signal2__analysis__publication',
+            'signal1__analysis__dataset', 'signal2__analysis__dataset',
+            'signal1__analysis__ld', 'signal2__analysis__ld'
+        )
+
+        query_serializer = ColocResultQueryParamsSerializer(data=self.request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        include_orphans = query_serializer.validated_data.get('include_orphans', False)
+
+        if include_orphans:
+            return models.ColocResultWithOrphans.objects.select_related(*fields)
+
+        return models.ColocResult.objects.select_related(*fields)
 
     serializer_class = serializers.ColocResultSerializer
-    filterset_class = filters.ColocResultFilter
+    # filterset_class = filters.ColocResultWithOrphansFilter
+
+    @property
+    def filterset_class(self):
+        query_serializer = ColocResultQueryParamsSerializer(data=self.request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        include_orphans = query_serializer.validated_data.get('include_orphans', False)
+
+        if include_orphans:
+            return filters.ColocResultWithOrphansFilter
+
+        return filters.ColocResultFilter
 
 
 @method_decorator(cache_page(None), name='get')

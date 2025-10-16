@@ -237,7 +237,7 @@ class ColocResultFilter(FilterSet):
     )
 
     class Meta:
-        model = models.ColocResult
+        abstract = True
         fields = (
             'uuid',
             'genes',
@@ -261,6 +261,22 @@ class ColocResultFilter(FilterSet):
             'min_h4',
             'min_r2',
         )
+
+
+class ColocResultFilter(BaseColocResultFilter):
+    """
+    Filter for ColocResult model (real colocalization results only).
+    """
+    class Meta(BaseColocResultFilter.Meta):
+        model = models.ColocResult
+
+
+class ColocResultWithOrphansFilter(BaseColocResultFilter):
+    """
+    Filter for ColocResultWithOrphans model (includes orphan signals).
+    """
+    class Meta(BaseColocResultFilter.Meta):
+        model = models.ColocResultWithOrphans
 
 
 class FinemappedSignalResultFilter(FilterSet):

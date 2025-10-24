@@ -43,6 +43,59 @@ docker compose exec django bash -c 'source .venv/bin/activate && python3 manage.
 docker compose exec django bash -c 'source .venv/bin/activate && python3 scripts/load_dataset.py /data'
 ```
 
+While developing you may want the containers to rebuild or resync with your source files changing automatically. The following can be placed in a `docker-compose.override.yml` file: 
+
+```yml
+services:
+  django:
+    build: .
+    command: --reload
+    develop:
+      watch:
+        - action: sync
+          path: ./colocus
+          target: /opt/colocus/colocus
+        - action: rebuild
+          path: ./Dockerfile
+
+  ui:
+    build:
+      context: ../colocus-ui-vue3
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${VITE_PORT}:${VITE_PORT}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${VITE_PORT}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    develop:
+      watch:
+        - action: rebuild
+          path: ../colocus-ui-vue3/package.json
+        - action: rebuild
+          path: ../colocus-ui-vue3/vite.config.mjs
+        - action: sync
+          path: ../colocus-ui-vue3/src
+          target: /app/src
+        - action: sync
+          path: ../colocus-ui-vue3/etc
+          target: /app/etc
+        - action: rebuild
+          path: ../colocus-ui-vue3/Dockerfile.dev
+```
+
+This assumes you have `colocus` and `colocus-ui-vue3` repositories checked out and next to each other in the directory hierarchy. 
+
+You'll also want the following in your `.env` file: 
+
+```bash
+VITE_HOST=0.0.0.0
+VITE_PORT=5173
+VITE_API_URL=http://django:${UVICORN_PORT}
+```
+
+
 ### CSG
 
 We have our own deployment and terraform instructions for CSG. There is currently one site deployed, for the

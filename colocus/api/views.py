@@ -81,7 +81,7 @@ def annotate_prioritized_signals(queryset, analysis_type_priority=None):
         analysis_type_priority: Comma-separated string like "GWAS,eQTL"
 
     Returns:
-        Annotated queryset with 'use_signal1_as_primary' boolean field
+        Annotated queryset with 'no_signal_swap' boolean field
     """
     if analysis_type_priority:
         order_list = analysis_type_priority.split(",")
@@ -119,7 +119,7 @@ def annotate_prioritized_signals(queryset, analysis_type_priority=None):
         # - If both have values: use the one with lower index
 
         queryset = queryset.annotate(
-            use_signal1_as_primary=Case(
+            no_signal_swap=Case(
                 When(Q(order1__isnull=True) & Q(order2__isnull=True), then=Value(True)),
 
                 When(
@@ -158,7 +158,7 @@ def annotate_prioritized_signals(queryset, analysis_type_priority=None):
         )
     else:
         queryset = queryset.annotate(
-            use_signal1_as_primary=Value(True, output_field=BooleanField())
+            no_signal_swap=Value(True, output_field=BooleanField())
         )
 
     return queryset

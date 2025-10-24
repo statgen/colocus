@@ -311,11 +311,18 @@ class ColocResultSerializer(drf_serializers.ModelSerializer):
     n_coloc_between_traits = drf_serializers.IntegerField(
         read_only=True,
         label="Number of coloc results between signal1's trait and signal2's trait")
+    signal_swap = drf_serializers.SerializerMethodField(
+        method_name='get_signal_swap',
+        read_only=True,
+        label="Denotes whether signals have been swapped due to analysis priority parameter)")
+
+    def get_signal_swap(self, obj):
+        return not obj.no_signal_swap
 
     def get_signal1(self, obj):
         # Use annotated field if available, otherwise fall back to current logic
-        if hasattr(obj, 'use_signal1_as_primary'):
-            signal = obj.signal1 if obj.use_signal1_as_primary else obj.signal2
+        if hasattr(obj, 'no_signal_swap'):
+            signal = obj.signal1 if obj.no_signal_swap else obj.signal2
         else:
             signal = obj.signal1
 
@@ -328,8 +335,8 @@ class ColocResultSerializer(drf_serializers.ModelSerializer):
 
     def get_signal2(self, obj):
         # Use annotated field if available, otherwise fall back to current logic
-        if hasattr(obj, 'use_signal1_as_primary'):
-            signal = obj.signal2 if obj.use_signal1_as_primary else obj.signal1
+        if hasattr(obj, 'no_signal_swap'):
+            signal = obj.signal2 if obj.no_signal_swap else obj.signal1
         else:
             signal = obj.signal2
 
@@ -341,4 +348,4 @@ class ColocResultSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.ColocResult
         fields = ('uuid', 'signal1', 'signal2', 'coloc_h3', 'coloc_h4', 'cross_signal',
-                  'r2', 'n_coloc_between_traits', 'marg_cond_flip')
+                  'r2', 'n_coloc_between_traits', 'marg_cond_flip', 'signal_swap')

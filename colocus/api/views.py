@@ -72,7 +72,23 @@ order_options = sorted([
 
 class ColocResultQueryParamsSerializer(drf_serializers.Serializer):
     include_orphans = drf_serializers.BooleanField(required=False, default=False)
+    analysis_type_priority = drf_serializers.CharField(
+        required=False, 
+        allow_blank=True,
+        help_text=(
+            'Comma-separated list of analysis types to prioritize when assigning signals. '
+            'Example: "eQTL,GWAS" prioritizes eQTL as signal1.'
+        )
+    )
 
+    def validate_analysis_type_priority(self, value):
+        if value:
+            # Could add validation here, e.g., check valid analysis types
+            types = [t.strip() for t in value.split(',')]
+            for t in types:
+                if t not in dict(ANALYSIS_TYPES):
+                    raise drf_serializers.ValidationError(f"Invalid analysis type: {t}")
+        return value
 
 @extend_schema(
     parameters=[

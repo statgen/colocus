@@ -1,7 +1,7 @@
 import os
 import typing as ty
 from typing import Union
-
+from django.db.models import Case, When, Value, IntegerField, BooleanField, Q, F
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -16,6 +16,7 @@ from zorp.sniffers import guess_gwas_standard
 from colocus.core import models
 from colocus.utils.paginators import LargeResultsSetPagination
 from colocus.utils.variants import parse_variant
+from colocus.core.constants import ANALYSIS_TYPES
 
 from . import filters, parsers, serializers, util
 
@@ -68,6 +69,99 @@ order_options = sorted([
     for field in filters.ColocResultFilter.base_filters.get('ordering').field.choices
     if field and (not field[0].startswith("-")) and (not field[0] == '')
 ])
+
+
+def annotate_prioritized_signals(queryset, analysis_type_priority=None):
+    """
+    Annotate a ColocResult queryset with fields indicating which signal should be used
+    based on analysis_type_priority.
+
+    Args:
+        queryset: ColocResult queryset
+        analysis_type_priority: Comma-separated string like "GWAS,eQTL"
+
+    Returns:
+        Annotated queryset with 'use_signal1_as_primary' boolean field
+    """
+    if analysis_type_priority:
+        order_list = analysis_type_priority.split(",")
+
+        # Create CASE statements for order1 and order2
+        order1_whens = [
+            When(signal1__analysis__analysis_type=atype, then=Value(idx))
+            for idx, atype in enumerate(order_list)
+        ]
+
+        order2_whens = [
+            When(signal2__analysis__analysis_type=atype, then=Value(idx))
+            for idx, atype in enumerate(order_list)
+        ]
+
+        queryset = queryset.annotate(
+            order1=Case(
+                *order1_whens,
+                default=Value(None, output_field=IntegerField()),
+                output_field=IntegerField()
+            ),
+            order2=Case(
+                *order2_whens,
+                default=Value(None, output_field=IntegerField()),
+                output_field=IntegerField()
+            )
+        )
+
+        # Now determine which signal to use as primary (first signal shown)
+        # Logic:
+        # - If both None: use signal1
+        # - If only one has a value:
+        #   - If that value is 0: use that signal
+        #   - If that value is 1: use the other signal
+        # - If both have values: use the one with lower index
+
+        queryset = queryset.annotate(
+            use_signal1_as_primary=Case(
+                When(Q(order1__isnull=True) & Q(order2__isnull=True), then=Value(True)),
+
+                When(
+                    Q(order1__isnull=False) & Q(order2__isnull=True),
+                    then=Case(
+                        When(order1=0, then=Value(True)),
+                        When(order1=1, then=Value(False)),
+                        default=Value(True),
+                        output_field=BooleanField()
+                    )
+                ),
+
+                When(
+                    Q(order1__isnull=True) & Q(order2__isnull=False),
+                    then=Case(
+                        When(order2=0, then=Value(False)),
+                        When(order2=1, then=Value(True)),
+                        default=Value(True),
+                        output_field=BooleanField()
+                    )
+                ),
+
+                When(
+                    Q(order1__isnull=False) & Q(order2__isnull=False),
+                    then=Case(
+                        When(order1__lt=F('order2'), then=Value(True)),
+                        When(order1__gt=F('order2'), then=Value(False)),
+                        When(order1=F('order2'), then=Value(True)),
+                        output_field=BooleanField()
+                    )
+                ),
+
+                default=Value(True),
+                output_field=BooleanField()
+            )
+        )
+    else:
+        queryset = queryset.annotate(
+            use_signal1_as_primary=Value(True, output_field=BooleanField())
+        )
+
+    return queryset
 
 
 class ColocResultQueryParamsSerializer(drf_serializers.Serializer):
@@ -167,11 +261,16 @@ class ColocResultListView(generics.ListAPIView):
         query_serializer.is_valid(raise_exception=True)
 
         include_orphans = query_serializer.validated_data.get('include_orphans', False)
+        analysis_type_priority = query_serializer.validated_data.get('analysis_type_priority')
 
         if include_orphans:
-            return models.ColocResultWithOrphans.objects.select_related(*fields)
+            queryset = models.ColocResultWithOrphans.objects.select_related(*fields)
+        else:
+            queryset = models.ColocResult.objects.select_related(*fields)
 
-        return models.ColocResult.objects.select_related(*fields)
+        queryset = annotate_prioritized_signals(queryset, analysis_type_priority)
+
+        return queryset
 
     serializer_class = serializers.ColocResultSerializer
     # filterset_class = filters.ColocResultWithOrphansFilter
@@ -192,18 +291,36 @@ class ColocResultListView(generics.ListAPIView):
 @method_decorator(cache_page(None), name='get')
 class ColocResultDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
-    queryset = models.ColocResult.objects.select_related(
-        'signal1', 'signal2',
-        'signal1__analysis', 'signal2__analysis',
-        'signal1__analysis__trait', 'signal2__analysis__trait',
-        'signal1__lead_variant', 'signal2__lead_variant',
-        'signal1__analysis__trait__gene', 'signal2__analysis__trait__gene',
-        'signal1__analysis__trait__exon', 'signal2__analysis__trait__exon',
-        'signal1__analysis__trait__phenotype', 'signal2__analysis__trait__phenotype',
-        'signal1__analysis__study', 'signal2__analysis__study',
-        'signal1__analysis__publication', 'signal2__analysis__publication',
-        'signal1__analysis__dataset', 'signal2__analysis__dataset',
-        'signal1__analysis__ld', 'signal2__analysis__ld')
+    def get_queryset(self):
+        fields = (
+            'signal1', 'signal2',
+            'signal1__analysis', 'signal2__analysis',
+            'signal1__analysis__trait', 'signal2__analysis__trait',
+            'signal1__lead_variant', 'signal2__lead_variant',
+            'signal1__analysis__trait__gene', 'signal2__analysis__trait__gene',
+            'signal1__analysis__trait__exon', 'signal2__analysis__trait__exon',
+            'signal1__analysis__trait__phenotype', 'signal2__analysis__trait__phenotype',
+            'signal1__analysis__study', 'signal2__analysis__study',
+            'signal1__analysis__publication', 'signal2__analysis__publication',
+            'signal1__analysis__dataset', 'signal2__analysis__dataset',
+            'signal1__analysis__ld', 'signal2__analysis__ld'
+        )
+
+        query_serializer = ColocResultQueryParamsSerializer(data=self.request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        include_orphans = query_serializer.validated_data.get('include_orphans', False)
+        analysis_type_priority = query_serializer.validated_data.get('analysis_type_priority')
+
+        if include_orphans:
+            queryset = models.ColocResultWithOrphans.objects.select_related(*fields)
+        else:
+            queryset = models.ColocResult.objects.select_related(*fields)
+
+        queryset = annotate_prioritized_signals(queryset, analysis_type_priority)
+
+        return queryset
+
     serializer_class = serializers.ColocResultSerializer
 
 

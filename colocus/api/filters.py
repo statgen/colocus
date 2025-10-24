@@ -16,7 +16,7 @@ from django_filters.rest_framework import (
 )
 
 from colocus.core import models
-from colocus.core.constants import ANALYSIS_TYPES, GWAS, EQTL, MEQTL, METABQTL, PQTL
+from colocus.core.constants import ANALYSIS_TYPES
 
 
 def parse_region(region):
@@ -101,6 +101,92 @@ class BaseColocResultFilter(FilterSet):
                 queryset = queryset.exclude(
                     Q(**{f'{field_name}': float('-inf')}) | Q(**{f'{field_name}__isnull': True})
                 )
+
+        # Add conditional annotations for ordering
+        # These are necessary because on a per-row basis, signals may be swapped depending on user preference
+        # (e.g. analysis_priority), so we need to create consistent "primary" and "secondary" signal fields
+        queryset = queryset.annotate(
+            primary_signal_trait=Case(
+                When(use_signal1_as_primary=True, then=F('signal1__analysis__trait__uuid')),
+                default=F('signal2__analysis__trait__uuid')
+            ),
+            secondary_signal_trait=Case(
+                When(use_signal1_as_primary=True, then=F('signal2__analysis__trait__uuid')),
+                default=F('signal1__analysis__trait__uuid')
+            ),
+            primary_signal_chrom=Case(
+                When(use_signal1_as_primary=True, then=F('signal1__lead_variant__chrom')),
+                default=F('signal2__lead_variant__chrom')
+            ),
+            secondary_signal_chrom=Case(
+                When(use_signal1_as_primary=True, then=F('signal2__lead_variant__chrom')),
+                default=F('signal1__lead_variant__chrom')
+            ),
+            primary_signal_pos=Case(
+                When(use_signal1_as_primary=True, then=F('signal1__lead_variant__pos')),
+                default=F('signal2__lead_variant__pos')
+            ),
+            secondary_signal_pos=Case(
+                When(use_signal1_as_primary=True, then=F('signal2__lead_variant__pos')),
+                default=F('signal1__lead_variant__pos')
+            ),
+            primary_signal_logp=Case(
+                When(use_signal1_as_primary=True, then=F('signal1__neg_log_p')),
+                default=F('signal2__neg_log_p')
+            ),
+            secondary_signal_logp=Case(
+                When(use_signal1_as_primary=True, then=F('signal2__neg_log_p')),
+                default=F('signal1__neg_log_p')
+            ),
+            primary_signal_tissue=Case(
+                When(use_signal1_as_primary=True, then=F('signal1__analysis__tissue')),
+                default=F('signal2__analysis__tissue')
+            ),
+            secondary_signal_tissue=Case(
+                When(use_signal1_as_primary=True, then=F('signal2__analysis__tissue')),
+                default=F('signal1__analysis__tissue')
+            ),
+            primary_signal_cell_type=Case(
+                When(use_signal1_as_primary=True, then=F('signal1__analysis__cell_type')),
+                default=F('signal2__analysis__cell_type')
+            ),
+            secondary_signal_cell_type=Case(
+                When(use_signal1_as_primary=True, then=F('signal2__analysis__cell_type')),
+                default=F('signal1__analysis__cell_type')
+            ),
+            primary_signal_study=Case(
+                When(use_signal1_as_primary=True, then=F('signal1__analysis__study__uuid')),
+                default=F('signal2__analysis__study__uuid')
+            ),
+            secondary_signal_study=Case(
+                When(use_signal1_as_primary=True, then=F('signal2__analysis__study__uuid')),
+                default=F('signal1__analysis__study__uuid')
+            ),
+            primary_signal_gene_ens_id=Case(
+                When(use_signal1_as_primary=True, then=F('signal1__analysis__trait__gene__ens_id')),
+                default=F('signal2__analysis__trait__gene__ens_id')
+            ),
+            secondary_signal_gene_ens_id=Case(
+                When(use_signal1_as_primary=True, then=F('signal2__analysis__trait__gene__ens_id')),
+                default=F('signal1__analysis__trait__gene__ens_id')
+            ),
+            primary_signal_gene_symbol=Case(
+                When(use_signal1_as_primary=True, then=F('signal1__analysis__trait__gene__symbol')),
+                default=F('signal2__analysis__trait__gene__symbol')
+            ),
+            secondary_signal_gene_symbol=Case(
+                When(use_signal1_as_primary=True, then=F('signal2__analysis__trait__gene__symbol')),
+                default=F('signal1__analysis__trait__gene__symbol')
+            ),
+            primary_signal_exon_ens_id=Case(
+                When(use_signal1_as_primary=True, then=F('signal1__analysis__trait__exon__ens_id')),
+                default=F('signal2__analysis__trait__exon__ens_id')
+            ),
+            secondary_signal_exon_ens_id=Case(
+                When(use_signal1_as_primary=True, then=F('signal2__analysis__trait__exon__ens_id')),
+                default=F('signal1__analysis__trait__exon__ens_id')
+            ),
+        )
 
         return super().filter_queryset(queryset)
 
@@ -228,26 +314,54 @@ class BaseColocResultFilter(FilterSet):
         if match:
             chrom, start_pos, end_pos = match
 
-            pos_field = None
-            if "signal1" in name:
-                pos_field = "signal1__lead_variant__pos"
-            elif "signal2" in name:
-                pos_field = "signal2__lead_variant__pos"
-
-            chrom_field = None
             if "signal1" in name:
                 chrom_field = "signal1__lead_variant__chrom"
+                pos_field = "signal1__lead_variant__pos"
+                return queryset.filter(
+                    Q(**{
+                      "use_signal1_as_primary": True,
+                      f'{chrom_field}': chrom,
+                      f'{pos_field}__gte': start_pos,
+                      f'{pos_field}__lte': end_pos}) |
+                    Q(**{
+                      "use_signal1_as_primary": False,
+                      f'{chrom_field.replace("signal1", "signal2")}': chrom,
+                      f'{pos_field.replace("signal1", "signal2")}__gte': start_pos,
+                      f'{pos_field.replace("signal1", "signal2")}__lte': end_pos})
+                )
             elif "signal2" in name:
                 chrom_field = "signal2__lead_variant__chrom"
-
-            if chrom_field and pos_field:
+                pos_field = "signal2__lead_variant__pos"
                 return queryset.filter(
-                    Q(**{f'{chrom_field}': chrom})
-                    & Q(**{f'{pos_field}__gte': start_pos})
-                    & Q(**{f'{pos_field}__lte': end_pos})
+                    Q(**{
+                      "use_signal1_as_primary": True,
+                      f'{chrom_field}': chrom,
+                      f'{pos_field}__gte': start_pos,
+                      f'{pos_field}__lte': end_pos}) |
+                    Q(**{
+                      "use_signal1_as_primary": False,
+                      f'{chrom_field.replace("signal2", "signal1")}': chrom,
+                      f'{pos_field.replace("signal2", "signal1")}__gte': start_pos,
+                      f'{pos_field.replace("signal2", "signal1")}__lte': end_pos})
+                )
+            else:
+                return queryset.filter(
+                    Q(**{
+                      "signal1__lead_variant__chrom": chrom,
+                      "signal1__lead_variant__pos__gte": start_pos,
+                      "signal1__lead_variant__pos__lte": end_pos}) |
+                    Q(**{
+                      "signal2__lead_variant__chrom": chrom,
+                      "signal2__lead_variant__pos__gte": start_pos,
+                      "signal2__lead_variant__pos__lte": end_pos})
                 )
 
         return queryset
+
+    region = CharFilter(
+        method='filter_region',
+        label="Only retrieve results (for signal1 or signal2) within a specified region given as chr:start-end"
+    )
 
     signal1_region = CharFilter(
         method='filter_region',
@@ -262,10 +376,23 @@ class BaseColocResultFilter(FilterSet):
     signal2_analysis = CharFilter(field_name='signal2__analysis__uuid', lookup_expr='exact',
                                   label="Signal 2 analysis UUID")
 
-    signal1_trait = CharFilter(field_name='signal1__analysis__trait__uuid', lookup_expr='exact',
+    signal1_trait = CharFilter(method='filter_signal1_trait', lookup_expr='exact',
                                label="Signal 1 trait UUID")
-    signal2_trait = CharFilter(field_name='signal2__analysis__trait__uuid', lookup_expr='exact',
+
+    def filter_signal1_trait(self, queryset, name, value):
+        return queryset.filter(
+            Q(use_signal1_as_primary=True, signal1__analysis__trait__uuid=value) |
+            Q(use_signal1_as_primary=False, signal2__analysis__trait__uuid=value)
+        )
+
+    signal2_trait = CharFilter(method='filter_signal2_trait', lookup_expr='exact',
                                label="Signal 2 trait UUID")
+
+    def filter_signal2_trait(self, queryset, name, value):
+        return queryset.filter(
+            Q(use_signal1_as_primary=True, signal2__analysis__trait__uuid=value) |
+            Q(use_signal1_as_primary=False, signal1__analysis__trait__uuid=value)
+        )
 
     signal1_min_logp = NumberFilter(field_name='signal1__neg_log_p', lookup_expr='gte',
                                     label="Minimum -log10 p-value for signal 1")
@@ -284,26 +411,26 @@ class BaseColocResultFilter(FilterSet):
             ('r2', 'r2'),
             ('n_coloc_between_traits', 'n_coloc_between_traits'),
             *(f"logp_max_over_{e[0].lower()}" for e in ANALYSIS_TYPES),
-            ('signal1__neg_log_p', 'signal1_logp'),
-            ('signal2__neg_log_p', 'signal2_logp'),
-            ('signal1__lead_variant__chrom', 'signal1_chrom'),
-            ('signal1__lead_variant__pos', 'signal1_pos'),
-            ('signal1__analysis__trait__uuid', 'signal1_trait'),
-            ('signal2__analysis__trait__uuid', 'signal2_trait'),
-            ('signal2__lead_variant__chrom', 'signal2_chrom'),
-            ('signal2__lead_variant__pos', 'signal2_pos'),
-            ('signal1__analysis__trait__gene__ens_id', 'signal1_gene_ens_id'),
-            ('signal1__analysis__trait__gene__symbol', 'signal1_gene_symbol'),
-            ('signal1__analysis__tissue', 'signal1_tissue'),
-            ('signal1__analysis__cell_type', 'signal1_cell_type'),
-            ('signal1__analysis__trait__exon__ens_id', 'signal1_exon_ens_id'),
-            ('signal2__analysis__trait__gene__ens_id', 'signal2_gene_ens_id'),
-            ('signal2__analysis__trait__gene__symbol', 'signal2_gene_symbol'),
-            ('signal2__analysis__tissue', 'signal2_tissue'),
-            ('signal2__analysis__cell_type', 'signal2_cell_type'),
-            ('signal2__analysis__trait__exon__ens_id', 'signal2_exon_ens_id'),
-            ('signal1__analysis__study__uuid', 'signal1_study'),
-            ('signal2__analysis__study__uuid', 'signal2_study')
+            ('primary_signal_logp', 'signal1_logp'),
+            ('secondary_signal_logp', 'signal2_logp'),
+            ('primary_signal_chrom', 'signal1_chrom'),
+            ('primary_signal_pos', 'signal1_pos'),
+            ('primary_signal_trait', 'signal1_trait'),
+            ('secondary_signal_trait', 'signal2_trait'),
+            ('secondary_signal_chrom', 'signal2_chrom'),
+            ('secondary_signal_pos', 'signal2_pos'),
+            ('primary_signal_gene_ens_id', 'signal1_gene_ens_id'),
+            ('primary_signal_gene_symbol', 'signal1_gene_symbol'),
+            ('primary_signal_tissue', 'signal1_tissue'),
+            ('primary_signal_cell_type', 'signal1_cell_type'),
+            ('primary_signal_exon_ens_id', 'signal1_exon_ens_id'),
+            ('secondary_signal_gene_ens_id', 'signal2_gene_ens_id'),
+            ('secondary_signal_gene_symbol', 'signal2_gene_symbol'),
+            ('secondary_signal_tissue', 'signal2_tissue'),
+            ('secondary_signal_cell_type', 'signal2_cell_type'),
+            ('secondary_signal_exon_ens_id', 'signal2_exon_ens_id'),
+            ('primary_signal_study', 'signal1_study'),
+            ('secondary_signal_study', 'signal2_study')
         )
     )
 

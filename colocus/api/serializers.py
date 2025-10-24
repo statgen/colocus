@@ -313,90 +313,28 @@ class ColocResultSerializer(drf_serializers.ModelSerializer):
         label="Number of coloc results between signal1's trait and signal2's trait")
 
     def get_signal1(self, obj):
-        request = self.context.get('request')
-        analysis_type_priority = request and request.query_params.get('analysis_type_priority')
-
-        if analysis_type_priority:
-            order = analysis_type_priority.split(",")
-
-            try:
-                order1 = order.index(obj.signal1.analysis.analysis_type) if obj.signal1.analysis.analysis_type in order else None
-            except (ValueError, AttributeError):
-                order1 = None
-
-            try:
-                order2 = order.index(obj.signal2.analysis.analysis_type) if obj.signal2.analysis.analysis_type in order else None
-            except (ValueError, AttributeError):
-                order2 = None
-
-            if order1 is None and order2 is None:
-                signal = obj.signal1
-
-            elif order1 is not None:
-                if order1 == 0:
-                    signal = obj.signal1
-                elif order1 == 1:
-                    signal = obj.signal2
-
-            elif order2 is not None:
-                if order2 == 0:
-                    signal = obj.signal2
-                elif order2 == 1:
-                    signal = obj.signal1
-
-            elif order1 == order2:
-                return obj.signal1
-            elif order1 < order2:
-                signal = obj.signal1
-            elif order1 > order2:
-                signal = obj.signal2
-
+        # Use annotated field if available, otherwise fall back to current logic
+        if hasattr(obj, 'use_signal1_as_primary'):
+            signal = obj.signal1 if obj.use_signal1_as_primary else obj.signal2
         else:
             signal = obj.signal1
+
+        if signal is None:
+            # Otherwise the FinemappedSignalSerializer will serialize a bunch of null fields under a signal object,
+            # rather than just making the entire object null (which it should be in the response).
+            return None
 
         return FinemappedSignalSerializer(signal, context=self.context).data
 
     def get_signal2(self, obj):
-        request = self.context.get('request')
-        analysis_type_priority = request and request.query_params.get('analysis_type_priority')
-
-        if analysis_type_priority:
-            order = analysis_type_priority.split(",")
-
-            try:
-                order1 = order.index(obj.signal1.analysis.analysis_type) if obj.signal1.analysis.analysis_type in order else None
-            except (ValueError, AttributeError):
-                order1 = None
-
-            try:
-                order2 = order.index(obj.signal2.analysis.analysis_type) if obj.signal2.analysis.analysis_type in order else None
-            except (ValueError, AttributeError):
-                order2 = None
-
-            if order1 is None and order2 is None:
-                signal = obj.signal2
-
-            elif order1 is not None:
-                if order1 == 0:
-                    signal = obj.signal2
-                elif order1 == 1:
-                    signal = obj.signal1
-
-            elif order2 is not None:
-                if order2 == 0:
-                    signal = obj.signal1
-                elif order2 == 1:
-                    signal = obj.signal2
-
-            elif order1 == order2:
-                return obj.signal2
-            elif order1 < order2:
-                signal = obj.signal2
-            elif order1 > order2:
-                signal = obj.signal1
-
+        # Use annotated field if available, otherwise fall back to current logic
+        if hasattr(obj, 'use_signal1_as_primary'):
+            signal = obj.signal2 if obj.use_signal1_as_primary else obj.signal1
         else:
             signal = obj.signal2
+
+        if signal is None:
+            return None
 
         return FinemappedSignalSerializer(signal, context=self.context).data
 

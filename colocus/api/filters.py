@@ -26,6 +26,28 @@ def parse_region(region):
         return match.groups()
 
 
+class NullsLastOrderingFilter(OrderingFilter):
+    """OrderingFilter that always puts NULL values last."""
+
+    def filter(self, qs, value):
+        if value in ([], (), {}, None, ''):
+            return qs
+
+        ordering = []
+        for param in value:
+            descending = param.startswith('-')
+            param = param.lstrip('-')
+
+            field_name = self.param_map.get(param, param)
+
+            if descending:
+                ordering.append(F(field_name).desc(nulls_last=True))
+            else:
+                ordering.append(F(field_name).asc(nulls_last=True))
+
+        return qs.order_by(*ordering)
+
+
 class BaseColocResultFilter(FilterSet):
     """
     Default filtering behavior for coloc results.
@@ -254,7 +276,7 @@ class BaseColocResultFilter(FilterSet):
     min_r2 = NumberFilter(field_name='r2', lookup_expr='gte', label="Minimum r2 between the two signals' lead variants")
 
     order_by_field = 'ordering'
-    ordering = OrderingFilter(
+    ordering = NullsLastOrderingFilter(
         # fields(('model field name', 'parameter name used by API request / user'),)
         fields=(
             ('coloc_h3', 'h3'),

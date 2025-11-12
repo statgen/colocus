@@ -314,6 +314,37 @@ class Exon(models.Model):
     end = models.PositiveIntegerField(null=True, blank=False, help_text="End position of the exon")
 
 
+class MethylProbe(models.Model):
+    uuid = models.TextField(
+        null=False, blank=False, db_index=True, unique=True,
+        help_text="ID of the methylation probe, e.g. cg00000029")
+
+    chrom = models.TextField(null=True, blank=False, help_text="Chromosome")
+    pos = models.PositiveIntegerField(null=True, blank=False, help_text="Position of the methylation probe")
+
+
+class Protein(models.Model):
+    ens_id = models.TextField(null=False, blank=False, db_index=True, unique=True, help_text="Ensembl Protein ID")
+
+    gene = models.ForeignKey(
+        Gene, on_delete=models.CASCADE,
+        help_text="The gene encoding this protein",
+        related_name="proteins")
+
+    chrom = models.TextField(null=True, blank=False, help_text="Chromosome")
+    start = models.PositiveIntegerField(null=True, blank=False, help_text="Start position of the protein sequence")
+    end = models.PositiveIntegerField(null=True, blank=False, help_text="End position of the protein sequence")
+
+class Metabolite(models.Model):
+    uuid = models.TextField(
+        null=False, blank=False, db_index=True, unique=True,
+        help_text="ID of the metabolite, e.g. HMDB0000122 or CHEBI:17234")
+
+    name = models.TextField(
+        null=False, blank=False,
+        help_text="Name of the metabolite, e.g. '2,6-Diethylpyrazine'")
+
+
 class Trait(models.Model):
     """
     A trait is a phenotype or other biological property that has been studied in one or more analyses. This could be a
@@ -342,6 +373,27 @@ class Trait(models.Model):
 
     exon = models.ForeignKey(
         Exon,
+        on_delete=models.CASCADE,
+        related_name='trait',
+        null=True
+    )
+
+    protein = models.ForeignKey(
+        Protein,
+        on_delete=models.CASCADE,
+        related_name='trait',
+        null=True
+    )
+
+    methyl_probe = models.ForeignKey(
+        MethylProbe,
+        on_delete=models.CASCADE,
+        related_name='trait',
+        null=True
+    )
+
+    metabolite = models.ForeignKey(
+        Metabolite,
         on_delete=models.CASCADE,
         related_name='trait',
         null=True

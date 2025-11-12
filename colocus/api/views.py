@@ -260,6 +260,9 @@ class ColocResultListView(generics.ListAPIView):
             'signal1__analysis__trait__gene', 'signal2__analysis__trait__gene',
             'signal1__analysis__trait__exon', 'signal2__analysis__trait__exon',
             'signal1__analysis__trait__phenotype', 'signal2__analysis__trait__phenotype',
+            'signal1__analysis__trait__metabolite', 'signal2__analysis__trait__metabolite',
+            'signal1__analysis__trait__protein', 'signal2__analysis__trait__protein',
+            'signal1__analysis__trait__methyl_probe', 'signal2__analysis__trait__methyl_probe',
             'signal1__analysis__study', 'signal2__analysis__study',
             'signal1__analysis__publication', 'signal2__analysis__publication',
             'signal1__analysis__dataset', 'signal2__analysis__dataset',
@@ -309,6 +312,9 @@ class ColocResultDetailView(generics.RetrieveAPIView):
             'signal1__analysis__trait__gene', 'signal2__analysis__trait__gene',
             'signal1__analysis__trait__exon', 'signal2__analysis__trait__exon',
             'signal1__analysis__trait__phenotype', 'signal2__analysis__trait__phenotype',
+            'signal1__analysis__trait__metabolite', 'signal2__analysis__trait__metabolite',
+            'signal1__analysis__trait__protein', 'signal2__analysis__trait__protein',
+            'signal1__analysis__trait__methyl_probe', 'signal2__analysis__trait__methyl_probe',
             'signal1__analysis__study', 'signal2__analysis__study',
             'signal1__analysis__publication', 'signal2__analysis__publication',
             'signal1__analysis__dataset', 'signal2__analysis__dataset',
@@ -454,6 +460,7 @@ class FinemappedSignalListView(generics.ListAPIView):
     """
     queryset = models.FineMappedSignal.objects.select_related(
         'analysis', 'analysis__trait', 'analysis__trait__gene', 'analysis__trait__exon', 'analysis__study',
+        'analysis__trait__metabolite', 'analysis__trait__protein', 'analysis__trait__methyl_probe',
         'analysis__ld', 'analysis__dataset', 'analysis__publication', 'analysis__trait__phenotype',
         'lead_variant')
     serializer_class = serializers.FinemappedSignalSerializer
@@ -592,7 +599,8 @@ class MarginalAnalysisListView(generics.ListAPIView):
     """
 
     queryset = models.MarginalAnalysis.objects.select_related(
-        'dataset', 'trait', 'trait__gene', 'trait__exon', 'trait__phenotype', 'study', 'publication', 'ld')
+        'dataset', 'trait', 'trait__gene', 'trait__exon', 'trait__phenotype', 'trait__protein', 'trait__methyl_probe',
+        'trait__metabolite', 'study', 'publication', 'ld')
     serializer_class = serializers.MarginalAnalysisSerializer
 
 
@@ -613,13 +621,13 @@ class TraitListView(generics.ListAPIView):
     A phenotype may be any non-molecular measured trait, such as height, BMI, T2D affection status, etc.
     """
 
-    queryset = models.Trait.objects.select_related('gene', 'exon', 'phenotype')
+    queryset = models.Trait.objects.select_related('gene', 'exon', 'phenotype', 'metabolite', 'protein', 'methyl_probe')
     serializer_class = serializers.TraitSerializer
 
 
 class TraitDetailView(generics.RetrieveAPIView):
     lookup_field = 'uuid'
-    queryset = models.Trait.objects.select_related('gene', 'exon', 'phenotype')
+    queryset = models.Trait.objects.select_related('gene', 'exon', 'phenotype', 'metabolite', 'protein', 'methyl_probe')
     serializer_class = serializers.TraitSerializer
 
 

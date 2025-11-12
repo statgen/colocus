@@ -77,6 +77,34 @@ class ExonSerializer(drf_serializers.ModelSerializer):
         fields = ('ens_id', 'chrom', 'start', 'end')
 
 
+class ProteinSerializer(drf_serializers.ModelSerializer):
+    """
+    A protein is a biological molecule encoded by a gene. Proteins are represented by Ensembl Protein IDs, which are
+    stable identifiers from the Ensembl database.
+    """
+    class Meta:
+        model = models.Protein
+        fields = ('ens_id', 'chrom', 'start', 'end')
+
+class MethylProbeSerializer(drf_serializers.ModelSerializer):
+    """
+    A methylation probe is a specific site in the genome where DNA methylation is measured. Methylation probes are
+    represented by their probe IDs, e.g. "cg00000029".
+    """
+    class Meta:
+        model = models.MethylProbe
+        fields = ('uuid', 'chrom', 'pos')
+
+
+class MetaboliteSerializer(drf_serializers.ModelSerializer):
+    """
+    A metabolite is a small molecule that is involved in metabolism. Metabolites are represented by their UUIDs.
+    """
+    class Meta:
+        model = models.Metabolite
+        fields = ('uuid', 'name')
+
+
 class PhenotypeSerializer(drf_serializers.ModelSerializer):
     """
     A phenotype is a type of trait. These are usually human diseases or measurements of human traits, such as "BMI" or
@@ -97,10 +125,14 @@ class TraitSerializer(NonNullModelSerializer):
     gene = GeneSerializer(read_only=True)
     exon = ExonSerializer(read_only=True)
     phenotype = PhenotypeSerializer(read_only=True)
+    metabolite = MetaboliteSerializer(read_only=True)
+    protein = ProteinSerializer(read_only=True)
+    methyl_probe = MethylProbeSerializer(read_only=True)
+
 
     class Meta:
         model = models.Trait
-        fields = ('uuid', 'biomarker_type', 'gene', 'exon', 'phenotype')
+        fields = ('uuid', 'biomarker_type', 'gene', 'exon', 'phenotype', 'metabolite', 'protein', 'methyl_probe')
 
 
 class StudySerializer(drf_serializers.ModelSerializer):

@@ -49,8 +49,11 @@ from colocus.core.models import (  # noqa E402
     LDStats,
     LeadVariant,
     MarginalAnalysis,
+    Metabolite,
+    MethylProbe,
     Person,
     Phenotype,
+    Protein,
     Publication,
     Study,
     Trait,
@@ -466,6 +469,9 @@ def load_one_marginal(
             gene = v.pop('gene', None)
             exon = v.pop('exon', None)
             pheno = v.pop('phenotype', None)
+            metabolite = v.pop('metabolite', None)
+            methyl_probe = v.pop('probe', None)
+            protein = v.pop('protein', None)
 
             # trait, created = Trait.objects.get_or_create(**v)
             trait = get_by_id_or_create(Trait, {'uuid': v['uuid']}, v)
@@ -481,12 +487,29 @@ def load_one_marginal(
                 exon = get_by_id_or_create(Exon, {'ens_id': exon['ens_id']}, exon)
                 trait.exon = exon
 
+            if protein:
+                protein["gene"] = gene
+                protein = get_by_id_or_create(Protein, {'ens_id': v['uuid']}, protein)
+                trait.protein = protein
+
             if pheno:
                 # pheno, created = Phenotype.objects.get_or_create(**pheno)
                 if "uuid" not in pheno:
                     pheno["uuid"] = v["uuid"]
                 pheno = get_by_id_or_create(Phenotype, {'uuid': pheno['uuid']}, pheno)
                 trait.phenotype = pheno
+
+            if metabolite:
+                if "uuid" not in metabolite:
+                    metabolite["uuid"] = v["uuid"]
+                metabolite = get_by_id_or_create(Metabolite, {'uuid': metabolite['uuid']}, metabolite)
+                trait.metabolite = metabolite
+
+            if methyl_probe:
+                if "uuid" not in methyl_probe:
+                    methyl_probe["uuid"] = v["uuid"]
+                methyl_probe = get_by_id_or_create(MethylProbe, {'uuid': methyl_probe['uuid']}, methyl_probe)
+                trait.methyl_probe = methyl_probe
 
             trait.save()
             marginal.trait = trait

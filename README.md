@@ -29,7 +29,8 @@ chmod g+rX -R /path/to/data
 Now you can start the docker compose stack:
 
 ```bash
-docker compose up -d
+# This will build images and enable docker compose watch (see docker-compose.override.yml instructions below.)
+docker compose up -d --build --watch
 ```
 
 When the `colocus-django` container starts, it will begin applying django migrations and then load the data located at the `DATA_PATH` specified in your `.env` file.
@@ -37,10 +38,28 @@ When the `colocus-django` container starts, it will begin applying django migrat
 In the future, if you wish to start over and load a new dataset, do the following:
 
 ```bash
+# If loading data from a new path:
+# Change your `DATA_PATH` in your `.env` file to match the location of your dataset
+# Then restart to force docker to remount DATA_PATH inside the container
+# It's best to recreate the container and build so that your new migrations are included (if any)
+docker compose up -d --build --force-recreate django
+
+# If you're just reloading an existing dataset in the same DATA_PATH as before, you can start here:
 docker compose exec db bash -c 'psql -U colocus -c "DROP DATABASE core WITH (FORCE)"'
 docker compose exec db bash /docker-entrypoint-initdb.d/init-db.sh
 docker compose exec django bash -c 'source .venv/bin/activate && python3 manage.py migrate --database=core'
 docker compose exec django bash -c 'source .venv/bin/activate && python3 scripts/load_dataset.py /data'
+```
+
+For debugging a new dataset load:
+
+```bash
+# Get a shell in container
+docker compose exec django bash
+
+# From inside container
+source .venv/bin/activate
+python3 -m pdb scripts/load_dataset.py /data
 ```
 
 While developing you may want the containers to rebuild or resync with your source files changing automatically. The following can be placed in a `docker-compose.override.yml` file: 
@@ -55,6 +74,12 @@ services:
         - action: sync
           path: ./colocus
           target: /opt/colocus/colocus
+        - action: sync
+          path: ./colocus/core/migrations
+          target: /opt/colocus/colocus/core/migrations
+        - action: sync
+          path: ./scripts
+          target: /opt/colocus/scripts
         - action: rebuild
           path: ./Dockerfile
 

@@ -84,7 +84,8 @@ def annotate_prioritized_signals(queryset, analysis_type_priority=None):
         Annotated queryset with 'no_signal_swap' boolean field
     """
     if analysis_type_priority:
-        order_list = analysis_type_priority.split(",")
+        # Only first two analysis types are used to designate slots 1/2; the rest are ignored
+        order_list = analysis_type_priority.split(",")[0:2]
 
         # Create CASE statements for order1 and order2
         order1_whens = [
@@ -110,13 +111,19 @@ def annotate_prioritized_signals(queryset, analysis_type_priority=None):
             )
         )
 
-        # Now determine which signal to use as primary (first signal shown)
-        # Logic:
-        # - If both None: use signal1
-        # - If only one has a value:
-        #   - If that value is 0: use that signal
-        #   - If that value is 1: use the other signal
-        # - If both have values: use the one with lower index
+        if len(order_list) == 0:
+            pass # nothing to do in this case
+        elif len(order_list) == 1:
+            queryset = queryset.filter(
+                Q(order1=0) | Q(order2=0)
+            )
+        elif len(order_list) == 2:
+            queryset = queryset.filter(
+                ((Q(order1=0) & Q(order2=1)) | (Q(order1=1) & Q(order2=0)))
+            )
+        else:
+            # Raise exception
+            raise drf_exceptions.ValidationError('analysis_type_priority should contain <=2 analysis types')
 
         queryset = queryset.annotate(
             no_signal_swap=Case(
@@ -145,9 +152,11 @@ def annotate_prioritized_signals(queryset, analysis_type_priority=None):
                 When(
                     Q(order1__isnull=False) & Q(order2__isnull=False),
                     then=Case(
-                        When(order1__lt=F('order2'), then=Value(True)),
-                        When(order1__gt=F('order2'), then=Value(False)),
-                        When(order1=F('order2'), then=Value(True)),
+                        When(order1=0, then=Value(True)),
+                        When(order1=1, then=Value(False)),
+                        When(order2=0, then=Value(False)),
+                        When(order2=1, then=Value(True)),
+                        default=Value(True),
                         output_field=BooleanField()
                     )
                 ),

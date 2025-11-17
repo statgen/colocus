@@ -30,24 +30,22 @@ jobs:
       - name: Run pre-commit
         run: uv run pre-commit run --all-files
 
-  # With no caching at all the entire ci process takes 4m 30s to complete!
   pytest:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code Repository
         uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-
-      - name: Set up Python
-        run: uv python install 3.10
-
-      - name: Install dependencies
-        run: uv sync
-
-      - name: Run pytest
-        run: uv run pytest
+      - name: Run tests
         env:
-          DJANGO_SECRET_KEY: 1234
-          DJANGO_SETTINGS_MODULE: config.settings.test
+          COMPOSE_PROJECT_NAME: colocus_tests
+        run: |
+          docker compose -f docker-compose.tests.yml up \
+            --force-recreate \
+            --build \
+            --abort-on-container-exit \
+            --exit-code-from django
+
+      - name: Tear down
+        if: ${{ always() }}
+        run: docker compose -f docker-compose.tests.yml down --volumes --remove-orphans

@@ -59,8 +59,8 @@ RUN \
 COPY --chown=colocus:colocus . /opt/colocus/
 
 # Run test cases
-RUN env DJANGO_SECRET_KEY=1234 DJANGO_SETTINGS_MODULE=config.settings.test \
-  bash -c '. .venv/bin/activate && pytest'
+# RUN env DJANGO_SECRET_KEY=1234 DJANGO_SETTINGS_MODULE=config.settings.test \
+#  bash -c '. .venv/bin/activate && pytest'
 
 # Frequently changing metadata here to avoid cache misses
 ARG BUILD_DATE

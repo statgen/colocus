@@ -337,3 +337,6 @@ database/**
 
 # Private settings
 workflow/config/config.yml
+
+# Docker compose
+docker-compose.override.yml

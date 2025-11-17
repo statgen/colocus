@@ -2,10 +2,13 @@
 set -euxo pipefail
 
 COLOCUS_VERSION=`git describe --tags --abbrev=11 | sed 's/^v//' | sed 's/-g/-/'`
+COLOCUS_BRANCH=`git describe --all --tags --abbrev=11 | sed 's#heads/##' | sed s'#/#-#' | sed 's/-g/-/'`
 GIT_SHA=`git rev-parse HEAD`
 BUILD_DATE=`date -u +'%Y-%m-%dT%H:%M:%SZ'`
 
-docker build --pull -t colocus:${COLOCUS_VERSION} \
+docker build --pull \
+  -t colocus:${COLOCUS_VERSION} \
+  -t colocus:${COLOCUS_BRANCH} \
   --build-arg MAKEFLAGS="-j 3" \
   --build-arg CMAKE_BUILD_PARALLEL_LEVEL=3 \
   --build-arg BUILD_DATE=${BUILD_DATE} \

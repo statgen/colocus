@@ -1,0 +1,61 @@
+networks:
+  colocus-test-network:
+    driver: bridge
+
+x-common-env: &common-env
+  USE_DOCKER: "yes"
+  DJANGO_READ_DOT_ENV_FILE: "True"
+  DJANGO_SECRET_KEY: 1234
+  DJANGO_SETTINGS_MODULE: config.settings.local
+  DJANGO_MEDIA_ROOT: colocus/media
+  POSTGRES_DB_CORE: core
+  POSTGRES_DB_DEFAULT: django
+  POSTGRES_USER: colocus
+  POSTGRES_PASSWORD: colocus
+  POSTGRES_HOST: db
+  POSTGRES_PORT: 5432
+  UVICORN_HOST: 0.0.0.0
+  UVICORN_PORT: 8989
+  WEB_CONCURRENCY: 1
+  DATA_PATH: "./colocus/tests/data"
+
+services:
+  db:
+    image: postgres:18
+    environment: 
+      <<: *common-env
+    volumes:
+      - type: tmpfs
+        target: /var/lib/postgresql
+      - ./bin/init-postgres.sh:/docker-entrypoint-initdb.d/init-db.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - colocus-test-network
+
+  django:
+    build: .
+    environment:
+      <<: *common-env
+    volumes:
+      - "./colocus/tests/data/:/data:ro"
+    ports:
+      - "${UVICORN_PORT}:${UVICORN_PORT}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${UVICORN_PORT}/api/v1/datasets/?page_size=1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - colocus-test-network
+    entrypoint: >
+      /bin/bash -c '
+        /opt/colocus/bin/entrypoint-migrate-and-load.sh &&
+        uv run pytest
+      '

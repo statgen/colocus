@@ -5,10 +5,10 @@ set -euxo pipefail
 export COMPOSE_PROJECT_NAME="colocus_tests"
 
 # Ensure cleanup on exit
-trap 'docker compose -f docker-compose.tests.yml down --volumes --remove-orphans' EXIT
+trap 'docker compose --env-file envs/env.test -f docker-compose.tests.yml down --volumes --remove-orphans' EXIT
 
 # Run the test suite
-docker compose -f docker-compose.tests.yml up --force-recreate --build --abort-on-container-exit --exit-code-from django
+docker compose --env-file envs/env.test -f docker-compose.tests.yml up --force-recreate --build --abort-on-container-exit --exit-code-from django
 
 # If you want to debug into the django container:
-# docker compose -f docker-compose.tests.yml run --entrypoint bash --rm django -l
+# docker compose --env-file envs/env.test -f docker-compose.tests.yml run --entrypoint bash --rm django -l

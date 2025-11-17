@@ -40,7 +40,7 @@ jobs:
         env:
           COMPOSE_PROJECT_NAME: colocus_tests
         run: |
-          docker compose -f docker-compose.tests.yml up \
+          docker compose --env-file envs/env.test -f docker-compose.tests.yml up \
             --force-recreate \
             --build \
             --abort-on-container-exit \
@@ -48,4 +48,4 @@ jobs:
 
       - name: Tear down
         if: ${{ always() }}
-        run: docker compose -f docker-compose.tests.yml down --volumes --remove-orphans
+        run: docker compose --env-file envs/env.test -f docker-compose.tests.yml down --volumes --remove-orphans

@@ -20,6 +20,7 @@
 !/requirements
 !/bin/entrypoint-colocus.sh
 !/bin/entrypoint-migrate-and-load.sh
+!envs/env.test
 
 # Ignore unnecessary files inside allowed directories
 # This should go after the allowed directories

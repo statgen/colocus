@@ -2,28 +2,10 @@ networks:
   colocus-test-network:
     driver: bridge
 
-x-common-env: &common-env
-  USE_DOCKER: "yes"
-  DJANGO_READ_DOT_ENV_FILE: "True"
-  DJANGO_SECRET_KEY: 1234
-  DJANGO_SETTINGS_MODULE: config.settings.local
-  DJANGO_MEDIA_ROOT: colocus/media
-  POSTGRES_DB_CORE: core
-  POSTGRES_DB_DEFAULT: django
-  POSTGRES_USER: colocus
-  POSTGRES_PASSWORD: colocus
-  POSTGRES_HOST: db
-  POSTGRES_PORT: 5432
-  UVICORN_HOST: 0.0.0.0
-  UVICORN_PORT: 8989
-  WEB_CONCURRENCY: 1
-  DATA_PATH: "./colocus/tests/data"
-
 services:
   db:
     image: postgres:18
-    environment: 
-      <<: *common-env
+    env_file: "envs/env.test"
     volumes:
       - type: tmpfs
         target: /var/lib/postgresql
@@ -38,8 +20,7 @@ services:
 
   django:
     build: .
-    environment:
-      <<: *common-env
+    env_file: "envs/env.test"
     volumes:
       - "./colocus/tests/data/:/data:ro"
     ports:
@@ -56,6 +37,7 @@ services:
       - colocus-test-network
     entrypoint: >
       /bin/bash -c '
-        /opt/colocus/bin/entrypoint-migrate-and-load.sh &&
+        cp envs/env.test .env &&
+        bin/entrypoint-migrate-and-load.sh &&
         uv run pytest
       '

@@ -487,7 +487,7 @@ There is an example test dataset in `colocus/tests/data/` that can be used to te
 
 Make a `docker-compose.override.yml` that enables watching files and rebuilding container images as needed:
 
-While developing you may want the containers to rebuild or resync with your source files changing automatically. The following can be placed in a `docker-compose.override.yml` file: 
+While developing you may want the containers to rebuild or resync with your source files changing automatically. The following can be placed in a `docker-compose.override.yml` file:
 
 ```yml
 services:
@@ -545,7 +545,7 @@ root
 | - colocus
 ```
 
-You'll also want the following in your `.env` file: 
+You'll also want the following in your `.env` file:
 
 ```bash
 VITE_HOST=0.0.0.0

@@ -4,10 +4,30 @@ Visualize and explore fine-mapped signals and their colocalizations
 
 To see an example of a running instance of Colocus, try: https://amp.colocus.app/.
 
+This repository contains the code for the backend server component of Colocus, as well as a docker compose stack to help deploy it.
+
+:warning: This project is still in active development and has not yet reached a stable release. Breaking changes may occur. :warning:
+
 <!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
 
-This repository contains the code for the backend server component of Colocus, as well as a docker compose stack to help
-deploy it.
+<!-- code_chunk_output -->
+
+- [colocus](#colocus)
+  - [Deployment](#deployment)
+    - [Docker](#docker)
+      - [Sentry](#sentry)
+    - [CSG](#csg)
+  - [Required data](#required-data)
+    - [Marginal and conditional / fine-mapping analyses](#marginal-and-conditional--fine-mapping-analyses)
+    - [Linkage disequilibrium (LD)](#linkage-disequilibrium-ld)
+    - [Colocalization](#colocalization)
+  - [Development](#development)
+    - [Data](#data)
+    - [Docker](#docker-1)
+      - [Running all code checks](#running-all-code-checks)
+      - [Running tests](#running-tests)
+
+<!-- /code_chunk_output -->
 
 ## Deployment
 
@@ -47,16 +67,7 @@ docker compose up -d --build --force-recreate django
 # If you're just reloading an existing dataset in the same DATA_PATH as before, you can start here:
 docker compose exec db bash -c 'psql -U colocus -c "DROP DATABASE core WITH (FORCE)"'
 docker compose exec db bash /docker-entrypoint-initdb.d/init-db.sh
-docker compose exec django bash -c 'source .venv/bin/activate && python3 manage.py migrate --database=core'
-docker compose exec django bash -c "
-  source .venv/bin/activate
-  for subdir in \$(find /data -mindepth 1 -maxdepth 1 -type d); do
-    subdir=\"\${subdir%/}\"
-    if [ -d \"\$subdir\" ]; then
-      uv run python3 scripts/load_dataset.py \"\${subdir}\"
-    fi
-  done
-"
+docker compose exec django bash /opt/colocus/bin/entrypoint-migrate-and-load.sh
 ```
 
 For debugging a new dataset load:
@@ -67,67 +78,14 @@ docker compose exec django bash
 
 # From inside container
 source .venv/bin/activate
-python3 -m pdb scripts/load_dataset.py /data
+python3 -m pdb scripts/load_dataset.py /data/your-dataset
 ```
 
-While developing you may want the containers to rebuild or resync with your source files changing automatically. The following can be placed in a `docker-compose.override.yml` file: 
+#### Sentry
 
-```yml
-services:
-  django:
-    build: .
-    command: --reload
-    develop:
-      watch:
-        - action: sync
-          path: ./colocus
-          target: /opt/colocus/colocus
-        - action: sync
-          path: ./colocus/core/migrations
-          target: /opt/colocus/colocus/core/migrations
-        - action: sync
-          path: ./scripts
-          target: /opt/colocus/scripts
-        - action: rebuild
-          path: ./Dockerfile
+Sentry is an error logging aggregator service. You can sign up for a free account at <https://sentry.io/signup/> or download and host it yourself. The system is set up with reasonable defaults, including 404 logging and integration with the WSGI application.
 
-  ui:
-    build:
-      context: ../colocus-ui-vue3
-      dockerfile: Dockerfile.dev
-    ports:
-      - "${VITE_PORT}:${VITE_PORT}"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${VITE_PORT}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    develop:
-      watch:
-        - action: rebuild
-          path: ../colocus-ui-vue3/package.json
-        - action: rebuild
-          path: ../colocus-ui-vue3/vite.config.mjs
-        - action: sync
-          path: ../colocus-ui-vue3/src
-          target: /app/src
-        - action: sync
-          path: ../colocus-ui-vue3/etc
-          target: /app/etc
-        - action: rebuild
-          path: ../colocus-ui-vue3/Dockerfile.dev
-```
-
-This assumes you have `colocus` and `colocus-ui-vue3` repositories checked out and next to each other in the directory hierarchy. 
-
-You'll also want the following in your `.env` file: 
-
-```bash
-VITE_HOST=0.0.0.0
-VITE_PORT=5173
-VITE_API_URL=http://django:${UVICORN_PORT}
-```
-
+You must set the DSN url in `SENTRY_DSN` in your `.env` file.
 
 ### CSG
 
@@ -519,76 +477,103 @@ The fields are:
 
 ## Development
 
-### Bare metal
-
-This development setup deploys the colocus server directly to your VM or local machine. For a docker based setup, see below.
-
-#### Database setup
-
-We use `uv` to manage packages and dependencies. [Follow these instructions](https://docs.astral.sh/uv/getting-started/installation/) to install `uv` on your system.
-
-The database can be created by applying relevant migrations, and then loading a pre-packaged dataset (not provided in
-this repo, though subsets of data may be provided in the future).
-
-```bash
-$ cd /path/to/colocus
-$ uv sync
-$ mkdir database
-$ uv run python manage.py migrate
-$ uv run python scripts/load_dataset.py <path/to/dataset> # see below for datasets
-```
-
-<details>
-  <summary><b>Datasets for CSG users</b></summary>
-
-  There is an existing dataset on our cluster at
-  `/net/dumbo/home/welchr/projects/amp-cmd/colocus-pipeline-brotman/data/processed/`. The required files are
-  approximately 13GB in total. You can quickly sync the required files to your development environment with:
-
-  ```bash
-  rsync -avimHP \
-    user@dumbo.sph.umich.edu:/home/welchr/projects/amp-cmd/colocus-pipeline-brotman/ \
-    /path/on/your/machine/colocus-pipeline-brotman/ \
-    --exclude 'data/processed/ld/ukbb_grch37_all/variants' \
-    --exclude 'data/original-copy' \
-    --exclude 'data/ukbb/' \
-    --exclude 'venv' \
-    --exclude '.snakemake' \
-    --exclude 'logs'
-  ```
-
-  Then give the path to the `data/processed` directory as the argument to `load_dataset.py`:
-
-  ```bash
-  $ uv run python scripts/load_dataset.py /path/on/your/machine/colocus-pipeline-brotman/data/processed/
-  ```
-</details>
-
-
-
-If you have already tried to load the data previously and want a fresh start, you can delete the database and start over:
-
-```bash
-rm -f "./database/local.sqlite3"
-rm -rf "./colocus/media"
-uv run python manage.py migrate
-uv run python scripts/load_dataset.py <path/to/dataset>
-```
+### Data
 
 More information on the required types of data can be found below under [required data](#required-data).
 
-#### Running the django server
+There is an example test dataset in `colocus/tests/data/` that can be used to test loading data. It is the same dataset used for running test cases.
 
-This will start uvicorn to serve the django app and REST API. By default, the server runs on port 8000.
+### Docker
+
+Make a `docker-compose.override.yml` that enables watching files and rebuilding container images as needed:
+
+While developing you may want the containers to rebuild or resync with your source files changing automatically. The following can be placed in a `docker-compose.override.yml` file: 
+
+```yml
+services:
+  django:
+    build: .
+    command: --reload
+    develop:
+      watch:
+        - action: sync
+          path: ./colocus
+          target: /opt/colocus/colocus
+        - action: sync
+          path: ./colocus/core/migrations
+          target: /opt/colocus/colocus/core/migrations
+        - action: sync
+          path: ./scripts
+          target: /opt/colocus/scripts
+        - action: rebuild
+          path: ./Dockerfile
+
+  ui:
+    build:
+      context: ../colocus-ui-vue3
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${VITE_PORT}:${VITE_PORT}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${VITE_PORT}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    develop:
+      watch:
+        - action: rebuild
+          path: ../colocus-ui-vue3/package.json
+        - action: rebuild
+          path: ../colocus-ui-vue3/vite.config.mjs
+        - action: sync
+          path: ../colocus-ui-vue3/src
+          target: /app/src
+        - action: sync
+          path: ../colocus-ui-vue3/etc
+          target: /app/etc
+        - action: rebuild
+          path: ../colocus-ui-vue3/Dockerfile.dev
+```
+
+This assumes you have `colocus` and `colocus-ui-vue3` repositories checked out and next to each other in the directory hierarchy.
+
+For example, your directory tree should look like this:
+
+```
+root
+| - colocus-ui-vue3
+| - colocus
+```
+
+You'll also want the following in your `.env` file: 
 
 ```bash
-uv run uvicorn config.asgi:application --host 0.0.0.0 --reload
+VITE_HOST=0.0.0.0
+VITE_PORT=5173
+VITE_API_URL=http://django:${UVICORN_PORT}
 ```
+
+Now you can run:
+
+```bash
+docker compose up --build --watch
+```
+
+This will bring up the containers, building them as needed, and watch to see if source code files change. If any of the source changes, the container image will be rebuilt if necessary, and restarted. In the case of the Django container, it will instead just sync the new source files into the container, and then the uvicorn server will reload them.
 
 #### Running all code checks
 
-The project is setup to use [pre-commit](https://pre-commit.com/) to run all checks at once. You can either install
-the pre-commit git hooks, or run pre-commit yourself manually before committing.
+To run code checks, you will need to install `uv` first, and then required packages:
+
+```bash
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install packages
+uv sync
+```
+
+The project is setup to use [pre-commit](https://pre-commit.com/) to run all checks at once. You can either install the pre-commit git hooks, or run pre-commit yourself manually before committing.
 
 To run pre-commit manually:
 
@@ -601,54 +586,5 @@ This is the same command our Github Actions CI will run when you push a commit.
 #### Running tests
 
 ```bash
-uv run pytest
+bin/compose-run-pytest.sh
 ```
-
-#### Sentry
-
-Sentry is an error logging aggregator service. You can sign up for a free account at <https://sentry.io/signup/> or download and host it yourself. The system is set up with reasonable defaults, including 404 logging and integration with the WSGI application.
-
-You must set the DSN url in `SENTRY_DSN` in your `.env` file.
-
-### Docker
-
-Make a docker compose override that enables watching files and rebuilding container images as needed:
-
-```yml
-services:
-  django:
-    build: .
-    command: --reload
-    develop:
-      watch:
-        - action: sync
-          path: ./colocus
-          target: /opt/colocus/colocus
-
-  ui:
-    build:
-      context: ../colocus-ui-vue3
-      dockerfile: Dockerfile
-    develop:
-      watch:
-        - action: rebuild
-          path: ../colocus-ui-vue3/package.json
-        - action: rebuild
-          path: ../colocus-ui-vue3/src
-```
-
-To use this, you will need the `colocus-ui-vue3` repository checked out next to colocus. For example, your directory tree should look like this:
-
-```
-root
-| - colocus-ui-vue3
-| - colocus
-```
-
-Now you can run:
-
-```bash
-docker compose up --build --watch
-```
-
-This will bring up the containers, building them as needed, and watch to see if source code files change. If any of the source changes, the container image will be rebuilt if necessary, and restarted. In the case of the Django container, it will instead just sync the new source files into the container, and then the uvicorn server will reload them.

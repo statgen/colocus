@@ -6,7 +6,7 @@ https://django-filter.readthedocs.io/en/stable/ref/filterset.html#fields
 
 import re
 
-from django.db.models import Q, F, Case, When, Value
+from django.db.models import Case, F, Q, Value, When
 from django.db.models.functions import Greatest
 from django_filters.rest_framework import (
     CharFilter,

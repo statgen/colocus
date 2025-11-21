@@ -1,22 +1,23 @@
 import os
 import typing as ty
 from typing import Union
-from django.db.models import Case, When, Value, IntegerField, BooleanField, Q, F
+
 from django.conf import settings
+from django.db.models import BooleanField, Case, F, IntegerField, Q, Value, When
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import exceptions as drf_exceptions
-from rest_framework import serializers as drf_serializers
 from rest_framework import generics
+from rest_framework import serializers as drf_serializers
 from rest_framework.views import APIView
 from zorp.readers import TabixReader
 from zorp.sniffers import guess_gwas_standard
 
 from colocus.core import models
+from colocus.core.constants import ANALYSIS_TYPES
 from colocus.utils.paginators import LargeResultsSetPagination
 from colocus.utils.variants import parse_variant
-from colocus.core.constants import ANALYSIS_TYPES
 
 from . import filters, parsers, serializers, util
 
@@ -176,7 +177,7 @@ def annotate_prioritized_signals(queryset, analysis_type_priority=None):
 class ColocResultQueryParamsSerializer(drf_serializers.Serializer):
     include_orphans = drf_serializers.BooleanField(required=False, default=False)
     analysis_type_priority = drf_serializers.CharField(
-        required=False, 
+        required=False,
         allow_blank=True,
         help_text=(
             'Comma-separated list of analysis types to prioritize when assigning signals. '

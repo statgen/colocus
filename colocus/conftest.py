@@ -14,13 +14,13 @@ from colocus.users.tests.factories import UserFactory
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.test")
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def django_logger():
-    logger = logging.getLogger('django')
+    logger = logging.getLogger("django")
     return logger
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def django_db_setup(django_db_blocker, django_logger):
     # The database loading script will create some files the media directory, which we need to make sure have been
     # cleared out first
@@ -31,8 +31,10 @@ def django_db_setup(django_db_blocker, django_logger):
                 django_logger.info(f"Media directory: {settings.MEDIA_ROOT}")
                 shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
         except Exception as e:
-            django_logger.error(f"Media directory did not pass check, cannot delete, you may need to manually "
-                                f"delete the directory before running tests: {settings.MEDIA_ROOT}")
+            django_logger.error(
+                f"Media directory did not pass check, cannot delete, you may need to manually "
+                f"delete the directory before running tests: {settings.MEDIA_ROOT}"
+            )
             django_logger.error(f"Error was: {e}")
             raise e
 
@@ -40,10 +42,12 @@ def django_db_setup(django_db_blocker, django_logger):
         # TODO: in the future, `load_dataset.py` should be converted into a django command
         # under colocus/api/management/commands/load_data.py
         print("Loading database for testing...")
-        run(['python', 'manage.py', 'migrate'])
-        run(['python', 'manage.py', 'migrate', '--database=core'])
+        run(["python", "manage.py", "migrate"])
+        run(["python", "manage.py", "migrate", "--database=core"])
         # run(['python', 'scripts/load_dataset.py', 'colocus/tests/data/adipoexpress'])
-        run(['python', 'scripts/load_dataset.py', 'colocus/tests/data/all-amp-datasets'])
+        run(
+            ["python", "scripts/load_dataset.py", "colocus/tests/data/all-amp-datasets"]
+        )
 
 
 @pytest.fixture

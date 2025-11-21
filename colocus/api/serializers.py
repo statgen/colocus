@@ -9,27 +9,44 @@ from .util import serialize_neg_log_pvalue
 
 class ReducedPrecisionFloatField(drf_serializers.FloatField):
     def to_representation(self, value):
-        s = format(value, '.3g')
+        s = format(value, ".3g")
         return float(s)
 
 
 class NonNullModelSerializer(drf_serializers.ModelSerializer):
     def to_representation(self, instance):
         result = super(NonNullModelSerializer, self).to_representation(instance)
-        return OrderedDict([(key, result[key]) for key in result if result[key] is not None])
+        return OrderedDict(
+            [(key, result[key]) for key in result if result[key] is not None]
+        )
 
 
 class DataSubmissionSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.DataSubmission
-        fields = ('uuid', 'description', 'contact_email', 'ingest_date', 'data_version', 'data_hash')
+        fields = (
+            "uuid",
+            "description",
+            "contact_email",
+            "ingest_date",
+            "data_version",
+            "data_hash",
+        )
 
 
 class DataSubmissionDetailSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.DataSubmission
-        fields = ('uuid', 'description', 'contact_email', 'ingest_date', 'publication', 'trait_count', 'data_version',
-                  'data_hash')
+        fields = (
+            "uuid",
+            "description",
+            "contact_email",
+            "ingest_date",
+            "publication",
+            "trait_count",
+            "data_version",
+            "data_hash",
+        )
 
 
 class LDStatsSerializer(drf_serializers.ModelSerializer):
@@ -37,20 +54,22 @@ class LDStatsSerializer(drf_serializers.ModelSerializer):
     Represents a set of LD statistics for a single population and genome build. For colocus, we require LD between
     the lead variant of each fine-mapped signal, and all other variants in the region.
     """
+
     class Meta:
         model = models.LDStats
-        fields = ('uuid', 'panel', 'population', 'genome_build')
+        fields = ("uuid", "panel", "population", "genome_build")
 
 
 class LDRegionSerializer(drf_serializers.Serializer):
     """Serialize parsed data from a PLINK formatted LD file, with known columns"""
-    chromosome1 = drf_serializers.CharField(source='chrom_a', read_only=True)
-    position1 = drf_serializers.IntegerField(source='bp_a', read_only=True)
-    variant1 = drf_serializers.CharField(source='snp_a', read_only=True)
-    chromosome2 = drf_serializers.CharField(source='chrom_b', read_only=True)
-    position2 = drf_serializers.IntegerField(source='bp_b', read_only=True)
-    variant2 = drf_serializers.CharField(source='snp_b', read_only=True)
-    correlation = drf_serializers.FloatField(source='r2', read_only=True)
+
+    chromosome1 = drf_serializers.CharField(source="chrom_a", read_only=True)
+    position1 = drf_serializers.IntegerField(source="bp_a", read_only=True)
+    variant1 = drf_serializers.CharField(source="snp_a", read_only=True)
+    chromosome2 = drf_serializers.CharField(source="chrom_b", read_only=True)
+    position2 = drf_serializers.IntegerField(source="bp_b", read_only=True)
+    variant2 = drf_serializers.CharField(source="snp_b", read_only=True)
+    correlation = drf_serializers.FloatField(source="r2", read_only=True)
 
 
 class GeneSerializer(drf_serializers.ModelSerializer):
@@ -59,9 +78,10 @@ class GeneSerializer(drf_serializers.ModelSerializer):
     stable identifiers from the Ensembl database. Genes are also given a symbol by HGNC, which is a human-readable
     identifier for the gene, e.g. "TCF7L2".
     """
+
     class Meta:
         model = models.Gene
-        fields = ('ens_id', 'symbol', 'chrom', 'start', 'end')
+        fields = ("ens_id", "symbol", "chrom", "start", "end")
 
 
 class ExonSerializer(drf_serializers.ModelSerializer):
@@ -70,11 +90,12 @@ class ExonSerializer(drf_serializers.ModelSerializer):
     that begin with the ensembl gene ID and end with the start/end position of the called exon, e.g.
     ENSG00000123456_1000_2000.
     """
+
     # gene = GeneSerializer(read_only=True)
 
     class Meta:
         model = models.Exon
-        fields = ('ens_id', 'chrom', 'start', 'end')
+        fields = ("ens_id", "chrom", "start", "end")
 
 
 class ProteinSerializer(drf_serializers.ModelSerializer):
@@ -82,27 +103,31 @@ class ProteinSerializer(drf_serializers.ModelSerializer):
     A protein is a biological molecule encoded by a gene. Proteins are represented by Ensembl Protein IDs, which are
     stable identifiers from the Ensembl database.
     """
+
     class Meta:
         model = models.Protein
-        fields = ('ens_id', 'chrom', 'start', 'end')
+        fields = ("ens_id", "chrom", "start", "end")
+
 
 class MethylProbeSerializer(drf_serializers.ModelSerializer):
     """
     A methylation probe is a specific site in the genome where DNA methylation is measured. Methylation probes are
     represented by their probe IDs, e.g. "cg00000029".
     """
+
     class Meta:
         model = models.MethylProbe
-        fields = ('uuid', 'chrom', 'pos')
+        fields = ("uuid", "chrom", "pos")
 
 
 class MetaboliteSerializer(drf_serializers.ModelSerializer):
     """
     A metabolite is a small molecule that is involved in metabolism. Metabolites are represented by their UUIDs.
     """
+
     class Meta:
         model = models.Metabolite
-        fields = ('uuid', 'name')
+        fields = ("uuid", "name")
 
 
 class PhenotypeSerializer(drf_serializers.ModelSerializer):
@@ -111,9 +136,10 @@ class PhenotypeSerializer(drf_serializers.ModelSerializer):
     "type 2 diabetes". Phenotypes are represented by EFO IDs, which are stable identifiers from the Experimental
     Factor Ontology (EFO).
     """
+
     class Meta:
         model = models.Phenotype
-        fields = ('efo_id', 'kp_id', 'name')
+        fields = ("efo_id", "kp_id", "name")
 
 
 class TraitSerializer(NonNullModelSerializer):
@@ -129,25 +155,34 @@ class TraitSerializer(NonNullModelSerializer):
     protein = ProteinSerializer(read_only=True)
     methyl_probe = MethylProbeSerializer(read_only=True)
 
-
     class Meta:
         model = models.Trait
-        fields = ('uuid', 'biomarker_type', 'gene', 'exon', 'phenotype', 'metabolite', 'protein', 'methyl_probe')
+        fields = (
+            "uuid",
+            "biomarker_type",
+            "gene",
+            "exon",
+            "phenotype",
+            "metabolite",
+            "protein",
+            "methyl_probe",
+        )
 
 
 class StudySerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.Study
-        fields = ('uuid', 'description')
+        fields = ("uuid", "description")
 
 
 class LeadVariantSerializer(drf_serializers.ModelSerializer):
     """
     Helper object for representing the lead variant in a fine-mapped signal.
     """
+
     class Meta:
         model = models.LeadVariant
-        fields = ('vid', 'chrom', 'pos', 'ref', 'alt')
+        fields = ("vid", "chrom", "pos", "ref", "alt")
 
 
 class PublicationSerializer(drf_serializers.ModelSerializer):
@@ -155,18 +190,20 @@ class PublicationSerializer(drf_serializers.ModelSerializer):
     A publication is a scientific paper that describes one or more analyses. Publications have either a PubMed
     ID (stable identifiers from the PubMed database), or a DOI (Digital Object Identifier), or both.
     """
+
     class Meta:
         model = models.Publication
-        fields = ('pmid', 'doi', 'authors', 'title', 'year', 'journal')
+        fields = ("pmid", "doi", "authors", "title", "year", "journal")
 
 
 class PersonSerializer(drf_serializers.ModelSerializer):
     """
     A person is an individual who contributed to an analysis or dataset. People have names and email addresses.
     """
+
     class Meta:
         model = models.Person
-        fields = ('name', 'orcid', 'institution')
+        fields = ("name", "orcid", "institution")
 
 
 class MarginalAnalysisSerializerBrief(drf_serializers.ModelSerializer):
@@ -175,14 +212,24 @@ class MarginalAnalysisSerializerBrief(drf_serializers.ModelSerializer):
     for a single trait. In other words, it is the output of GWAS or eQTL analysis for one trait or gene.
     """
 
-    ld = drf_serializers.CharField(source='ld.uuid', read_only=True)
+    ld = drf_serializers.CharField(source="ld.uuid", read_only=True)
     trait = TraitSerializer(read_only=True)
     study = StudySerializer(read_only=True)
 
     class Meta:
         model = models.MarginalAnalysis
-        fields = ('uuid', 'analysis_type', 'genome_build', 'trait', 'tissue', 'cell_type', 'description', 'ancestry',
-                  'study', 'ld')
+        fields = (
+            "uuid",
+            "analysis_type",
+            "genome_build",
+            "trait",
+            "tissue",
+            "cell_type",
+            "description",
+            "ancestry",
+            "study",
+            "ld",
+        )
 
 
 class DatasetSerializer(drf_serializers.ModelSerializer):
@@ -190,6 +237,7 @@ class DatasetSerializer(drf_serializers.ModelSerializer):
     A dataset is a collection of analyses that are related in some way. For example, all analyses that were performed
     on a single study or cohort would be grouped into a single dataset.
     """
+
     publication = PublicationSerializer(read_only=True)
     submitter = PersonSerializer(read_only=True)
     analysts = PersonSerializer(many=True, read_only=True)
@@ -198,9 +246,22 @@ class DatasetSerializer(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.Dataset
-        fields = ('uuid', 'analysis_type', 'genome_build', 'tissue', 'cell_type', 'ancestry', 'n_traits',
-                  'n_traits_with_sig', 'publication', 'external_link', 'submitter', 'analysts',
-                  'principal_investigators', 'analysis')
+        fields = (
+            "uuid",
+            "analysis_type",
+            "genome_build",
+            "tissue",
+            "cell_type",
+            "ancestry",
+            "n_traits",
+            "n_traits_with_sig",
+            "publication",
+            "external_link",
+            "submitter",
+            "analysts",
+            "principal_investigators",
+            "analysis",
+        )
 
     def get_analysis(self, obj):
         count = obj.marginal_analyses.count()
@@ -215,6 +276,7 @@ class DatasetDetailSerializer(drf_serializers.ModelSerializer):
     A dataset is a collection of analyses that are related in some way. For example, all analyses that were performed
     on a single study or cohort would be grouped into a single dataset.
     """
+
     publication = PublicationSerializer(read_only=True)
     submitter = PersonSerializer(read_only=True)
     analysts = PersonSerializer(many=True, read_only=True)
@@ -223,9 +285,22 @@ class DatasetDetailSerializer(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.Dataset
-        fields = ('uuid', 'analysis_type', 'genome_build', 'tissue', 'cell_type', 'ancestry', 'n_traits',
-                  'n_traits_with_sig', 'publication', 'external_link', 'submitter', 'analysts',
-                  'principal_investigators', 'analysis')
+        fields = (
+            "uuid",
+            "analysis_type",
+            "genome_build",
+            "tissue",
+            "cell_type",
+            "ancestry",
+            "n_traits",
+            "n_traits_with_sig",
+            "publication",
+            "external_link",
+            "submitter",
+            "analysts",
+            "principal_investigators",
+            "analysis",
+        )
 
     def get_analysis(self, obj):
         count = obj.marginal_analyses.count()
@@ -238,7 +313,7 @@ class DatasetDetailSerializer(drf_serializers.ModelSerializer):
 class DatasetSerializerBrief(drf_serializers.ModelSerializer):
     class Meta:
         model = models.Dataset
-        fields = ('uuid',)
+        fields = ("uuid",)
 
 
 class MarginalAnalysisSerializer(drf_serializers.ModelSerializer):
@@ -249,15 +324,26 @@ class MarginalAnalysisSerializer(drf_serializers.ModelSerializer):
 
     dataset = DatasetSerializerBrief(read_only=True)
     trait = TraitSerializer(read_only=True)
-    ld = drf_serializers.CharField(source='ld.uuid', read_only=True)
+    ld = drf_serializers.CharField(source="ld.uuid", read_only=True)
     study = StudySerializer(read_only=True)
     publication = PublicationSerializer(read_only=True)
 
     class Meta:
         model = models.MarginalAnalysis
         fields = (
-            'uuid', 'dataset', 'analysis_type', 'genome_build', 'trait', 'tissue', 'cell_type', 'description',
-            'ancestry', 'study', 'publication', 'ld', 'external_link'
+            "uuid",
+            "dataset",
+            "analysis_type",
+            "genome_build",
+            "trait",
+            "tissue",
+            "cell_type",
+            "description",
+            "ancestry",
+            "study",
+            "publication",
+            "ld",
+            "external_link",
         )
 
 
@@ -278,8 +364,8 @@ class FinemappedSignalSerializer(drf_serializers.ModelSerializer):
     analysis = MarginalAnalysisSerializer(read_only=True)
     lead_variant = LeadVariantSerializer(read_only=True)
     neg_log_p = drf_serializers.SerializerMethodField(
-        method_name='get_neg_log_p',
-        read_only=True)
+        method_name="get_neg_log_p", read_only=True
+    )
 
     def get_neg_log_p(self, obj):
         return serialize_neg_log_pvalue(obj.neg_log_p)
@@ -287,16 +373,16 @@ class FinemappedSignalSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = models.FineMappedSignal
         fields = (
-            'uuid',
-            'analysis',
-            'lead_variant',
-            'neg_log_p',
-            'effect_cond',
-            'effect_marg',
-            'cond_minp_variant',
-            'is_marg',
-            'cs_variants',
-            'cs_alpha'
+            "uuid",
+            "analysis",
+            "lead_variant",
+            "neg_log_p",
+            "effect_cond",
+            "effect_marg",
+            "cond_minp_variant",
+            "is_marg",
+            "cs_variants",
+            "cs_alpha",
         )
 
 
@@ -305,18 +391,23 @@ class MergedSignalRegionSerializer(drf_serializers.Serializer):
     A generic serializer for when we want to fetch two merged signals in a single request, like trait1-trait2
         (locuscompare plot) or marginal signal + conditional analysis results.
     """
-    chromosome = drf_serializers.CharField(source='chrom', read_only=True)
-    position = drf_serializers.IntegerField(source='pos', read_only=True)
-    ref_allele = drf_serializers.CharField(source='ref', read_only=True)
-    alt_allele = drf_serializers.CharField(source='alt', read_only=True)
-    variant = drf_serializers.CharField(source='marker', read_only=True)
 
-    t1_neg_log_pvalue = drf_serializers.SerializerMethodField(method_name='get_t1_neg_log_pvalue', read_only=True)
+    chromosome = drf_serializers.CharField(source="chrom", read_only=True)
+    position = drf_serializers.IntegerField(source="pos", read_only=True)
+    ref_allele = drf_serializers.CharField(source="ref", read_only=True)
+    alt_allele = drf_serializers.CharField(source="alt", read_only=True)
+    variant = drf_serializers.CharField(source="marker", read_only=True)
+
+    t1_neg_log_pvalue = drf_serializers.SerializerMethodField(
+        method_name="get_t1_neg_log_pvalue", read_only=True
+    )
     t1_beta = drf_serializers.FloatField(read_only=True)
     t1_stderr_beta = drf_serializers.FloatField(read_only=True)
     t1_alt_allele_freq = drf_serializers.FloatField(read_only=True)
 
-    t2_neg_log_pvalue = drf_serializers.SerializerMethodField(method_name='get_t2_neg_log_pvalue', read_only=True)
+    t2_neg_log_pvalue = drf_serializers.SerializerMethodField(
+        method_name="get_t2_neg_log_pvalue", read_only=True
+    )
     t2_beta = drf_serializers.FloatField(read_only=True)
     t2_stderr_beta = drf_serializers.FloatField(read_only=True)
     t2_alt_allele_freq = drf_serializers.FloatField(read_only=True)
@@ -335,25 +426,35 @@ class ColocResultSerializer(drf_serializers.ModelSerializer):
     associated with the same causal variant.
     """
 
-    signal1 = drf_serializers.SerializerMethodField(method_name='get_signal1', label="Signal 1")
-    signal2 = drf_serializers.SerializerMethodField(method_name='get_signal2', label="Signal 2")
-    coloc_h3 = ReducedPrecisionFloatField(read_only=True, label="Posterior probability of H3")
-    coloc_h4 = ReducedPrecisionFloatField(read_only=True, label="Posterior probability of H4")
+    signal1 = drf_serializers.SerializerMethodField(
+        method_name="get_signal1", label="Signal 1"
+    )
+    signal2 = drf_serializers.SerializerMethodField(
+        method_name="get_signal2", label="Signal 2"
+    )
+    coloc_h3 = ReducedPrecisionFloatField(
+        read_only=True, label="Posterior probability of H3"
+    )
+    coloc_h4 = ReducedPrecisionFloatField(
+        read_only=True, label="Posterior probability of H4"
+    )
     r2 = ReducedPrecisionFloatField(read_only=True, label="r2 between lead variants")
     n_coloc_between_traits = drf_serializers.IntegerField(
         read_only=True,
-        label="Number of coloc results between signal1's trait and signal2's trait")
+        label="Number of coloc results between signal1's trait and signal2's trait",
+    )
     signal_swap = drf_serializers.SerializerMethodField(
-        method_name='get_signal_swap',
+        method_name="get_signal_swap",
         read_only=True,
-        label="Denotes whether signals have been swapped due to analysis priority parameter)")
+        label="Denotes whether signals have been swapped due to analysis priority parameter)",
+    )
 
     def get_signal_swap(self, obj):
         return not obj.no_signal_swap
 
     def get_signal1(self, obj):
         # Use annotated field if available, otherwise fall back to current logic
-        if hasattr(obj, 'no_signal_swap'):
+        if hasattr(obj, "no_signal_swap"):
             signal = obj.signal1 if obj.no_signal_swap else obj.signal2
         else:
             signal = obj.signal1
@@ -367,7 +468,7 @@ class ColocResultSerializer(drf_serializers.ModelSerializer):
 
     def get_signal2(self, obj):
         # Use annotated field if available, otherwise fall back to current logic
-        if hasattr(obj, 'no_signal_swap'):
+        if hasattr(obj, "no_signal_swap"):
             signal = obj.signal2 if obj.no_signal_swap else obj.signal1
         else:
             signal = obj.signal2
@@ -379,5 +480,15 @@ class ColocResultSerializer(drf_serializers.ModelSerializer):
 
     class Meta:
         model = models.ColocResult
-        fields = ('uuid', 'signal1', 'signal2', 'coloc_h3', 'coloc_h4', 'cross_signal',
-                  'r2', 'n_coloc_between_traits', 'marg_cond_flip', 'signal_swap')
+        fields = (
+            "uuid",
+            "signal1",
+            "signal2",
+            "coloc_h3",
+            "coloc_h4",
+            "cross_signal",
+            "r2",
+            "n_coloc_between_traits",
+            "marg_cond_flip",
+            "signal_swap",
+        )

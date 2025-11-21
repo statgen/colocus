@@ -1,6 +1,7 @@
 """
 Views that power internal functionality: non-public API endpoints with additional information required for some pages
 """
+
 import os
 
 from django import http
@@ -148,9 +149,8 @@ from colocus.core import constants, models
 def search_page_metadata(request, *args, **kwargs):
     # Apply analysis_uuid filter if provided, else use all objects
     qs_analysis = models.MarginalAnalysis.objects.select_related(
-        "trait",
-        "trait__phenotype",
-        "study")
+        "trait", "trait__phenotype", "study"
+    )
 
     """Return metadata required to power the "available categories" menus in the "search" page UI"""
     count_signal_pairs = models.ColocResult.objects.count()
@@ -161,7 +161,13 @@ def search_page_metadata(request, *args, **kwargs):
     phenotypes = set()
     studies = set()
 
-    analysis_fields = ["analysis_type", "tissue", "cell_type", "trait__phenotype__name", "study__uuid"]
+    analysis_fields = [
+        "analysis_type",
+        "tissue",
+        "cell_type",
+        "trait__phenotype__name",
+        "study__uuid",
+    ]
     for obj in qs_analysis.values(*analysis_fields):
         analysis_types.add(obj.get("analysis_type"))
         tissues.add(obj.get("tissue"))
@@ -182,10 +188,10 @@ def search_page_metadata(request, *args, **kwargs):
     # This uses .values() to avoid pulling in a lot of unnecessary data and avoids issues with prefetching and
     # customizing the serializer for this one case
     fields = [
-        'signal1__analysis__trait__gene__ens_id',
-        'signal1__analysis__trait__gene__symbol',
-        'signal2__analysis__trait__gene__ens_id',
-        'signal2__analysis__trait__gene__symbol',
+        "signal1__analysis__trait__gene__ens_id",
+        "signal1__analysis__trait__gene__symbol",
+        "signal2__analysis__trait__gene__ens_id",
+        "signal2__analysis__trait__gene__symbol",
     ]
     coloc_results = models.ColocResult.objects.values(*fields)
     genes = set()
@@ -199,13 +205,13 @@ def search_page_metadata(request, *args, **kwargs):
                 genes.add(symb)
 
     result = {
-        'count_pairs': count_signal_pairs,
-        'tissues': tissues,
-        'cell_types': cell_types,
-        'analysis_types': analysis_types,
-        'phenotypes': phenotypes,
-        'studies': studies,
-        'genes': list(genes)
+        "count_pairs": count_signal_pairs,
+        "tissues": tissues,
+        "cell_types": cell_types,
+        "analysis_types": analysis_types,
+        "phenotypes": phenotypes,
+        "studies": studies,
+        "genes": list(genes),
     }
 
     # For debugging: Return data as HTML
@@ -229,13 +235,21 @@ def analysis_manhattan(request, *args, **kwargs):
     try:
         model = models.MarginalAnalysis.objects.get(**filter_args)
     except models.MarginalAnalysis.DoesNotExist:
-        return http.HttpResponseNotFound("No record was found for the specified study + trait")
+        return http.HttpResponseNotFound(
+            "No record was found for the specified study + trait"
+        )
 
     filename = model.manhattan_bins
-    if not model.analysis_type == constants.GWAS or not model.manhattan_bins or not os.path.exists(filename):
-        return http.HttpResponseBadRequest("No manhattan data is available for the specified trait")
+    if (
+        not model.analysis_type == constants.GWAS
+        or not model.manhattan_bins
+        or not os.path.exists(filename)
+    ):
+        return http.HttpResponseBadRequest(
+            "No manhattan data is available for the specified trait"
+        )
 
-    return http.FileResponse(open(filename, 'rb'), content_type='application/json')
+    return http.FileResponse(open(filename, "rb"), content_type="application/json")
 
 
 def analysis_qq(request, uuid):
@@ -248,10 +262,18 @@ def analysis_qq(request, uuid):
     try:
         model = models.MarginalAnalysis.objects.get(uuid=uuid)
     except models.MarginalAnalysis.DoesNotExist:
-        return http.HttpResponseNotFound("No record was found for the specified study + trait")
+        return http.HttpResponseNotFound(
+            "No record was found for the specified study + trait"
+        )
 
     filename = model.qq_bins
-    if not model.analysis_type == constants.GWAS or not model.qq_bins or not os.path.exists(filename):
-        return http.HttpResponseBadRequest("No QQ data is available for the specified trait")
+    if (
+        not model.analysis_type == constants.GWAS
+        or not model.qq_bins
+        or not os.path.exists(filename)
+    ):
+        return http.HttpResponseBadRequest(
+            "No QQ data is available for the specified trait"
+        )
 
-    return http.FileResponse(open(filename, 'rb'), content_type='application/json')
+    return http.FileResponse(open(filename, "rb"), content_type="application/json")

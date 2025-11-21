@@ -9,6 +9,7 @@ from zorp.parsers import BasicVariant
 @dataclasses.dataclass
 class MergedVariant:
     """The merged results of data for two aligned iterators, like marginal / conditional or trait1 / trait2"""
+
     # Same variant = same spec by definition
     chrom: str
     pos: int
@@ -30,9 +31,8 @@ class MergedVariant:
     @property
     def marker(self) -> str:
         """Specify the marker in a string format compatible with UM LD server and other variant-specific requests"""
-        ref_alt = '_{}/{}'.format(self.ref, self.alt) \
-            if (self.ref and self.alt) else ''
-        return '{}:{}{}'.format(self.chrom, self.pos, ref_alt)
+        ref_alt = "_{}/{}".format(self.ref, self.alt) if (self.ref and self.alt) else ""
+        return "{}:{}{}".format(self.chrom, self.pos, ref_alt)
 
 
 def merge_variants_in_region(a: ty.List[BasicVariant], b: ty.List[BasicVariant]):
@@ -63,13 +63,24 @@ def merge_variants_in_region(a: ty.List[BasicVariant], b: ty.List[BasicVariant])
         if "cond" in v:
             b_i = v["cond"]
         else:
-            b_i = BasicVariant(a_i.chrom, a_i.pos, a_i.rsid, a_i.ref, a_i.alt, None, None, None, None)
+            b_i = BasicVariant(
+                a_i.chrom, a_i.pos, a_i.rsid, a_i.ref, a_i.alt, None, None, None, None
+            )
 
         joined.append(
             MergedVariant(
-                a_i.chrom, a_i.pos, a_i.ref, a_i.alt,
-                a_i.neg_log_pvalue, a_i.beta, a_i.stderr_beta, a_i.alt_allele_freq,
-                b_i.neg_log_pvalue, b_i.beta, b_i.stderr_beta, b_i.alt_allele_freq,
+                a_i.chrom,
+                a_i.pos,
+                a_i.ref,
+                a_i.alt,
+                a_i.neg_log_pvalue,
+                a_i.beta,
+                a_i.stderr_beta,
+                a_i.alt_allele_freq,
+                b_i.neg_log_pvalue,
+                b_i.beta,
+                b_i.stderr_beta,
+                b_i.alt_allele_freq,
             )
         )
 
@@ -84,7 +95,7 @@ def serialize_neg_log_pvalue(value: float) -> ty.Union[float, str, None]:
     Therefore we serialize this as a special case so it can be used in the frontend
     """
     if value is not None and math.isinf(value):
-        return 'Infinity'
+        return "Infinity"
     else:
         return value
 

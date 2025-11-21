@@ -34,4 +34,4 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # MEDIA
 # ------------------------------------------------------------------------------
-MEDIA_ROOT = str(APPS_DIR / "tests" / "media") # noqa F405
+MEDIA_ROOT = str(APPS_DIR / "tests" / "media")  # noqa F405

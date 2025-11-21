@@ -7,6 +7,7 @@ This checks:
 2. Coloc signals get loaded. One signal per YML file.
 3.
 """
+
 import argparse
 import gzip
 import hashlib
@@ -31,7 +32,7 @@ import yaml
 # from django.conf import settings
 
 # Must configure standalone django usage before importing models
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
 sys.path.append(str(Path(__file__).parent.parent.resolve()))
 django.setup()
 
@@ -61,27 +62,33 @@ from colocus.core.models import (  # noqa E402
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Load a packaged coloc dataset into the database. Assumes validation "
-                                                 "was performed elsewhere, eg for uuid integrity")
-    parser.add_argument('input', help='The top level folder of the packaged dataset with a predefined '
-                                      'structure.', nargs="+")
+    parser = argparse.ArgumentParser(
+        description="Load a packaged coloc dataset into the database. Assumes validation "
+        "was performed elsewhere, eg for uuid integrity"
+    )
+    parser.add_argument(
+        "input",
+        help="The top level folder of the packaged dataset with a predefined "
+        "structure.",
+        nargs="+",
+    )
     return parser.parse_args()
 
 
 def load_submission(package_root: pathlib.Path) -> DataSubmission:
     meta_path = package_root / "metadata.yml"
     if not meta_path.exists():
-        raise Exception('No analysis package found')
+        raise Exception("No analysis package found")
 
-    with open(meta_path, 'r', encoding='utf-8') as f:
+    with open(meta_path, "r", encoding="utf-8") as f:
         metadata = yaml.safe_load(f)
 
     # Load additional fields from `version.yml`
     version_path = package_root / "version.yml"
     if not version_path.exists():
-        raise FileNotFoundError('No version.yml found')
+        raise FileNotFoundError("No version.yml found")
 
-    with open(version_path, 'r', encoding='utf-8') as f:
+    with open(version_path, "r", encoding="utf-8") as f:
         version_metadata = yaml.safe_load(f)
         metadata["data_version"] = version_metadata["data-version"]
         metadata["data_hash"] = version_metadata["data-hash"]
@@ -91,7 +98,7 @@ def load_submission(package_root: pathlib.Path) -> DataSubmission:
 
     try:
         # We don't use get_or_create because additional NOT NULL fields may be required
-        ds = DataSubmission.objects.get(uuid=metadata['uuid'])
+        ds = DataSubmission.objects.get(uuid=metadata["uuid"])
     except DataSubmission.DoesNotExist:
         ds = init_model(DataSubmission, metadata)
 
@@ -106,18 +113,21 @@ def load_submission(package_root: pathlib.Path) -> DataSubmission:
 def load_dataset(data_sub, dataset_dir):
     meta_path = dataset_dir / "metadata.parquet"
     if not meta_path.exists():
-        raise Exception(f'No dataset metadata.parquet found at {meta_path}')
+        raise Exception(f"No dataset metadata.parquet found at {meta_path}")
 
     metadata = pl.read_parquet(meta_path).to_dicts().pop()
 
     # Get the object or create it first
     dataset = get_by_id_or_create(
         Dataset,
-        {'uuid': metadata['uuid']},
+        {"uuid": metadata["uuid"]},
         {
-            'submitter': get_by_id_or_create(Person, {'orcid': metadata['submitter']['orcid']}, metadata['submitter']),
-            'data_submission': data_sub
-        })
+            "submitter": get_by_id_or_create(
+                Person, {"orcid": metadata["submitter"]["orcid"]}, metadata["submitter"]
+            ),
+            "data_submission": data_sub,
+        },
+    )
 
     for k, v in metadata.items():
         if k == "submitter":
@@ -125,20 +135,19 @@ def load_dataset(data_sub, dataset_dir):
         elif k == "analysts":
             if not v:
                 continue
-            analysts = [get_by_id_or_create(Person, {'orcid': a['orcid']}, a) for a in v]
+            analysts = [
+                get_by_id_or_create(Person, {"orcid": a["orcid"]}, a) for a in v
+            ]
             dataset.analysts.set(analysts)
         elif k == "principal_investigators":
             if not v:
                 continue
-            pis = [get_by_id_or_create(Person, {'orcid': pi['orcid']}, pi) for pi in v]
+            pis = [get_by_id_or_create(Person, {"orcid": pi["orcid"]}, pi) for pi in v]
             dataset.principal_investigators.set(pis)
         elif k == "publication":
             pub_uuid = hash_objects(v)
-            v['uuid'] = pub_uuid
-            pub = get_by_id_or_create(
-                Publication,
-                {'uuid': pub_uuid},
-                v)
+            v["uuid"] = pub_uuid
+            pub = get_by_id_or_create(Publication, {"uuid": pub_uuid}, v)
             dataset.publication = pub
         else:
             setattr(dataset, k, v)
@@ -163,7 +172,7 @@ def tabix(fpath):
     touch_if_exists(tbi)
 
 
-def flatten_data(data, parent_key='', sep='.'):
+def flatten_data(data, parent_key="", sep="."):
     """
     Recursively flattens dictionaries and lists of any depth.
     """
@@ -194,10 +203,10 @@ def hash_objects(*args):
 
     # Hash the string
     h = hashlib.sha512()
-    h.update(s.encode('utf-8'))
+    h.update(s.encode("utf-8"))
     b = h.digest()[:16]
 
-    return base58.b58encode(b).decode('utf-8')
+    return base58.b58encode(b).decode("utf-8")
 
 
 def merge_ld_files(out_path, *paths):
@@ -205,7 +214,7 @@ def merge_ld_files(out_path, *paths):
 
     def line_iter(file):
         for line in file:
-            ls = line.split('\t')
+            ls = line.split("\t")
             # TODO: this seems strange to me that LD is sorted on columns 4,5 (1-index) first, then 1,2.
             # Need to revisit pipelines generating the LD data and see why that is
             sort_key = (ls[3], int(ls[4]), ls[0], int(ls[1]))
@@ -215,9 +224,11 @@ def merge_ld_files(out_path, *paths):
         handles = []
 
         for path in paths:
-            handles.append(stack.enter_context(gzip.open(path, 'rt')))
+            handles.append(stack.enter_context(gzip.open(path, "rt")))
 
-        for _, line in heapq.merge(*[line_iter(f) for f in handles], key=lambda x: x[0]):
+        for _, line in heapq.merge(
+            *[line_iter(f) for f in handles], key=lambda x: x[0]
+        ):
             bgzip_proc.stdin.write(line)
             bgzip_proc.stdin.flush()
 
@@ -228,22 +239,26 @@ def merge_ld_files(out_path, *paths):
 def load_ld(data_sub, ld_dir: pathlib.Path) -> LDStats:
     meta_path = ld_dir / "metadata.yml"
     if not meta_path.exists():
-        raise Exception('No analysis package found')
+        raise Exception("No analysis package found")
 
-    with open(meta_path, 'r') as f:
+    with open(meta_path, "r") as f:
         metadata = yaml.safe_load(f)
 
     # Check UUID format
-    correct_uuid = f"{metadata['panel']}_{metadata['genome_build']}_{metadata['population']}"
-    if metadata['uuid'] != correct_uuid:
-        raise Exception(f"UUID {metadata['uuid']} does not match expected format {correct_uuid}")
+    correct_uuid = (
+        f"{metadata['panel']}_{metadata['genome_build']}_{metadata['population']}"
+    )
+    if metadata["uuid"] != correct_uuid:
+        raise Exception(
+            f"UUID {metadata['uuid']} does not match expected format {correct_uuid}"
+        )
 
     # Check if there are any other LD files that are the same panel / build / population.
     # If so, we need to merge them into a single file.
     matching = LDStats.objects.filter(
-        panel=metadata['panel'],
-        genome_build=metadata['genome_build'],
-        population=metadata['population']
+        panel=metadata["panel"],
+        genome_build=metadata["genome_build"],
+        population=metadata["population"],
     )
 
     found_ld = matching.exists()
@@ -252,8 +267,10 @@ def load_ld(data_sub, ld_dir: pathlib.Path) -> LDStats:
         # Note: unlike below, we're not allowing multiple instances of the same LD panel / build / population and then
         # merging them. We're assuming the colocus pipeline already did the merge since we process everything
         # together now.
-        raise Exception(f"Multiple LD files found for panel {metadata['panel']}, build {metadata['genome_build']}, "
-                        f"population {metadata['population']}. There should only be a single entry in the database.")
+        raise Exception(
+            f"Multiple LD files found for panel {metadata['panel']}, build {metadata['genome_build']}, "
+            f"population {metadata['population']}. There should only be a single entry in the database."
+        )
 
     # if found_ld and len(matching) > 1:
     #     raise Exception(f"Multiple LD files found for panel {metadata['panel']}, build {metadata['genome_build']}, "
@@ -293,7 +310,7 @@ def load_ld(data_sub, ld_dir: pathlib.Path) -> LDStats:
 
     try:
         # Don't use get_or_create because additional non-null fields exist
-        ld = LDStats.objects.get(uuid=metadata['uuid'])
+        ld = LDStats.objects.get(uuid=metadata["uuid"])
         for k, v in metadata.items():
             setattr(ld, k, v)
     except LDStats.DoesNotExist:
@@ -304,9 +321,11 @@ def load_ld(data_sub, ld_dir: pathlib.Path) -> LDStats:
     if not found_ld:
         # If we didn't find existing LD, then we need to go through the normal process of saving
         # the LD file, and storing the LD metadata/path in the database
-        logger.info(f"Saving LD file for {metadata['panel']} {metadata['genome_build']} {metadata['population']}")
-        ld.ld_data = str(ld_dir / 'ld.gz')
-        ld.ld_data_tbi = str(ld_dir / 'ld.gz.tbi')
+        logger.info(
+            f"Saving LD file for {metadata['panel']} {metadata['genome_build']} {metadata['population']}"
+        )
+        ld.ld_data = str(ld_dir / "ld.gz")
+        ld.ld_data_tbi = str(ld_dir / "ld.gz.tbi")
     # else:
     #     ld.ld_data = db_ld_path
     #     ld.ld_data_tbi = db_ld_path + ".tbi"
@@ -322,7 +341,13 @@ def init_model(model, attrs: dict):
 
     Allows YML files to specify additional info useful to the build process, without breaking the DB loader script
     """
-    return model(**{k: v for k, v in attrs.items() if k in [f.name for f in model._meta.get_fields()]})
+    return model(
+        **{
+            k: v
+            for k, v in attrs.items()
+            if k in [f.name for f in model._meta.get_fields()]
+        }
+    )
 
 
 def get_by_id_or_create(model, id_fields, attrs: dict):
@@ -343,7 +368,7 @@ def get_by_id_or_create(model, id_fields, attrs: dict):
 def load_one_signal(
     data_submission: DataSubmission,
     analysis: MarginalAnalysis,
-    signal_dir: pathlib.Path
+    signal_dir: pathlib.Path,
 ) -> ty.Optional[FineMappedSignal]:
     """
     Load a single fine mapped signal + conditional analysis results
@@ -368,24 +393,34 @@ def load_one_signal(
     ```
     """
 
-    meta_path = signal_dir / 'metadata.parquet'
+    meta_path = signal_dir / "metadata.parquet"
     if not meta_path.exists():
-        raise Exception(f'Signal must specify metadata as {meta_path}')
+        raise Exception(f"Signal must specify metadata as {meta_path}")
 
     metadata = pl.read_parquet(meta_path).to_dicts().pop()
 
     if "lead_variant" not in metadata:
-        raise Exception('Signal metadata must specify `lead_variant` block')
+        raise Exception("Signal metadata must specify `lead_variant` block")
 
     # Get the lead variant for this fine-mapped signal
     # We want a brand new `LeadVariant` each time; it is a utility class to keep track of the variant & its statistics
     # but those statistics (neg_log_p, effect, se, etc.) change depending on the associated trait and analysis
     lv_dict = metadata.pop("lead_variant")
-    lv_dict["vid"] = lv_dict["chrom"] + "_" + str(lv_dict["pos"]) + "_" + lv_dict["ref"] + "_" + lv_dict["alt"]
+    lv_dict["vid"] = (
+        lv_dict["chrom"]
+        + "_"
+        + str(lv_dict["pos"])
+        + "_"
+        + lv_dict["ref"]
+        + "_"
+        + lv_dict["alt"]
+    )
     lead_variant = LeadVariant.objects.create(**lv_dict)
 
     # Get fine-mapping program used
-    program, _ = FineMappingProgram.objects.get_or_create(**metadata.pop("finemap_program"))
+    program, _ = FineMappingProgram.objects.get_or_create(
+        **metadata.pop("finemap_program")
+    )
 
     metadata["lead_variant"] = lead_variant
     metadata["analysis"] = analysis
@@ -398,17 +433,18 @@ def load_one_signal(
 
     # Create a signal. This should never have existed previously. If it did, the `unique=True` check on the model should
     # kick it back when we try to save it.
-    signal = get_by_id_or_create(FineMappedSignal, {'uuid': metadata['uuid']}, metadata)
+    signal = get_by_id_or_create(FineMappedSignal, {"uuid": metadata["uuid"]}, metadata)
 
-    signal.cond_analysis = str(signal_dir / 'results.harmonized.gz')
-    signal.cond_analysis_tbi = str(signal_dir / 'results.harmonized.gz.tbi')
+    signal.cond_analysis = str(signal_dir / "results.harmonized.gz")
+    signal.cond_analysis_tbi = str(signal_dir / "results.harmonized.gz.tbi")
 
     signal.save()
     return signal
 
 
 def load_one_marginal(
-        data_submission: DataSubmission, dataset: Dataset, analysis_dir: pathlib.Path) -> MarginalAnalysis:
+    data_submission: DataSubmission, dataset: Dataset, analysis_dir: pathlib.Path
+) -> MarginalAnalysis:
     """
     Load a single marginal analysis + all signals contained in subdirectories.
 
@@ -440,75 +476,76 @@ def load_one_marginal(
     ```
     """
 
-    meta_path = analysis_dir / 'metadata.parquet'
+    meta_path = analysis_dir / "metadata.parquet"
     if not meta_path.exists():
-        raise Exception(f'Marginal trait must specify metadata as {meta_path}')
+        raise Exception(f"Marginal trait must specify metadata as {meta_path}")
 
     metadata = pl.read_parquet(meta_path).to_dicts().pop()
 
     try:
-        marginal = MarginalAnalysis.objects.get(uuid=metadata['uuid'])
+        marginal = MarginalAnalysis.objects.get(uuid=metadata["uuid"])
     except MarginalAnalysis.DoesNotExist:
         marginal = MarginalAnalysis()
 
     for k, v in metadata.items():
-        if k == 'ld':
+        if k == "ld":
             marginal.ld = LDStats.objects.get(uuid=v)
-        elif k == 'publication':
+        elif k == "publication":
             pub_uuid = hash_objects(v)
-            v['uuid'] = pub_uuid
-            pub = get_by_id_or_create(
-                Publication,
-                {'uuid': pub_uuid},
-                v)
+            v["uuid"] = pub_uuid
+            pub = get_by_id_or_create(Publication, {"uuid": pub_uuid}, v)
             marginal.publication = pub
-        elif k == 'study':
-            study = get_by_id_or_create(Study, {'uuid': v['uuid']}, v)
+        elif k == "study":
+            study = get_by_id_or_create(Study, {"uuid": v["uuid"]}, v)
             marginal.study = study
-        elif k == 'trait':
-            gene = v.pop('gene', None)
-            exon = v.pop('exon', None)
-            pheno = v.pop('phenotype', None)
-            metabolite = v.pop('metabolite', None)
-            methyl_probe = v.pop('probe', None)
-            protein = v.pop('protein', None)
+        elif k == "trait":
+            gene = v.pop("gene", None)
+            exon = v.pop("exon", None)
+            pheno = v.pop("phenotype", None)
+            metabolite = v.pop("metabolite", None)
+            methyl_probe = v.pop("probe", None)
+            protein = v.pop("protein", None)
 
             # trait, created = Trait.objects.get_or_create(**v)
-            trait = get_by_id_or_create(Trait, {'uuid': v['uuid']}, v)
+            trait = get_by_id_or_create(Trait, {"uuid": v["uuid"]}, v)
 
             if gene:
                 # gene, created = Gene.objects.get_or_create(**gene)
-                gene = get_by_id_or_create(Gene, {'ens_id': gene['ens_id']}, gene)
+                gene = get_by_id_or_create(Gene, {"ens_id": gene["ens_id"]}, gene)
                 trait.gene = gene
 
             if exon:
                 exon["gene"] = gene
                 # exon, created = Exon.objects.get_or_create(**exon)
-                exon = get_by_id_or_create(Exon, {'ens_id': exon['ens_id']}, exon)
+                exon = get_by_id_or_create(Exon, {"ens_id": exon["ens_id"]}, exon)
                 trait.exon = exon
 
             if protein:
                 protein["gene"] = gene
-                protein = get_by_id_or_create(Protein, {'ens_id': v['uuid']}, protein)
+                protein = get_by_id_or_create(Protein, {"ens_id": v["uuid"]}, protein)
                 trait.protein = protein
 
             if pheno:
                 # pheno, created = Phenotype.objects.get_or_create(**pheno)
                 if "uuid" not in pheno:
                     pheno["uuid"] = v["uuid"]
-                pheno = get_by_id_or_create(Phenotype, {'uuid': pheno['uuid']}, pheno)
+                pheno = get_by_id_or_create(Phenotype, {"uuid": pheno["uuid"]}, pheno)
                 trait.phenotype = pheno
 
             if metabolite:
                 if "uuid" not in metabolite:
                     metabolite["uuid"] = v["uuid"]
-                metabolite = get_by_id_or_create(Metabolite, {'uuid': metabolite['uuid']}, metabolite)
+                metabolite = get_by_id_or_create(
+                    Metabolite, {"uuid": metabolite["uuid"]}, metabolite
+                )
                 trait.metabolite = metabolite
 
             if methyl_probe:
                 if "uuid" not in methyl_probe:
                     methyl_probe["uuid"] = v["uuid"]
-                methyl_probe = get_by_id_or_create(MethylProbe, {'uuid': methyl_probe['uuid']}, methyl_probe)
+                methyl_probe = get_by_id_or_create(
+                    MethylProbe, {"uuid": methyl_probe["uuid"]}, methyl_probe
+                )
                 trait.methyl_probe = methyl_probe
 
             trait.save()
@@ -519,10 +556,10 @@ def load_one_marginal(
     marginal.data_submission = data_submission
     marginal.dataset = dataset
 
-    marginal.summary_stats = str(analysis_dir / 'summ_stats.harmonized.gz')
+    marginal.summary_stats = str(analysis_dir / "summ_stats.harmonized.gz")
 
-    manhattan_path = analysis_dir / 'manhattan.json'
-    qq_path = analysis_dir / 'qq.json'
+    manhattan_path = analysis_dir / "manhattan.json"
+    qq_path = analysis_dir / "qq.json"
 
     # Only GWAS traits (not eQTLs!) have a manhattan plot file. Don't require it for QTLs.
     if manhattan_path.exists():
@@ -531,7 +568,7 @@ def load_one_marginal(
     if qq_path.exists():
         marginal.qq_bins = str(qq_path)
 
-    marginal.summary_stats_tbi = str(analysis_dir / 'summ_stats.harmonized.gz.tbi')
+    marginal.summary_stats_tbi = str(analysis_dir / "summ_stats.harmonized.gz.tbi")
 
     marginal.save()
 
@@ -550,7 +587,9 @@ def ndarray_to_list(matrix):
     return [x.tolist() for x in matrix]
 
 
-def load_colocalizations(data_submission: DataSubmission, coloc_file: pathlib.Path) -> ColocResult:
+def load_colocalizations(
+    data_submission: DataSubmission, coloc_file: pathlib.Path
+) -> ColocResult:
     """Load colocalization results"""
 
     colocs = pl.read_parquet(coloc_file)
@@ -560,7 +599,7 @@ def load_colocalizations(data_submission: DataSubmission, coloc_file: pathlib.Pa
 
     for meta_dict in colocs.iter_rows(named=True):
         try:
-            coloc = ColocResult.objects.get(uuid=meta_dict['uuid'])
+            coloc = ColocResult.objects.get(uuid=meta_dict["uuid"])
         except ColocResult.DoesNotExist:
             coloc = ColocResult()
 
@@ -578,10 +617,12 @@ def load_colocalizations(data_submission: DataSubmission, coloc_file: pathlib.Pa
             try:
                 return FineMappedSignal.objects.get(uuid=uuid)
             except FineMappedSignal.DoesNotExist as e:
-                raise ValueError(f"Signal with UUID {uuid} not found in database") from e
+                raise ValueError(
+                    f"Signal with UUID {uuid} not found in database"
+                ) from e
 
-        coloc.signal1 = get_signal(meta_dict['signal1'])
-        coloc.signal2 = get_signal(meta_dict['signal2'])
+        coloc.signal1 = get_signal(meta_dict["signal1"])
+        coloc.signal2 = get_signal(meta_dict["signal2"])
 
         coloc.save()
 
@@ -589,7 +630,7 @@ def load_colocalizations(data_submission: DataSubmission, coloc_file: pathlib.Pa
 def main(package_root: str):
     path = pathlib.Path(package_root).resolve()
     if not path.exists():
-        raise Exception(f'Package directory does not exist: {path}')
+        raise Exception(f"Package directory does not exist: {path}")
 
     # Load parent analysis
     data_sub = load_submission(path)
@@ -619,13 +660,13 @@ def main(package_root: str):
 
     coloc_file = path / "coloc" / "coloc.parquet"
     if not coloc_file.exists():
-        raise Exception(f'Must provide colocalization results as {coloc_file}')
+        raise Exception(f"Must provide colocalization results as {coloc_file}")
 
     logger.info("Loading colocalizations")
     load_colocalizations(data_sub, coloc_file)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_args()
     for source_dir in args.input:
         logger.info(f"Loading dataset from: {source_dir}")

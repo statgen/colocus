@@ -10,13 +10,13 @@ from colocus.utils.variants import is_variant, valid_alleles
 
 
 class ColocusAPITestCase(APITestCase):
-    databases = ['default', 'core']
+    databases = ["default", "core"]
 
 
-@pytest.mark.django_db(databases=['core'])
+@pytest.mark.django_db(databases=["core"])
 class TestColocResultListView(ColocusAPITestCase):
     def test_simple(self):
-        self.url = reverse('api:coloc-all')
+        self.url = reverse("api:coloc-all")
         response = self.client.get(self.url, format="json")
 
         expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 cross_signal n_coloc_between_traits".split()
@@ -26,7 +26,7 @@ class TestColocResultListView(ColocusAPITestCase):
         assert response.status_code == HTTP_200_OK
 
     def test_sorting(self):
-        self.url = reverse('api:coloc-all')
+        self.url = reverse("api:coloc-all")
 
         response = self.client.get(self.url, data={"ordering": "-h3"}, format="json")
         for i, row in enumerate(response.data["results"]):
@@ -40,46 +40,66 @@ class TestColocResultListView(ColocusAPITestCase):
                 continue
             assert row["coloc_h3"] >= response.data["results"][i - 1]["coloc_h3"]
 
-        response = self.client.get(self.url, data={"ordering": "-signal2_logp"}, format="json")
+        response = self.client.get(
+            self.url, data={"ordering": "-signal2_logp"}, format="json"
+        )
         for i, row in enumerate(response.data["results"]):
             if i == 0:
                 continue
-            assert row["signal2"]["neg_log_p"] <= response.data["results"][i - 1]["signal2"]["neg_log_p"]
+            assert (
+                row["signal2"]["neg_log_p"]
+                <= response.data["results"][i - 1]["signal2"]["neg_log_p"]
+            )
 
-        response = self.client.get(self.url, data={"ordering": "signal2_logp"}, format="json")
+        response = self.client.get(
+            self.url, data={"ordering": "signal2_logp"}, format="json"
+        )
         for i, row in enumerate(response.data["results"]):
             if i == 0:
                 continue
-            assert row["signal2"]["neg_log_p"] >= response.data["results"][i - 1]["signal2"]["neg_log_p"]
+            assert (
+                row["signal2"]["neg_log_p"]
+                >= response.data["results"][i - 1]["signal2"]["neg_log_p"]
+            )
 
         assert response.status_code == HTTP_200_OK
 
     def test_gene(self):
-        self.url = reverse('api:coloc-all')
+        self.url = reverse("api:coloc-all")
         response = self.client.get(self.url, data={"genes": "SLC39A8"}, format="json")
 
         expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 cross_signal n_coloc_between_traits".split()
         for key in expected_keys:
             assert key in response.data["results"][0]
 
-        assert response.data["results"][0]["signal2"]["analysis"]["trait"]["gene"]["symbol"] == "SLC39A8"
+        assert (
+            response.data["results"][0]["signal2"]["analysis"]["trait"]["gene"][
+                "symbol"
+            ]
+            == "SLC39A8"
+        )
 
         assert response.status_code == HTTP_200_OK
 
     def test_variant(self):
-        self.url = reverse('api:coloc-all')
-        response = self.client.get(self.url, data={"variants": "4_103188709_C_T"}, format="json")
+        self.url = reverse("api:coloc-all")
+        response = self.client.get(
+            self.url, data={"variants": "4_103188709_C_T"}, format="json"
+        )
 
         expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 cross_signal n_coloc_between_traits".split()
         for key in expected_keys:
             assert key in response.data["results"][0]
 
-        assert response.data["results"][0]["signal2"]["lead_variant"]["vid"] == "4_103188709_C_T"
+        assert (
+            response.data["results"][0]["signal2"]["lead_variant"]["vid"]
+            == "4_103188709_C_T"
+        )
 
         assert response.status_code == HTTP_200_OK
 
     def test_signal1_trait(self):
-        self.url = reverse('api:coloc-all')
+        self.url = reverse("api:coloc-all")
 
         region = "4:103178709-103198709"
 
@@ -98,18 +118,20 @@ class TestColocResultListView(ColocusAPITestCase):
         for key in expected_keys:
             assert key in response.data["results"][0]
 
-        assert response.data["results"][0]["signal1"]["analysis"]["trait"]["uuid"] == "BMI"
-        assert response.data["results"][0]["signal1"]["analysis"]["uuid"] == "gwas_BMI_GIANT_2018_hg19_KAB_BMI"
+        assert (
+            response.data["results"][0]["signal1"]["analysis"]["trait"]["uuid"] == "BMI"
+        )
+        assert (
+            response.data["results"][0]["signal1"]["analysis"]["uuid"]
+            == "gwas_BMI_GIANT_2018_hg19_KAB_BMI"
+        )
 
         assert response.status_code == HTTP_200_OK
 
     def test_analysis_uuid(self):
-        self.url = reverse('api:coloc-all')
+        self.url = reverse("api:coloc-all")
 
-        data = {
-            "analyses": "gwas_BMI_GIANT_2018_hg19_KAB_BMI",
-            "min_h4": 0.5
-        }
+        data = {"analyses": "gwas_BMI_GIANT_2018_hg19_KAB_BMI", "min_h4": 0.5}
 
         response = self.client.get(self.url, data=data, format="json")
 
@@ -117,18 +139,21 @@ class TestColocResultListView(ColocusAPITestCase):
         for key in expected_keys:
             assert key in response.data["results"][0]
 
-        assert response.data["results"][0]["signal1"]["analysis"]["uuid"] == "gwas_BMI_GIANT_2018_hg19_KAB_BMI"
+        assert (
+            response.data["results"][0]["signal1"]["analysis"]["uuid"]
+            == "gwas_BMI_GIANT_2018_hg19_KAB_BMI"
+        )
 
         assert response.status_code == HTTP_200_OK
 
 
-@pytest.mark.django_db(databases=['core'])
+@pytest.mark.django_db(databases=["core"])
 class TestColocResultDetailView(ColocusAPITestCase):
     def test_simple(self):
         self.params = {
-            'uuid': "6MxwbaHqiX4cffxGy6ux3H",
+            "uuid": "6MxwbaHqiX4cffxGy6ux3H",
         }
-        self.url = reverse('api:coloc-detail', kwargs=self.params)
+        self.url = reverse("api:coloc-detail", kwargs=self.params)
         response = self.client.get(self.url, format="json")
 
         expected_keys = "uuid signal1 signal2 coloc_h3 coloc_h4 cross_signal n_coloc_between_traits".split()
@@ -140,7 +165,9 @@ class TestColocResultDetailView(ColocusAPITestCase):
             assert key in response.data["signal1"]["analysis"]
             assert key in response.data["signal2"]["analysis"]
 
-        signal_keys = ("uuid analysis lead_variant neg_log_p effect_cond effect_marg cond_minp_variant").split()
+        signal_keys = (
+            "uuid analysis lead_variant neg_log_p effect_cond effect_marg cond_minp_variant"
+        ).split()
         for key in signal_keys:
             assert key in response.data["signal1"]
             assert key in response.data["signal2"]
@@ -151,24 +178,26 @@ class TestColocResultDetailView(ColocusAPITestCase):
             assert key in response.data["signal2"]["analysis"]["trait"]
 
         assert response.data["uuid"] == "6MxwbaHqiX4cffxGy6ux3H"
-        assert response.data["signal2"]["analysis"]["trait"]["gene"]["symbol"] == "SLC39A8"
+        assert (
+            response.data["signal2"]["analysis"]["trait"]["gene"]["symbol"] == "SLC39A8"
+        )
 
         assert response.status_code == HTTP_200_OK
 
 
-@pytest.mark.django_db(databases=['core'])
+@pytest.mark.django_db(databases=["core"])
 class TestLDStatsRegionView(ColocusAPITestCase):
     def test_simple(self):
         self.params = {
-            'uuid': "UKBB_GRCh37_ALL",
+            "uuid": "UKBB_GRCh37_ALL",
         }
         self.data = {
-            'chrom': '4',
-            'start': 103178709,
-            'end': 103198709,
-            'variant': "4:103188709_C/T"
+            "chrom": "4",
+            "start": 103178709,
+            "end": 103198709,
+            "variant": "4:103188709_C/T",
         }
-        self.url = reverse('api:ld-region', kwargs=self.params)
+        self.url = reverse("api:ld-region", kwargs=self.params)
         response = self.client.get(self.url, data=self.data, format="json")
 
         expected_keys = "correlation position1 position2 variant1 variant2".split()
@@ -183,23 +212,25 @@ class TestLDStatsRegionView(ColocusAPITestCase):
         assert response.status_code == HTTP_200_OK
 
 
-@pytest.mark.django_db(databases=['core'])
+@pytest.mark.django_db(databases=["core"])
 class TestFinemappedSignalSummRegionView(ColocusAPITestCase):
     def test_simple(self):
         self.params = {
-            'uuid': "ExDdZgc17zypsGPt7sEeEz",
+            "uuid": "ExDdZgc17zypsGPt7sEeEz",
         }
         self.data = {
-            'chrom': '1',
-            'start': 203595798 - 10000,
-            'end': 203595798 + 10000,
+            "chrom": "1",
+            "start": 203595798 - 10000,
+            "end": 203595798 + 10000,
         }
-        self.url = reverse('api:signals-summstats', kwargs=self.params)
+        self.url = reverse("api:signals-summstats", kwargs=self.params)
         response = self.client.get(self.url, data=self.data, format="json")
 
-        expected_keys = ("chromosome position variant ref_allele alt_allele variant t1_neg_log_pvalue t1_beta "
-                         "t1_stderr_beta t1_alt_allele_freq t2_neg_log_pvalue t2_beta t2_stderr_beta "
-                         "t2_alt_allele_freq").split()
+        expected_keys = (
+            "chromosome position variant ref_allele alt_allele variant t1_neg_log_pvalue t1_beta "
+            "t1_stderr_beta t1_alt_allele_freq t2_neg_log_pvalue t2_beta t2_stderr_beta "
+            "t2_alt_allele_freq"
+        ).split()
 
         for key in expected_keys:
             assert key in response.data[0]
@@ -213,17 +244,17 @@ class TestFinemappedSignalSummRegionView(ColocusAPITestCase):
         assert response.status_code == HTTP_200_OK
 
 
-@pytest.mark.django_db(databases=['core'])
+@pytest.mark.django_db(databases=["core"])
 class TestInternalTraitManhattanView(ColocusAPITestCase):
     def test_simple(self):
         self.params = {
-            'uuid': "gwas_BMI_GIANT_2018_hg19_KAB_BMI",
+            "uuid": "gwas_BMI_GIANT_2018_hg19_KAB_BMI",
         }
-        self.url = reverse('api:analysis-manhattan', kwargs=self.params)
+        self.url = reverse("api:analysis-manhattan", kwargs=self.params)
         response = self.client.get(self.url, format="json")
 
         # This view unfortunately returns a `http.FileResponse` which is streaming content...
-        content = b''.join(response.streaming_content)
+        content = b"".join(response.streaming_content)
         json_data = json.loads(content.decode("utf-8"))
 
         unbinned_keys = "chrom pos rsid ref alt beta stderr_beta alt_allele_freq nearest_genes peak pvalue".split()
@@ -247,22 +278,22 @@ class TestInternalTraitManhattanView(ColocusAPITestCase):
         assert response.status_code == HTTP_200_OK
 
 
-@pytest.mark.django_db(databases=['core'])
+@pytest.mark.django_db(databases=["core"])
 class TestInternalSearchMetadata(ColocusAPITestCase):
     def test_simple(self):
-        self.url = reverse('api:search-metadata')
+        self.url = reverse("api:search-metadata")
         response = self.client.get(self.url, format="json")
         assert response.status_code == HTTP_200_OK
 
 
-@pytest.mark.django_db(databases=['core'])
+@pytest.mark.django_db(databases=["core"])
 class TestColocSlimView(ColocusAPITestCase):
     def test_simple(self):
-        self.url = reverse('api:coloc-slim')
+        self.url = reverse("api:coloc-slim")
         response = self.client.get(self.url, format="json")
 
         expected_keys = "uuid signal1 signal2 coloc_h4 r2".split()
         for key in expected_keys:
-            assert key in response.data['results'][0]
+            assert key in response.data["results"][0]
 
         assert response.status_code == HTTP_200_OK

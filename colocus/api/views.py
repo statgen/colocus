@@ -3,7 +3,7 @@ import typing as ty
 from typing import Union
 
 from django.conf import settings
-from django.db.models import BooleanField, Case, F, IntegerField, Q, Value, When
+from django.db.models import BooleanField, Case, IntegerField, Q, Value, When
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
@@ -39,12 +39,14 @@ class TabixRegionView(generics.RetrieveAPIView):
         """
         params = self.request.query_params
 
-        chrom: Union[str, None] = params.get('chrom', None)
-        start: Union[str, int, None] = params.get('start', None)
-        end: Union[str, int, None] = params.get('end', None)
+        chrom: Union[str, None] = params.get("chrom", None)
+        start: Union[str, int, None] = params.get("start", None)
+        end: Union[str, int, None] = params.get("end", None)
 
         if not (chrom and start and end):
-            raise drf_exceptions.ParseError('Must specify "chrom", "start", and "end" as query parameters')
+            raise drf_exceptions.ParseError(
+                'Must specify "chrom", "start", and "end" as query parameters'
+            )
 
         try:
             start = int(start)
@@ -55,21 +57,28 @@ class TabixRegionView(generics.RetrieveAPIView):
         start = max(0, start)
 
         if end <= start:
-            raise drf_exceptions.ParseError('"end" position must be greater than "start"')
+            raise drf_exceptions.ParseError(
+                '"end" position must be greater than "start"'
+            )
 
         if not (0 <= (end - start) <= settings.LZ_MAX_REGION_SIZE):
             raise drf_exceptions.ParseError(
-                f'Cannot handle requested region size. Max allowed is {settings.LZ_MAX_REGION_SIZE}')
+                f"Cannot handle requested region size. Max allowed is {settings.LZ_MAX_REGION_SIZE}"
+            )
 
         return chrom, start, end
 
 
 # Collect a list of possible ordering/sorting fields for documenting the API below.
-order_options = sorted([
-    f"\n * `{field[0]}`"
-    for field in filters.ColocResultFilter.base_filters.get('ordering').field.choices
-    if field and (not field[0].startswith("-")) and (not field[0] == '')
-])
+order_options = sorted(
+    [
+        f"\n * `{field[0]}`"
+        for field in filters.ColocResultFilter.base_filters.get(
+            "ordering"
+        ).field.choices
+        if field and (not field[0].startswith("-")) and (not field[0] == "")
+    ]
+)
 
 
 def annotate_prioritized_signals(queryset, analysis_type_priority=None):
@@ -103,53 +112,50 @@ def annotate_prioritized_signals(queryset, analysis_type_priority=None):
             order1=Case(
                 *order1_whens,
                 default=Value(None, output_field=IntegerField()),
-                output_field=IntegerField()
+                output_field=IntegerField(),
             ),
             order2=Case(
                 *order2_whens,
                 default=Value(None, output_field=IntegerField()),
-                output_field=IntegerField()
-            )
+                output_field=IntegerField(),
+            ),
         )
 
         if len(order_list) == 0:
-            pass # nothing to do in this case
+            pass  # nothing to do in this case
         elif len(order_list) == 1:
-            queryset = queryset.filter(
-                Q(order1=0) | Q(order2=0)
-            )
+            queryset = queryset.filter(Q(order1=0) | Q(order2=0))
         elif len(order_list) == 2:
             queryset = queryset.filter(
                 ((Q(order1=0) & Q(order2=1)) | (Q(order1=1) & Q(order2=0)))
             )
         else:
             # Raise exception
-            raise drf_exceptions.ValidationError('analysis_type_priority should contain <=2 analysis types')
+            raise drf_exceptions.ValidationError(
+                "analysis_type_priority should contain <=2 analysis types"
+            )
 
         queryset = queryset.annotate(
             no_signal_swap=Case(
                 When(Q(order1__isnull=True) & Q(order2__isnull=True), then=Value(True)),
-
                 When(
                     Q(order1__isnull=False) & Q(order2__isnull=True),
                     then=Case(
                         When(order1=0, then=Value(True)),
                         When(order1=1, then=Value(False)),
                         default=Value(True),
-                        output_field=BooleanField()
-                    )
+                        output_field=BooleanField(),
+                    ),
                 ),
-
                 When(
                     Q(order1__isnull=True) & Q(order2__isnull=False),
                     then=Case(
                         When(order2=0, then=Value(False)),
                         When(order2=1, then=Value(True)),
                         default=Value(True),
-                        output_field=BooleanField()
-                    )
+                        output_field=BooleanField(),
+                    ),
                 ),
-
                 When(
                     Q(order1__isnull=False) & Q(order2__isnull=False),
                     then=Case(
@@ -158,12 +164,11 @@ def annotate_prioritized_signals(queryset, analysis_type_priority=None):
                         When(order2=0, then=Value(False)),
                         When(order2=1, then=Value(True)),
                         default=Value(True),
-                        output_field=BooleanField()
-                    )
+                        output_field=BooleanField(),
+                    ),
                 ),
-
                 default=Value(True),
-                output_field=BooleanField()
+                output_field=BooleanField(),
             )
         )
     else:
@@ -180,70 +185,69 @@ class ColocResultQueryParamsSerializer(drf_serializers.Serializer):
         required=False,
         allow_blank=True,
         help_text=(
-            'Comma-separated list of analysis types to prioritize when assigning signals. '
+            "Comma-separated list of analysis types to prioritize when assigning signals. "
             'Example: "eQTL,GWAS" prioritizes eQTL as signal1.'
-        )
+        ),
     )
 
     def validate_analysis_type_priority(self, value):
         if value:
             # Could add validation here, e.g., check valid analysis types
-            types = [t.strip() for t in value.split(',')]
+            types = [t.strip() for t in value.split(",")]
             for t in types:
                 if t not in dict(ANALYSIS_TYPES):
                     raise drf_serializers.ValidationError(f"Invalid analysis type: {t}")
         return value
 
+
 @extend_schema(
     parameters=[
         OpenApiParameter(
-            name='ordering',
+            name="ordering",
             description=(
-                'Use the following options for ordering/sorting results: '
-                + ''.join(order_options) + '\n\n'
-                + 'H4 is posterior probability of colocalization '
-                  '(i.e. the two signals share the same causal variant).\n'
+                "Use the following options for ordering/sorting results: "
+                + "".join(order_options)
+                + "\n\n"
+                + "H4 is posterior probability of colocalization "
+                "(i.e. the two signals share the same causal variant).\n"
             ),
             required=False,
-            type=str
+            type=str,
         ),
         OpenApiParameter(
-            name='uuid',
-            description='Filter results by coloc result UUID',
+            name="uuid",
+            description="Filter results by coloc result UUID",
             required=False,
-            type=str
+            type=str,
         ),
         OpenApiParameter(
-            name='analysis_type_priority',
+            name="analysis_type_priority",
             description=(
-                'Comma-separated list of analysis types to prioritize when assigning signals to signal1 and signal2. '
+                "Comma-separated list of analysis types to prioritize when assigning signals to signal1 and signal2. "
                 'For example: "eQTL,GWAS" will prioritize eQTL signals as signal1 and GWAS signals as signal2. '
-                'Analysis types earlier in the list have higher priority.'
+                "Analysis types earlier in the list have higher priority."
             ),
             required=False,
-            type=str
+            type=str,
         ),
         OpenApiParameter(
-            name='include_orphans',
-            description='Include colocalization results where one signal has no other colocalizations',
+            name="include_orphans",
+            description="Include colocalization results where one signal has no other colocalizations",
             required=False,
             type=bool,
         ),
     ],
     examples=[
         OpenApiExample(
-            'Example of filtering on H4 > some value and sorting',
-            summary='Example GET request with sorting',
-            description='This is an example of a GET request with sorting by coloc_h4.',
-            value={
-                'ordering': '-coloc_h4',
-                'coloc_h4__gte': 0.95
-            },
+            "Example of filtering on H4 > some value and sorting",
+            summary="Example GET request with sorting",
+            description="This is an example of a GET request with sorting by coloc_h4.",
+            value={"ordering": "-coloc_h4", "coloc_h4__gte": 0.95},
             request_only=True,
         ),
-    ]
+    ],
 )
-@method_decorator(cache_page(None), name='get')
+@method_decorator(cache_page(None), name="get")
 class ColocResultListView(generics.ListAPIView):
     """
     ## List colocalization results
@@ -254,37 +258,57 @@ class ColocResultListView(generics.ListAPIView):
 
     def get_queryset(self):
         select_fields = (
-            'signal1', 'signal2',
-            'signal1__analysis', 'signal2__analysis',
-            'signal1__analysis__trait', 'signal2__analysis__trait',
-            'signal1__lead_variant', 'signal2__lead_variant',
+            "signal1",
+            "signal2",
+            "signal1__analysis",
+            "signal2__analysis",
+            "signal1__analysis__trait",
+            "signal2__analysis__trait",
+            "signal1__lead_variant",
+            "signal2__lead_variant",
         )
 
         prefetch_fields = (
-            'signal1__analysis__trait__gene', 'signal2__analysis__trait__gene',
-            'signal1__analysis__trait__exon', 'signal2__analysis__trait__exon',
-            'signal1__analysis__trait__phenotype', 'signal2__analysis__trait__phenotype',
-            'signal1__analysis__trait__metabolite', 'signal2__analysis__trait__metabolite',
-            'signal1__analysis__trait__protein', 'signal2__analysis__trait__protein',
-            'signal1__analysis__trait__methyl_probe', 'signal2__analysis__trait__methyl_probe',
-            'signal1__analysis__study', 'signal2__analysis__study',
-            'signal1__analysis__publication', 'signal2__analysis__publication',
-            'signal1__analysis__dataset', 'signal2__analysis__dataset',
-            'signal1__analysis__ld', 'signal2__analysis__ld'
+            "signal1__analysis__trait__gene",
+            "signal2__analysis__trait__gene",
+            "signal1__analysis__trait__exon",
+            "signal2__analysis__trait__exon",
+            "signal1__analysis__trait__phenotype",
+            "signal2__analysis__trait__phenotype",
+            "signal1__analysis__trait__metabolite",
+            "signal2__analysis__trait__metabolite",
+            "signal1__analysis__trait__protein",
+            "signal2__analysis__trait__protein",
+            "signal1__analysis__trait__methyl_probe",
+            "signal2__analysis__trait__methyl_probe",
+            "signal1__analysis__study",
+            "signal2__analysis__study",
+            "signal1__analysis__publication",
+            "signal2__analysis__publication",
+            "signal1__analysis__dataset",
+            "signal2__analysis__dataset",
+            "signal1__analysis__ld",
+            "signal2__analysis__ld",
         )
 
-        query_serializer = ColocResultQueryParamsSerializer(data=self.request.query_params)
+        query_serializer = ColocResultQueryParamsSerializer(
+            data=self.request.query_params
+        )
         query_serializer.is_valid(raise_exception=True)
 
-        include_orphans = query_serializer.validated_data.get('include_orphans', False)
-        analysis_type_priority = query_serializer.validated_data.get('analysis_type_priority')
+        include_orphans = query_serializer.validated_data.get("include_orphans", False)
+        analysis_type_priority = query_serializer.validated_data.get(
+            "analysis_type_priority"
+        )
 
         if include_orphans:
-            queryset = (models.ColocResultWithOrphans.objects
-                            .select_related(*select_fields)
-                            .prefetch_related(*prefetch_fields))
+            queryset = models.ColocResultWithOrphans.objects.select_related(
+                *select_fields
+            ).prefetch_related(*prefetch_fields)
         else:
-            queryset = models.ColocResult.objects.select_related(*select_fields).prefetch_related(*prefetch_fields)
+            queryset = models.ColocResult.objects.select_related(
+                *select_fields
+            ).prefetch_related(*prefetch_fields)
 
         queryset = annotate_prioritized_signals(queryset, analysis_type_priority)
 
@@ -295,10 +319,12 @@ class ColocResultListView(generics.ListAPIView):
 
     @property
     def filterset_class(self):
-        query_serializer = ColocResultQueryParamsSerializer(data=self.request.query_params)
+        query_serializer = ColocResultQueryParamsSerializer(
+            data=self.request.query_params
+        )
         query_serializer.is_valid(raise_exception=True)
 
-        include_orphans = query_serializer.validated_data.get('include_orphans', False)
+        include_orphans = query_serializer.validated_data.get("include_orphans", False)
 
         if include_orphans:
             return filters.ColocResultWithOrphansFilter
@@ -306,32 +332,51 @@ class ColocResultListView(generics.ListAPIView):
         return filters.ColocResultFilter
 
 
-@method_decorator(cache_page(None), name='get')
+@method_decorator(cache_page(None), name="get")
 class ColocResultDetailView(generics.RetrieveAPIView):
-    lookup_field = 'uuid'
+    lookup_field = "uuid"
+
     def get_queryset(self):
         fields = (
-            'signal1', 'signal2',
-            'signal1__analysis', 'signal2__analysis',
-            'signal1__analysis__trait', 'signal2__analysis__trait',
-            'signal1__lead_variant', 'signal2__lead_variant',
-            'signal1__analysis__trait__gene', 'signal2__analysis__trait__gene',
-            'signal1__analysis__trait__exon', 'signal2__analysis__trait__exon',
-            'signal1__analysis__trait__phenotype', 'signal2__analysis__trait__phenotype',
-            'signal1__analysis__trait__metabolite', 'signal2__analysis__trait__metabolite',
-            'signal1__analysis__trait__protein', 'signal2__analysis__trait__protein',
-            'signal1__analysis__trait__methyl_probe', 'signal2__analysis__trait__methyl_probe',
-            'signal1__analysis__study', 'signal2__analysis__study',
-            'signal1__analysis__publication', 'signal2__analysis__publication',
-            'signal1__analysis__dataset', 'signal2__analysis__dataset',
-            'signal1__analysis__ld', 'signal2__analysis__ld'
+            "signal1",
+            "signal2",
+            "signal1__analysis",
+            "signal2__analysis",
+            "signal1__analysis__trait",
+            "signal2__analysis__trait",
+            "signal1__lead_variant",
+            "signal2__lead_variant",
+            "signal1__analysis__trait__gene",
+            "signal2__analysis__trait__gene",
+            "signal1__analysis__trait__exon",
+            "signal2__analysis__trait__exon",
+            "signal1__analysis__trait__phenotype",
+            "signal2__analysis__trait__phenotype",
+            "signal1__analysis__trait__metabolite",
+            "signal2__analysis__trait__metabolite",
+            "signal1__analysis__trait__protein",
+            "signal2__analysis__trait__protein",
+            "signal1__analysis__trait__methyl_probe",
+            "signal2__analysis__trait__methyl_probe",
+            "signal1__analysis__study",
+            "signal2__analysis__study",
+            "signal1__analysis__publication",
+            "signal2__analysis__publication",
+            "signal1__analysis__dataset",
+            "signal2__analysis__dataset",
+            "signal1__analysis__ld",
+            "signal2__analysis__ld",
         )
 
-        query_serializer = ColocResultQueryParamsSerializer(data=self.request.query_params)
+        query_serializer = ColocResultQueryParamsSerializer(
+            data=self.request.query_params
+        )
         query_serializer.is_valid(raise_exception=True)
 
-        include_orphans = query_serializer.validated_data.get('include_orphans', False)
-        analysis_type_priority = query_serializer.validated_data.get('analysis_type_priority')
+        include_orphans = query_serializer.validated_data.get("include_orphans", False)
+        analysis_type_priority = query_serializer.validated_data.get(
+            "analysis_type_priority"
+        )
 
         if include_orphans:
             queryset = models.ColocResultWithOrphans.objects.select_related(*fields)
@@ -345,12 +390,13 @@ class ColocResultDetailView(generics.RetrieveAPIView):
     serializer_class = serializers.ColocResultSerializer
 
 
-@method_decorator(cache_page(None), name='dispatch')
+@method_decorator(cache_page(None), name="dispatch")
 class ColocResultSlimListView(APIView):
     """
     API endpoint to return a fast and slimmed-down version of all colocalization results with pagination and caching.
     """
-    schema = None # hide from auto-generated docs # noqa
+
+    schema = None  # hide from auto-generated docs # noqa
 
     def get(self, request, *args, **kwargs):
         fields = """
@@ -381,53 +427,57 @@ class ColocResultSlimListView(APIView):
         objects = models.ColocResult.objects.values(*fields)
         result = []
         for obj in objects:
-            result.append({
-                "uuid": obj.get("uuid"),
-                "signal1": {
-                    "uuid": obj.get("signal1__uuid"),
-                    "analysis": {
-                        "uuid": obj.get("signal1__analysis__uuid"),
-                        "dataset": {
-                            "uuid": obj.get("signal1__analysis__dataset__uuid"),
+            result.append(
+                {
+                    "uuid": obj.get("uuid"),
+                    "signal1": {
+                        "uuid": obj.get("signal1__uuid"),
+                        "analysis": {
+                            "uuid": obj.get("signal1__analysis__uuid"),
+                            "dataset": {
+                                "uuid": obj.get("signal1__analysis__dataset__uuid"),
+                            },
+                            "analysis_type": obj.get(
+                                "signal1__analysis__analysis_type"
+                            ),
+                            "trait": {
+                                "uuid": obj.get("signal1__analysis__trait__uuid"),
+                            },
+                            "tissue": obj.get("signal1__analysis__tissue"),
+                            "cell_type": obj.get("signal1__analysis__cell_type"),
+                            "study": {
+                                "uuid": obj.get("signal1__analysis__study__uuid"),
+                            },
                         },
-                        "analysis_type": obj.get("signal1__analysis__analysis_type"),
-                        "trait": {
-                            "uuid": obj.get("signal1__analysis__trait__uuid"),
-                        },
-                        "tissue": obj.get("signal1__analysis__tissue"),
-                        "cell_type": obj.get("signal1__analysis__cell_type"),
-                        "study": {
-                            "uuid": obj.get("signal1__analysis__study__uuid"),
-                        }
+                        "lead_variant": {"vid": obj.get("signal1__lead_variant__vid")},
                     },
-                    "lead_variant": {
-                        "vid": obj.get("signal1__lead_variant__vid")
-                    }
-                },
-                "signal2": {
-                    "uuid": obj.get("signal2__uuid"),
-                    "analysis": {
-                        "uuid": obj.get("signal2__analysis__uuid"),
-                        "dataset": {
-                            "uuid": obj.get("signal2__analysis__dataset__uuid"),
+                    "signal2": {
+                        "uuid": obj.get("signal2__uuid"),
+                        "analysis": {
+                            "uuid": obj.get("signal2__analysis__uuid"),
+                            "dataset": {
+                                "uuid": obj.get("signal2__analysis__dataset__uuid"),
+                            },
+                            "analysis_type": obj.get(
+                                "signal2__analysis__analysis_type"
+                            ),
+                            "trait": {
+                                "uuid": obj.get("signal2__analysis__trait__uuid"),
+                            },
+                            "tissue": obj.get("signal2__analysis__tissue"),
+                            "cell_type": obj.get("signal2__analysis__cell_type"),
+                            "study": {
+                                "uuid": obj.get("signal2__analysis__study__uuid"),
+                            },
                         },
-                        "analysis_type": obj.get("signal2__analysis__analysis_type"),
-                        "trait": {
-                            "uuid": obj.get("signal2__analysis__trait__uuid"),
-                        },
-                        "tissue": obj.get("signal2__analysis__tissue"),
-                        "cell_type": obj.get("signal2__analysis__cell_type"),
-                        "study": {
-                            "uuid": obj.get("signal2__analysis__study__uuid"),
-                        }
+                        "lead_variant": {"vid": obj.get("signal2__lead_variant__vid")},
                     },
-                    "lead_variant": {
-                        "vid": obj.get("signal2__lead_variant__vid")
-                    }
-                },
-                "coloc_h4": float(format(obj.get("coloc_h4"), '.3g')),
-                "r2": float(format(obj.get("r2"), '.3g')) if obj.get("r2") else None,
-            })
+                    "coloc_h4": float(format(obj.get("coloc_h4"), ".3g")),
+                    "r2": float(format(obj.get("r2"), ".3g"))
+                    if obj.get("r2")
+                    else None,
+                }
+            )
 
         # Apply pagination
         paginator = LargeResultsSetPagination()
@@ -438,18 +488,18 @@ class ColocResultSlimListView(APIView):
 
 
 class LDStatsListView(generics.ListAPIView):
-    ordering = ('panel', 'population')
+    ordering = ("panel", "population")
     queryset = models.LDStats.objects.all()
     serializer_class = serializers.LDStatsSerializer
 
 
 class LDStatsDetailView(generics.RetrieveAPIView):
-    lookup_field = 'uuid'
+    lookup_field = "uuid"
     queryset = models.LDStats.objects.all()
     serializer_class = serializers.LDStatsSerializer
 
 
-@method_decorator(cache_page(None), name='get')
+@method_decorator(cache_page(None), name="get")
 class FinemappedSignalListView(generics.ListAPIView):
     """
     ## List fine-mapped signals
@@ -464,30 +514,49 @@ class FinemappedSignalListView(generics.ListAPIView):
     is possible for there to be more than one lead variant (with equivalent posterior probability of being causal), but
     we only use one as the sentinel variant for the signal.
     """
+
     queryset = models.FineMappedSignal.objects.select_related(
-        'analysis', 'analysis__trait', 'analysis__trait__gene', 'analysis__trait__exon', 'analysis__study',
-        'analysis__trait__metabolite', 'analysis__trait__protein', 'analysis__trait__methyl_probe',
-        'analysis__ld', 'analysis__dataset', 'analysis__publication', 'analysis__trait__phenotype',
-        'lead_variant')
+        "analysis",
+        "analysis__trait",
+        "analysis__trait__gene",
+        "analysis__trait__exon",
+        "analysis__study",
+        "analysis__trait__metabolite",
+        "analysis__trait__protein",
+        "analysis__trait__methyl_probe",
+        "analysis__ld",
+        "analysis__dataset",
+        "analysis__publication",
+        "analysis__trait__phenotype",
+        "lead_variant",
+    )
     serializer_class = serializers.FinemappedSignalSerializer
     filterset_class = filters.FinemappedSignalResultFilter
 
 
-@method_decorator(cache_page(None), name='get')
+@method_decorator(cache_page(None), name="get")
 class FinemappedSignalDetailView(generics.RetrieveAPIView):
-    lookup_field = 'uuid'
+    lookup_field = "uuid"
     queryset = models.FineMappedSignal.objects.select_related(
-        'analysis', 'analysis__trait', 'analysis__study', 'analysis__ld', 'analysis__dataset',
-        'analysis__trait__phenotype', 'analysis__publication', 'lead_variant')
+        "analysis",
+        "analysis__trait",
+        "analysis__study",
+        "analysis__ld",
+        "analysis__dataset",
+        "analysis__trait__phenotype",
+        "analysis__publication",
+        "lead_variant",
+    )
     serializer_class = serializers.FinemappedSignalSerializer
 
 
-@method_decorator(cache_page(None), name='dispatch')
+@method_decorator(cache_page(None), name="dispatch")
 class FinemappedSignalSlimListView(APIView):
     """
     API endpoint to return a fast and slimmed-down version of all signals with pagination.
     """
-    schema = None # hide from auto-generated docs # noqa
+
+    schema = None  # hide from auto-generated docs # noqa
 
     def get(self, request, *args, **kwargs):
         # Define fields
@@ -509,27 +578,27 @@ class FinemappedSignalSlimListView(APIView):
         # Transform objects
         result = []
         for obj in objects:
-            result.append({
-                "uuid": obj.get("uuid"),
-                "analysis": {
-                    "uuid": obj.get("analysis__uuid"),
-                    "dataset": {
-                        "uuid": obj.get("analysis__dataset__uuid"),
+            result.append(
+                {
+                    "uuid": obj.get("uuid"),
+                    "analysis": {
+                        "uuid": obj.get("analysis__uuid"),
+                        "dataset": {
+                            "uuid": obj.get("analysis__dataset__uuid"),
+                        },
+                        "analysis_type": obj.get("analysis__analysis_type"),
+                        "trait": {
+                            "uuid": obj.get("analysis__trait__uuid"),
+                        },
+                        "tissue": obj.get("analysis__tissue"),
+                        "cell_type": obj.get("analysis__cell_type"),
+                        "study": {
+                            "uuid": obj.get("analysis__study__uuid"),
+                        },
                     },
-                    "analysis_type": obj.get("analysis__analysis_type"),
-                    "trait": {
-                        "uuid": obj.get("analysis__trait__uuid"),
-                    },
-                    "tissue": obj.get("analysis__tissue"),
-                    "cell_type": obj.get("analysis__cell_type"),
-                    "study": {
-                        "uuid": obj.get("analysis__study__uuid"),
-                    }
-                },
-                "lead_variant": {
-                    "vid": obj.get("lead_variant__vid")
+                    "lead_variant": {"vid": obj.get("lead_variant__vid")},
                 }
-            })
+            )
 
         # Apply pagination
         paginator = LargeResultsSetPagination()
@@ -539,7 +608,7 @@ class FinemappedSignalSlimListView(APIView):
         return paginator.get_paginated_response(paginated_result)
 
 
-@method_decorator(cache_page(None), name='get')
+@method_decorator(cache_page(None), name="get")
 class DataSubmissionListView(generics.ListAPIView):
     """
     ## List of data submissions
@@ -549,19 +618,19 @@ class DataSubmissionListView(generics.ListAPIView):
     colocalization results.
     """
 
-    ordering = ('uuid',)
-    queryset = models.DataSubmission.objects.prefetch_related('publication')
+    ordering = ("uuid",)
+    queryset = models.DataSubmission.objects.prefetch_related("publication")
     serializer_class = serializers.DataSubmissionSerializer
 
 
-@method_decorator(cache_page(None), name='get')
+@method_decorator(cache_page(None), name="get")
 class DataSubmissionDetailView(generics.RetrieveAPIView):
-    lookup_field = 'uuid'
-    queryset = models.DataSubmission.objects.prefetch_related('publication')
+    lookup_field = "uuid"
+    queryset = models.DataSubmission.objects.prefetch_related("publication")
     serializer_class = serializers.DataSubmissionDetailSerializer
 
 
-@method_decorator(cache_page(None), name='get')
+@method_decorator(cache_page(None), name="get")
 class DatasetListView(generics.ListAPIView):
     """
     ## List of datasets
@@ -570,24 +639,23 @@ class DatasetListView(generics.ListAPIView):
     GWAS, or thousands of traits, in the case of QTLs.
     """
 
-    ordering = ('uuid',)
-    queryset = (models.Dataset.objects
-                .select_related('publication', 'submitter')
-                .prefetch_related('analysts', 'principal_investigators'))
+    ordering = ("uuid",)
+    queryset = models.Dataset.objects.select_related(
+        "publication", "submitter"
+    ).prefetch_related("analysts", "principal_investigators")
     serializer_class = serializers.DatasetSerializer
 
 
-@method_decorator(cache_page(None), name='get')
+@method_decorator(cache_page(None), name="get")
 class DatasetDetailView(generics.RetrieveAPIView):
-    lookup_field = 'uuid'
-    queryset = (models.Dataset.objects
-                .select_related('publication', 'submitter')
-                .prefetch_related('analysts', 'principal_investigators', 'marginal_analyses')
-                )
+    lookup_field = "uuid"
+    queryset = models.Dataset.objects.select_related(
+        "publication", "submitter"
+    ).prefetch_related("analysts", "principal_investigators", "marginal_analyses")
     serializer_class = serializers.DatasetDetailSerializer
 
 
-@method_decorator(cache_page(None), name='get')
+@method_decorator(cache_page(None), name="get")
 class MarginalAnalysisListView(generics.ListAPIView):
     """
     ## List marginal analyses
@@ -605,15 +673,25 @@ class MarginalAnalysisListView(generics.ListAPIView):
     """
 
     queryset = models.MarginalAnalysis.objects.select_related(
-        'dataset', 'trait', 'trait__gene', 'trait__exon', 'trait__phenotype', 'trait__protein', 'trait__methyl_probe',
-        'trait__metabolite', 'study', 'publication', 'ld')
+        "dataset",
+        "trait",
+        "trait__gene",
+        "trait__exon",
+        "trait__phenotype",
+        "trait__protein",
+        "trait__methyl_probe",
+        "trait__metabolite",
+        "study",
+        "publication",
+        "ld",
+    )
     serializer_class = serializers.MarginalAnalysisSerializer
 
 
-@method_decorator(cache_page(None), name='get')
+@method_decorator(cache_page(None), name="get")
 class MarginalAnalysisDetailView(generics.RetrieveAPIView):
-    lookup_field = 'uuid'
-    queryset = models.MarginalAnalysis.objects.select_related('data_submission')
+    lookup_field = "uuid"
+    queryset = models.MarginalAnalysis.objects.select_related("data_submission")
     serializer_class = serializers.MarginalAnalysisSerializer
 
 
@@ -627,13 +705,17 @@ class TraitListView(generics.ListAPIView):
     A phenotype may be any non-molecular measured trait, such as height, BMI, T2D affection status, etc.
     """
 
-    queryset = models.Trait.objects.select_related('gene', 'exon', 'phenotype', 'metabolite', 'protein', 'methyl_probe')
+    queryset = models.Trait.objects.select_related(
+        "gene", "exon", "phenotype", "metabolite", "protein", "methyl_probe"
+    )
     serializer_class = serializers.TraitSerializer
 
 
 class TraitDetailView(generics.RetrieveAPIView):
-    lookup_field = 'uuid'
-    queryset = models.Trait.objects.select_related('gene', 'exon', 'phenotype', 'metabolite', 'protein', 'methyl_probe')
+    lookup_field = "uuid"
+    queryset = models.Trait.objects.select_related(
+        "gene", "exon", "phenotype", "metabolite", "protein", "methyl_probe"
+    )
     serializer_class = serializers.TraitSerializer
 
 
@@ -645,24 +727,25 @@ class StudyListView(generics.ListAPIView):
     may be a consortium, such as "DIAGRAM", or a single study group, such as "UK Biobank" or "FUSION".
     """
 
-    ordering = ('uuid',)
+    ordering = ("uuid",)
     queryset = models.Study.objects.all()
     serializer_class = serializers.StudySerializer
 
 
 class StudyDetailView(generics.RetrieveAPIView):
-    lookup_field = 'uuid'
+    lookup_field = "uuid"
     queryset = models.Study.objects.all()
     serializer_class = serializers.StudySerializer
 
 
 # Tabix-based "region view" endpoints
 # -------------------------------------
-@method_decorator(cache_page(None), name='get')
+@method_decorator(cache_page(None), name="get")
 class FinemappedSignalSummRegionView(TabixRegionView):
     """Provide all summary stats associated with a particular signal (marginal + conditional) in a given region"""
-    lookup_field = 'uuid'
-    queryset = models.FineMappedSignal.objects.select_related('analysis')
+
+    lookup_field = "uuid"
+    queryset = models.FineMappedSignal.objects.select_related("analysis")
     serializer_class = serializers.MergedSignalRegionSerializer
 
     def get_object(self):
@@ -674,16 +757,18 @@ class FinemappedSignalSummRegionView(TabixRegionView):
         cond_fn = signal.cond_analysis
 
         if not os.path.isfile(marg_fn):
-            raise drf_exceptions.NotFound(f"Could not find marginal analysis file for uuid {signal.uuid}")
+            raise drf_exceptions.NotFound(
+                f"Could not find marginal analysis file for uuid {signal.uuid}"
+            )
 
         if not os.path.isfile(cond_fn):
-            raise drf_exceptions.NotFound(f"Could not find conditional analysis file for uuid {signal.uuid}")
+            raise drf_exceptions.NotFound(
+                f"Could not find conditional analysis file for uuid {signal.uuid}"
+            )
 
-        marg_reader = guess_gwas_standard(marg_fn)\
-            .add_filter('neg_log_pvalue')
+        marg_reader = guess_gwas_standard(marg_fn).add_filter("neg_log_pvalue")
 
-        cond_reader = guess_gwas_standard(cond_fn) \
-            .add_filter('neg_log_pvalue')
+        cond_reader = guess_gwas_standard(cond_fn).add_filter("neg_log_pvalue")
 
         try:
             marg_records = marg_reader.fetch(chrom, start, end)
@@ -707,9 +792,9 @@ class FinemappedSignalSummRegionView(TabixRegionView):
         return list(joined)
 
 
-@method_decorator(cache_page(None), name='get')
+@method_decorator(cache_page(None), name="get")
 class LDPairsRegionView(TabixRegionView):
-    lookup_field = 'uuid'
+    lookup_field = "uuid"
     queryset = models.LDStats.objects.all()
     serializer_class = serializers.LDRegionSerializer
 
@@ -721,13 +806,17 @@ class LDPairsRegionView(TabixRegionView):
         chrom, start, end = super(LDPairsRegionView, self)._query_params()
         params = self.request.query_params
 
-        variant = params.get('variant', None)
+        variant = params.get("variant", None)
         if not variant:
-            raise drf_exceptions.ParseError('Must specify reference variant as ""variant=chr:pos_ref/alt"')
+            raise drf_exceptions.ParseError(
+                'Must specify reference variant as ""variant=chr:pos_ref/alt"'
+            )
         return chrom, start, end, variant
 
     def get_object(self):
-        panel = super(LDPairsRegionView, self).get_object()  # External-facing GWAS id given as slug in url
+        panel = super(
+            LDPairsRegionView, self
+        ).get_object()  # External-facing GWAS id given as slug in url
         chrom, start, end, variant = self._query_params_variant()
         vchrom, vpos, vref, valt, *rest = parse_variant(variant)
         vpos = int(vpos)
@@ -740,11 +829,13 @@ class LDPairsRegionView(TabixRegionView):
             raise drf_exceptions.NotFound
 
         # LD files might specify more than one reference variant.
-        reader = TabixReader(filename, parser=parsers.parse_plink) \
-            .add_filter('snp_a', variant) \
-            .add_filter('chr_b', chrom) \
-            # this does not work even though the library doc says it should # noqa
-            # .add_filter('pos_b', lambda x: start <= x <= end) # noqa
+        reader = (
+            TabixReader(filename, parser=parsers.parse_plink)
+            .add_filter("snp_a", variant)
+            .add_filter("chr_b", chrom)
+        )
+        # this does not work even though the library doc says it should # noqa
+        # .add_filter('pos_b', lambda x: start <= x <= end) # noqa
 
         try:
             results = []

@@ -33,7 +33,7 @@ CACHES = {
             "PARSER_CLASS": "redis.connection.HiredisParser",
             "IGNORE_EXCEPTIONS": True,
         },
-        "TIMEOUT": None
+        "TIMEOUT": None,
     }
 }
 

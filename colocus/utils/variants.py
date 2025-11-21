@@ -1,6 +1,8 @@
 import re
 
-REGEX_MARKER = re.compile(r'^(?:chr)?([a-zA-Z0-9]+?)[_:-](\d+)[_:|-]?([A-Za-z]+)?[/_:|-]?([^_]+)?_?(.*)?')
+REGEX_MARKER = re.compile(
+    r"^(?:chr)?([a-zA-Z0-9]+?)[_:-](\d+)[_:|-]?([A-Za-z]+)?[/_:|-]?([^_]+)?_?(.*)?"
+)
 
 
 def parse_variant(v):

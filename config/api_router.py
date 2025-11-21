@@ -18,6 +18,6 @@ from colocus.api import urls as api_urls
 
 
 urlpatterns = [
-    path('v1/', include((api_urls.urls_v1, 'api'), namespace='v1')),
+    path("v1/", include((api_urls.urls_v1, "api"), namespace="v1")),
     # path('v2/', include((api_urls.urls_v2, 'api'), namespace='v2')),
 ]

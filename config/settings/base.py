@@ -1,6 +1,7 @@
 """
 Base settings to build other settings files upon.
 """
+
 from pathlib import Path
 
 import environ
@@ -60,7 +61,7 @@ if env("POSTGRES_HOST", default=None):
             "PORT": env("POSTGRES_PORT"),
             "ATOMIC_REQUESTS": True,
             "CONN_MAX_AGE": env.int("CONN_MAX_AGE", default=60),
-        }
+        },
     }
 else:
     DATABASES = {
@@ -76,7 +77,7 @@ else:
         },
     }
 
-DATABASE_ROUTERS = ['config.db_router.CoreRouter']
+DATABASE_ROUTERS = ["config.db_router.CoreRouter"]
 
 # https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-DEFAULT_AUTO_FIELD
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -111,11 +112,7 @@ THIRD_PARTY_APPS = [
     "drf_spectacular",
 ]
 
-LOCAL_APPS = [
-    "colocus.users",
-    "colocus.api",
-    "colocus.core"
-]
+LOCAL_APPS = ["colocus.users", "colocus.api", "colocus.core"]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -149,7 +146,9 @@ PASSWORD_HASHERS = [
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -259,10 +258,7 @@ EMAIL_TIMEOUT = 5
 # Django Admin URL.
 ADMIN_URL = "admin/"
 # https://docs.djangoproject.com/en/dev/ref/settings/#admins
-ADMINS = [
-    ("Ryan Welch", "welchr@umich.edu"),
-    ("Jeff Holtzman", "jkholtz@umich.edu")
-]
+ADMINS = [("Ryan Welch", "welchr@umich.edu"), ("Jeff Holtzman", "jkholtz@umich.edu")]
 # https://docs.djangoproject.com/en/dev/ref/settings/#managers
 MANAGERS = ADMINS
 
@@ -294,13 +290,13 @@ LOGGING = {
 # -------------------------------------------------------------------------------
 # django-rest-framework - https://www.django-rest-framework.org/api-guide/settings/
 REST_FRAMEWORK = {
-    'DEFAULT_FILTER_BACKENDS': [
-        'django_filters.rest_framework.DjangoFilterBackend',
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     # Since the result set is stable, a basic pagination class is sufficient
-    'DEFAULT_PAGINATION_CLASS': 'colocus.utils.paginators.ResizablePageNumberPagination',
-    'PAGE_SIZE': 50
+    "DEFAULT_PAGINATION_CLASS": "colocus.utils.paginators.ResizablePageNumberPagination",
+    "PAGE_SIZE": 50,
 }
 
 # This site is a public API / dataset browser. Allowing all origins is ok and simplifies things.

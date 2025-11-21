@@ -3,6 +3,7 @@ Create json files which can be used to render Manhattan plots.
 
 Extracted from PheWeb: 2cfaa69, with modifications to use logp based on locuszoom-hosted 6ba931b
 """
+
 # NOTE: `qval` means `-log10(pvalue)`
 import argparse
 import collections
@@ -27,6 +28,7 @@ class MaxPriorityQueue:
     priorities must be comparable.
     `item` can be anything.
     """
+
     # TODO: check if this is slower than blist-based MaxPriorityQueue, for ~500 items
     # Note: `ComparesFalse()` is used to prevent `heapq` from comparing `item`s to eachother.
     #       Even if two priorities are equal, `ComparesFalse() <= ComparesFalse()` will be `False`, so `item`s won't
@@ -48,8 +50,12 @@ class MaxPriorityQueue:
         if len(self._q) < size:
             self.add(item, priority)
         else:
-            if priority > self._q[0][0]:  # if new priority < the biggest priority in the heap, switch them
-                _, _, item = heapq.heapreplace(self._q, (priority, MaxPriorityQueue.ComparesFalse(), item))
+            if (
+                priority > self._q[0][0]
+            ):  # if new priority < the biggest priority in the heap, switch them
+                _, _, item = heapq.heapreplace(
+                    self._q, (priority, MaxPriorityQueue.ComparesFalse(), item)
+                )
             popped_callback(item)
 
     def pop(self):
@@ -66,12 +72,16 @@ class MaxPriorityQueue:
 
 class Binner:
     """Manhattan plot binner class"""
-    def __init__(self, *,
-                 peak_neg_log_pval_threshold: float = 6.0,
-                 peak_sprawl_dist: int = int(200e3),
-                 peak_max_count: int = 500,
-                 num_unbinned: int = 500,
-                 bin_length: int = int(3e6)):
+
+    def __init__(
+        self,
+        *,
+        peak_neg_log_pval_threshold: float = 6.0,
+        peak_sprawl_dist: int = int(200e3),
+        peak_max_count: int = 500,
+        num_unbinned: int = 500,
+        bin_length: int = int(3e6),
+    ):
         # Instance configuration
         self._peak_neg_log_pval_threshold = peak_neg_log_pval_threshold
         self._peak_sprawl_dist = peak_sprawl_dist
@@ -84,8 +94,12 @@ class Binner:
         self._peak_last_chrpos = None
         self._peak_pq = MaxPriorityQueue()
         self._unbinned_variant_pq = MaxPriorityQueue()
-        self._bins = collections.OrderedDict()  # like {<chrom>: {<pos // bin_length>: [{chrom, startpos, qvals}]}}
-        self._qval_bin_size = 0.05  # this makes 200 bins for the minimum-allowed y-axis covering 0-10
+        self._bins = (
+            collections.OrderedDict()
+        )  # like {<chrom>: {<pos // bin_length>: [{chrom, startpos, qvals}]}}
+        self._qval_bin_size = (
+            0.05  # this makes 200 bins for the minimum-allowed y-axis covering 0-10
+        )
 
     def process_variant(self, variant: BasicVariant):
         """
@@ -108,28 +122,38 @@ class Binner:
         #   This is low hanging fruit for optimization in the future (eg using a mutable, non-slots container
         #   in the parser by default)
         variant_dict = variant.to_dict()
-        variant_dict['pvalue'] = variant.pvalue  # derived property
+        variant_dict["pvalue"] = variant.pvalue  # derived property
 
-        if not math.isinf(variant_dict['pvalue']):
+        if not math.isinf(variant_dict["pvalue"]):
             # Determine bin size based on variants with finite values (eg not pvalue underflow)
-            qval = variant_dict['neg_log_pvalue']
+            qval = variant_dict["neg_log_pvalue"]
             if qval > 40:
                 # this makes 200 bins for a y-axis extending past 40 (but folded so that the lower half is 0-20)s
                 self._qval_bin_size = 0.2
             elif qval > 20:
-                self._qval_bin_size = 0.1  # this makes 200-400 bins for a y-axis extending up to 20-40.
+                self._qval_bin_size = (
+                    0.1  # this makes 200-400 bins for a y-axis extending up to 20-40.
+                )
 
-        if variant_dict['neg_log_pvalue'] > self._peak_neg_log_pval_threshold:  # part of a peak
+        if (
+            variant_dict["neg_log_pvalue"] > self._peak_neg_log_pval_threshold
+        ):  # part of a peak
             if self._peak_best_variant is None:  # open a new peak
                 self._peak_best_variant = variant_dict
-                self._peak_last_chrpos = (variant_dict['chrom'], variant_dict['pos'])
-            elif self._peak_last_chrpos[0] == variant_dict['chrom'] \
-                    and self._peak_last_chrpos[1] + self._peak_sprawl_dist > variant_dict['pos']:
+                self._peak_last_chrpos = (variant_dict["chrom"], variant_dict["pos"])
+            elif (
+                self._peak_last_chrpos[0] == variant_dict["chrom"]
+                and self._peak_last_chrpos[1] + self._peak_sprawl_dist
+                > variant_dict["pos"]
+            ):
                 # If this new position is near the previous top hit, extend current peak. I *think* the spec calls for
                 #   only a few top hits in a given window (not everything in a wide peak), so all the lower ones in
                 #   that peak become binned
-                self._peak_last_chrpos = (variant_dict['chrom'], variant_dict['pos'])
-                if variant_dict['neg_log_pvalue'] <= self._peak_best_variant['neg_log_pvalue']:
+                self._peak_last_chrpos = (variant_dict["chrom"], variant_dict["pos"])
+                if (
+                    variant_dict["neg_log_pvalue"]
+                    <= self._peak_best_variant["neg_log_pvalue"]
+                ):
                     self._maybe_bin_variant(variant_dict)
                 else:
                     self._maybe_bin_variant(self._peak_best_variant)
@@ -137,33 +161,38 @@ class Binner:
             else:  # close old peak and open new peak
                 self._maybe_peak_variant(self._peak_best_variant)
                 self._peak_best_variant = variant_dict
-                self._peak_last_chrpos = (variant_dict['chrom'], variant_dict['pos'])
+                self._peak_last_chrpos = (variant_dict["chrom"], variant_dict["pos"])
         else:
             self._maybe_bin_variant(variant_dict)
 
     def _maybe_peak_variant(self, variant: dict):
-
-        self._peak_pq.add_and_keep_size(variant, variant['neg_log_pvalue'],
-                                        size=self._peak_max_count,
-                                        popped_callback=self._maybe_bin_variant)
+        self._peak_pq.add_and_keep_size(
+            variant,
+            variant["neg_log_pvalue"],
+            size=self._peak_max_count,
+            popped_callback=self._maybe_bin_variant,
+        )
 
     def _maybe_bin_variant(self, variant):
-        self._unbinned_variant_pq.add_and_keep_size(variant, variant['neg_log_pvalue'],
-                                                    size=self._num_unbinned,
-                                                    popped_callback=self._bin_variant)
+        self._unbinned_variant_pq.add_and_keep_size(
+            variant,
+            variant["neg_log_pvalue"],
+            size=self._num_unbinned,
+            popped_callback=self._bin_variant,
+        )
 
     def _bin_variant(self, variant):
-        chrom_idx = variant['chrom']  # This part differs from PheWeb
+        chrom_idx = variant["chrom"]  # This part differs from PheWeb
         if chrom_idx not in self._bins:
             self._bins[chrom_idx] = {}
-        pos_bin_id = variant['pos'] // self._bin_length
+        pos_bin_id = variant["pos"] // self._bin_length
         if pos_bin_id not in self._bins[chrom_idx]:
             self._bins[chrom_idx][pos_bin_id] = {
-                'chrom': variant['chrom'],
-                'startpos': pos_bin_id * self._bin_length,
-                'qvals': set()
+                "chrom": variant["chrom"],
+                "startpos": pos_bin_id * self._bin_length,
+                "qvals": set(),
             }
-        qval = self._rounded(variant['neg_log_pvalue'])
+        qval = self._rounded(variant["neg_log_pvalue"])
         self._bins[chrom_idx][pos_bin_id]["qvals"].add(qval)
 
     def get_result(self):
@@ -174,34 +203,40 @@ class Binner:
 
         peaks = list(self._peak_pq.pop_all())
         for peak in peaks:
-            peak['peak'] = True
+            peak["peak"] = True
 
         unbinned_variants = list(self._unbinned_variant_pq.pop_all())
-        unbinned_variants = sorted(unbinned_variants + peaks,
-                                   key=(lambda variant: variant['neg_log_pvalue']),
-                                   reverse=True)
+        unbinned_variants = sorted(
+            unbinned_variants + peaks,
+            key=(lambda variant: variant["neg_log_pvalue"]),
+            reverse=True,
+        )
 
         # unroll dict-of-dict-of-array `bins` into array `variant_bins`
         variant_bins = []
         for chrom_idx in sorted(self._bins.keys()):
             for pos_bin_id in sorted(self._bins[chrom_idx].keys()):
                 b = self._bins[chrom_idx][pos_bin_id]
-                assert len(b['qvals']) > 0
-                b['qvals'], b['qval_extents'] = self._get_qvals_and_qval_extents(b['qvals'])
-                b['pos'] = int(b['startpos'] + self._bin_length / 2)
-                del b['startpos']
+                assert len(b["qvals"]) > 0
+                b["qvals"], b["qval_extents"] = self._get_qvals_and_qval_extents(
+                    b["qvals"]
+                )
+                b["pos"] = int(b["startpos"] + self._bin_length / 2)
+                del b["startpos"]
                 variant_bins.append(b)
 
         return {
-            'variant_bins': variant_bins,
-            'unbinned_variants': unbinned_variants,
+            "variant_bins": variant_bins,
+            "unbinned_variants": unbinned_variants,
         }
 
     def _rounded(self, qval: float):
         # round down to the nearest multiple of `self._qval_bin_size`, then add 1/2 of `self._qval_bin_size` to be
         # in the middle of the bin
         x = qval // self._qval_bin_size * self._qval_bin_size + self._qval_bin_size / 2
-        return round(x, 3)  # trim `0.35000000000000003` to `0.35` for convenience and network request size
+        return round(
+            x, 3
+        )  # trim `0.35000000000000003` to `0.35` for convenience and network request size
 
     def _get_qvals_and_qval_extents(self, qvals: list):
         """The PheWeb manhattan plot UI code draws three kinds of points: significant hits (clickable),
@@ -212,9 +247,14 @@ class Binner:
         """
         # Binning is something we do for UI; don't create "aggregate chunks" for infinity values (or any NaN output
         #   by rounding in a previous step)
-        qvals = sorted(self._rounded(qval) for qval in qvals
-                       if not math.isinf(qval) and not math.isnan(qval))
-        extents = [[qvals[0], qvals[0]]]  # Initialize the extents as a single point so that we can begin grouping
+        qvals = sorted(
+            self._rounded(qval)
+            for qval in qvals
+            if not math.isinf(qval) and not math.isnan(qval)
+        )
+        extents = [
+            [qvals[0], qvals[0]]
+        ]  # Initialize the extents as a single point so that we can begin grouping
         for q in qvals:
             # If this item falls near an existing bin, add to bin; else create a new bin
             if q <= (extents[-1][1] + self._qval_bin_size * 1.1):
@@ -222,7 +262,7 @@ class Binner:
             else:
                 extents.append([q, q])
         rv_qvals, rv_qval_extents = [], []
-        for (start, end) in extents:
+        for start, end in extents:
             # Separate the single points from the regions
             if start == end:
                 rv_qvals.append(start)
@@ -234,8 +274,7 @@ class Binner:
 def generate_manhattan(build: str, in_filename: str, out_filename: str) -> bool:
     """Generate manhattan plot data for the processed file"""
     # Strong assumption: there are no invalid lines when a file reaches this stage; this operates on normalized data
-    reader = sniffers.guess_gwas_standard(in_filename)\
-        .add_filter('neg_log_pvalue')
+    reader = sniffers.guess_gwas_standard(in_filename).add_filter("neg_log_pvalue")
 
     binner = Binner()
     for variant in reader:
@@ -244,54 +283,60 @@ def generate_manhattan(build: str, in_filename: str, out_filename: str) -> bool:
     manhattan_data = binner.get_result()
 
     gl = get_genelocator(build, coding_only=False)
-    for v_dict in manhattan_data['unbinned_variants']:
+    for v_dict in manhattan_data["unbinned_variants"]:
         # Annotate nearest gene(s) for all "top hits", and also clean up values so JS can handle them
         # It's possible to have more than one nearest gene for a given position (if variant is inside, not just near)
         try:
             nearest_genes = [
-                {
-                    'symbol': res['symbol'],
-                    'ensg': res['ensg']
-                }
+                {"symbol": res["symbol"], "ensg": res["ensg"]}
                 for res in gl.at(v_dict["chrom"], v_dict["pos"])
             ]
         except (gene_exc.BadCoordinateException, gene_exc.NoResultsFoundException):
             nearest_genes = []
 
-        v_dict['nearest_genes'] = nearest_genes
+        v_dict["nearest_genes"] = nearest_genes
 
-        if math.isinf(v_dict['neg_log_pvalue']):
+        if math.isinf(v_dict["neg_log_pvalue"]):
             # JSON has no concept of infinity; use a string that browsers can type-coerce into the correct number
-            v_dict['neg_log_pvalue'] = 'Infinity'
+            v_dict["neg_log_pvalue"] = "Infinity"
 
-    with open(out_filename, 'w') as f:
+    with open(out_filename, "w") as f:
         json.dump(manhattan_data, f)
     return True
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Summarize a GWAS file and produce a JSON output file suitable for "
-                                                 "drawing manhattan plots")
-    parser.add_argument('input', help='A gwas file (assumed to be bgzipped and in the harmonized format used by '
-                                      'my.locuszoom.org)')
-    parser.add_argument(
-        '--build',
-        required=True,
-        choices=('GRCh37', 'GRCh38'),
-        help='The genome build for this dataset'
+    parser = argparse.ArgumentParser(
+        description="Summarize a GWAS file and produce a JSON output file suitable for "
+        "drawing manhattan plots"
     )
-    parser.add_argument('--output', dest='output', help='The output filename for the json file, defaults to '
-                                                        '`<input_folder>/manhattan.json`')
+    parser.add_argument(
+        "input",
+        help="A gwas file (assumed to be bgzipped and in the harmonized format used by "
+        "my.locuszoom.org)",
+    )
+    parser.add_argument(
+        "--build",
+        required=True,
+        choices=("GRCh37", "GRCh38"),
+        help="The genome build for this dataset",
+    )
+    parser.add_argument(
+        "--output",
+        dest="output",
+        help="The output filename for the json file, defaults to "
+        "`<input_folder>/manhattan.json`",
+    )
     return parser.parse_args()
 
 
 def main(genome_build, input_fn, output_fn):
     if output_fn is None:
-        output_fn = os.path.join(os.path.dirname(input_fn), 'manhattan.json')
+        output_fn = os.path.join(os.path.dirname(input_fn), "manhattan.json")
 
     generate_manhattan(genome_build, input_fn, output_fn)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_args()
     main(args.build, args.input, args.output)

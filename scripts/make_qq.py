@@ -29,7 +29,7 @@ MAF_SIGFIGS = 2
 logger = logging.getLogger(__name__)
 
 
-Variant = collections.namedtuple('Variant', ['qval', 'maf'])
+Variant = collections.namedtuple("Variant", ["qval", "maf"])
 
 
 def augment_variants(variants: ty.Iterator[BasicVariant], num_samples=None):
@@ -78,14 +78,18 @@ def make_qq_stratified(variants):
     def make_strata(idx):
         # Note: slice_indices[1] is the same as slice_indices[0] of the next slice.
         # But that's not a problem, because range() ignores the last index.
-        slice_indices = (len(variants) * idx // NUM_MAF_RANGES,
-                         len(variants) * (idx + 1) // NUM_MAF_RANGES)
+        slice_indices = (
+            len(variants) * idx // NUM_MAF_RANGES,
+            len(variants) * (idx + 1) // NUM_MAF_RANGES,
+        )
         qvals = sorted((variants[i].qval for i in range(*slice_indices)), reverse=True)
         return {
-            'maf_range': (variants[slice_indices[0]].maf,
-                          variants[slice_indices[1] - 1].maf),
-            'count': len(qvals),
-            'qq': compute_qq(qvals),
+            "maf_range": (
+                variants[slice_indices[0]].maf,
+                variants[slice_indices[1] - 1].maf,
+            ),
+            "count": len(qvals),
+            "qq": compute_qq(qvals),
         }
 
     return [make_strata(i) for i in range(NUM_MAF_RANGES)]
@@ -95,15 +99,15 @@ def make_qq_unstratified(variants, include_qq):
     qvals = sorted((v.qval for v in variants), reverse=True)
     rv = {}
     if include_qq:
-        rv['qq'] = compute_qq(qvals)
-    rv['count'] = len(qvals)
-    rv['gc_lambda'] = {}
-    for perc in ['0.5', '0.1', '0.01', '0.001']:
+        rv["qq"] = compute_qq(qvals)
+    rv["count"] = len(qvals)
+    rv["gc_lambda"] = {}
+    for perc in ["0.5", "0.1", "0.01", "0.001"]:
         gc = gc_value_from_list(qvals, float(perc))
         if math.isnan(gc) or abs(gc) == math.inf:
-            logger.warning('WARNING: got gc_value {!r}'.format(gc))
+            logger.warning("WARNING: got gc_value {!r}".format(gc))
         else:
-            rv['gc_lambda'][perc] = round_sig(gc, 5)
+            rv["gc_lambda"][perc] = round_sig(gc, 5)
     return rv
 
 
@@ -115,7 +119,9 @@ def compute_qq(qvals):
         return []
 
     if qvals[0] == 0:
-        logger.warning('WARNING: All pvalues are 1! How is that supposed to make a QQ plot?')
+        logger.warning(
+            "WARNING: All pvalues are 1! How is that supposed to make a QQ plot?"
+        )
         return []
 
     max_exp_qval = -math.log10(0.5 / len(qvals))
@@ -125,9 +131,9 @@ def compute_qq(qvals):
     # this calculation must avoid dropping points that would be shown by the calculation done in javascript.
     # `max_obs_qval` means the largest observed -log10(pvalue) that will be shown in the plot. It's usually NOT the
     # largest in the data.
-    max_obs_qval = boltons.mathutils.clamp(qvals[0],
-                                           lower=max_exp_qval,
-                                           upper=math.ceil(2 * max_exp_qval))
+    max_obs_qval = boltons.mathutils.clamp(
+        qvals[0], lower=max_exp_qval, upper=math.ceil(2 * max_exp_qval)
+    )
     if qvals[0] > max_obs_qval:
         for qval in qvals:
             if qval <= max_obs_qval:
@@ -150,13 +156,12 @@ def compute_qq(qvals):
     for exp_bin, obs_bin in occupied_bins:
         assert 0 <= exp_bin <= NUM_BINS, exp_bin
         assert 0 <= obs_bin <= NUM_BINS, obs_bin
-        bins.append((
-            exp_bin / NUM_BINS * max_exp_qval,
-            obs_bin / NUM_BINS * max_obs_qval
-        ))
+        bins.append(
+            (exp_bin / NUM_BINS * max_exp_qval, obs_bin / NUM_BINS * max_obs_qval)
+        )
     return {
-        'bins': sorted(bins),
-        'max_exp_qval': max_exp_qval,
+        "bins": sorted(bins),
+        "max_exp_qval": max_exp_qval,
     }
 
 
@@ -164,7 +169,7 @@ def gc_value_from_list(qvals, quantile=0.5):
     # qvals must be in decreasing order.
     assert all(a >= b for a, b in boltons.iterutils.pairwise(qvals))
     qval = qvals[int(len(qvals) * quantile)]
-    pval = 10 ** -qval
+    pval = 10**-qval
     return gc_value(pval, quantile)
 
 
@@ -187,16 +192,16 @@ def get_confidence_intervals(num_variants, confidence=0.95):
     # any `1 <= variant_count <= num_variants-1` could be used, but scale in powers of 2 to make the CI visually smooth
     variant_counts = []
     for x in range(0, int(math.ceil(math.log2(num_variants)))):
-        variant_counts.append(2 ** x)
+        variant_counts.append(2**x)
     variant_counts.append(num_variants - 1)
     variant_counts.reverse()
 
     for variant_count in variant_counts:
         rv = scipy.stats.beta(variant_count, num_variants - variant_count)
         yield {
-            'x': round(-math.log10((variant_count - 0.5) / num_variants), 2),
-            'y_min': round(-math.log10(rv.ppf(1 - one_sided_doubt)), 2),
-            'y_max': round(-math.log10(rv.ppf(one_sided_doubt)), 2),
+            "x": round(-math.log10((variant_count - 0.5) / num_variants), 2),
+            "y_min": round(-math.log10(rv.ppf(1 - one_sided_doubt)), 2),
+            "y_max": round(-math.log10(rv.ppf(one_sided_doubt)), 2),
         }
 
 
@@ -204,8 +209,7 @@ def generate_qq(in_filename: str, out_filename) -> bool:
     """Largely borrowed from PheWeb code (load.qq.make_json_file) and locuszoom-hosted (util.ingest.processors)"""
     # TODO: This step appears to load ALL data into memory (list on generator). This could be a memory hog; not sure if
     #   there is a way around it as it seems to rely on sorting values
-    reader = sniffers.guess_gwas_standard(in_filename)\
-        .add_filter("neg_log_pvalue")
+    reader = sniffers.guess_gwas_standard(in_filename).add_filter("neg_log_pvalue")
 
     # TODO: Pheweb QQ code benefits from being passed { num_samples: n }, from metadata stored outside the
     #   gwas file. This is used when AF/MAF are present (which at the moment ingest pipeline does not support)
@@ -214,36 +218,45 @@ def generate_qq(in_filename: str, out_filename) -> bool:
     rv = {}
     if variants:
         if variants[0].maf is not None:
-            rv['overall'] = make_qq_unstratified(variants, include_qq=False)
-            rv['by_maf'] = make_qq_stratified(variants)
-            rv['ci'] = list(get_confidence_intervals(len(variants) / len(rv['by_maf'])))
+            rv["overall"] = make_qq_unstratified(variants, include_qq=False)
+            rv["by_maf"] = make_qq_stratified(variants)
+            rv["ci"] = list(get_confidence_intervals(len(variants) / len(rv["by_maf"])))
         else:
-            rv['overall'] = make_qq_unstratified(variants, include_qq=True)
-            rv['ci'] = list(get_confidence_intervals(len(variants)))
+            rv["overall"] = make_qq_unstratified(variants, include_qq=True)
+            rv["ci"] = list(get_confidence_intervals(len(variants)))
 
-    with open(out_filename, 'w') as f:
+    with open(out_filename, "w") as f:
         json.dump(rv, f)
 
     return True
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Summarize a GWAS file and produce a JSON output file suitable "
-                                                 "for drawing QQ plots")
-    parser.add_argument('input', help='A gwas file (assumed to be bgzipped and in the harmonized format used '
-                                      'by my.locuszoom.org)')
-    parser.add_argument('--output', dest='output', help='The output filename for the json file, '
-                                                        'defaults to `<input_folder>/qq.json`')
+    parser = argparse.ArgumentParser(
+        description="Summarize a GWAS file and produce a JSON output file suitable "
+        "for drawing QQ plots"
+    )
+    parser.add_argument(
+        "input",
+        help="A gwas file (assumed to be bgzipped and in the harmonized format used "
+        "by my.locuszoom.org)",
+    )
+    parser.add_argument(
+        "--output",
+        dest="output",
+        help="The output filename for the json file, "
+        "defaults to `<input_folder>/qq.json`",
+    )
     return parser.parse_args()
 
 
 def main(input_fn, output_fn):
     if output_fn is None:
-        output_fn = os.path.join(os.path.dirname(input_fn), 'qq.json')
+        output_fn = os.path.join(os.path.dirname(input_fn), "qq.json")
 
     generate_qq(input_fn, output_fn)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_args()
     main(args.input, args.output)

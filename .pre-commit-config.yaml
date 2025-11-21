@@ -28,6 +28,8 @@ repos:
     rev: v0.14.6
     hooks:
       - id: ruff-check
+        args: [ --fix ]
+      - id: ruff-format
 
 # sets up .pre-commit-ci.yaml to ensure pre-commit dependencies stay up to date
 ci:

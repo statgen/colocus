@@ -252,11 +252,14 @@ class ColocResultListView(generics.ListAPIView):
     """
 
     def get_queryset(self):
-        fields = (
+        select_fields = (
             'signal1', 'signal2',
             'signal1__analysis', 'signal2__analysis',
             'signal1__analysis__trait', 'signal2__analysis__trait',
             'signal1__lead_variant', 'signal2__lead_variant',
+        )
+
+        prefetch_fields = (
             'signal1__analysis__trait__gene', 'signal2__analysis__trait__gene',
             'signal1__analysis__trait__exon', 'signal2__analysis__trait__exon',
             'signal1__analysis__trait__phenotype', 'signal2__analysis__trait__phenotype',
@@ -276,9 +279,11 @@ class ColocResultListView(generics.ListAPIView):
         analysis_type_priority = query_serializer.validated_data.get('analysis_type_priority')
 
         if include_orphans:
-            queryset = models.ColocResultWithOrphans.objects.select_related(*fields)
+            queryset = (models.ColocResultWithOrphans.objects
+                            .select_related(*select_fields)
+                            .prefetch_related(*prefetch_fields))
         else:
-            queryset = models.ColocResult.objects.select_related(*fields)
+            queryset = models.ColocResult.objects.select_related(*select_fields).prefetch_related(*prefetch_fields)
 
         queryset = annotate_prioritized_signals(queryset, analysis_type_priority)
 

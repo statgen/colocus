@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             sql="""
-CREATE VIEW core_colocresult_with_orphans AS
+CREATE MATERIALIZED VIEW core_colocresult_with_orphans AS
 SELECT
   ROW_NUMBER() OVER (ORDER BY uuid) as id,
   uuid,
@@ -49,14 +49,18 @@ FROM (
     ma.data_submission_id as data_submission_id,
     fs.id as signal1_id,
     NULL::integer as signal2_id
-  FROM core_finemappedsignal fs, core_marginalanalysis ma
-  WHERE fs.id NOT IN (
-    SELECT signal1_id FROM core_colocresult WHERE signal1_id IS NOT NULL
-    UNION
-    SELECT signal2_id FROM core_colocresult WHERE signal2_id IS NOT NULL
-  ) AND ma.id = fs.analysis_id
+  FROM core_finemappedsignal fs
+  JOIN core_marginalanalysis ma ON ma.id = fs.analysis_id
+  LEFT JOIN core_colocresult cr1 ON fs.id = cr1.signal1_id
+  LEFT JOIN core_colocresult cr2 ON fs.id = cr2.signal2_id
+  WHERE cr1.id IS NULL AND cr2.id IS NULL
 ) combined_results;
+
+-- Create indexes since we're now using a materialized view
+CREATE UNIQUE INDEX idx_colocresult_orphans_id ON core_colocresult_with_orphans (id);
+CREATE INDEX idx_colocresult_orphans_signal1 ON core_colocresult_with_orphans (signal1_id);
+CREATE INDEX idx_colocresult_orphans_signal2 ON core_colocresult_with_orphans (signal2_id);
             """,
-            reverse_sql="DROP VIEW IF EXISTS core_colocresult_with_orphans;"
+            reverse_sql="DROP MATERIALIZED VIEW IF EXISTS core_colocresult_with_orphans;"
         ),
     ]

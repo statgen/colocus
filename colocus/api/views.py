@@ -94,83 +94,41 @@ def annotate_prioritized_signals(queryset, analysis_type_priority=None):
         Annotated queryset with 'no_signal_swap' boolean field
     """
     if analysis_type_priority:
-        # Only first two analysis types are used to designate slots 1/2; the rest are ignored
-        order_list = analysis_type_priority.split(",")[0:2]
-
-        # Create CASE statements for order1 and order2
-        order1_whens = [
-            When(signal1__analysis__analysis_type=atype, then=Value(idx))
-            for idx, atype in enumerate(order_list)
-        ]
-
-        order2_whens = [
-            When(signal2__analysis__analysis_type=atype, then=Value(idx))
-            for idx, atype in enumerate(order_list)
-        ]
-
-        queryset = queryset.annotate(
-            order1=Case(
-                *order1_whens,
-                default=Value(None, output_field=IntegerField()),
-                output_field=IntegerField(),
-            ),
-            order2=Case(
-                *order2_whens,
-                default=Value(None, output_field=IntegerField()),
-                output_field=IntegerField(),
-            ),
-        )
+        order_list = [t.strip() for t in analysis_type_priority.split(",")[0:2]]
 
         if len(order_list) == 0:
-            pass  # nothing to do in this case
-        elif len(order_list) == 1:
-            queryset = queryset.filter(Q(order1=0) | Q(order2=0))
-        elif len(order_list) == 2:
-            queryset = queryset.filter(
-                ((Q(order1=0) & Q(order2=1)) | (Q(order1=1) & Q(order2=0)))
-            )
-        else:
-            # Raise exception
-            raise drf_exceptions.ValidationError(
-                "analysis_type_priority should contain <=2 analysis types"
-            )
+            return queryset.annotate(no_signal_swap=Value(True, output_field=BooleanField()))
+
+        # Simplified: signal1 should be the first priority type
+        # no_signal_swap=True means signal1 is already the preferred type
+        first_priority = order_list[0]
 
         queryset = queryset.annotate(
             no_signal_swap=Case(
-                When(Q(order1__isnull=True) & Q(order2__isnull=True), then=Value(True)),
-                When(
-                    Q(order1__isnull=False) & Q(order2__isnull=True),
-                    then=Case(
-                        When(order1=0, then=Value(True)),
-                        When(order1=1, then=Value(False)),
-                        default=Value(True),
-                        output_field=BooleanField(),
-                    ),
-                ),
-                When(
-                    Q(order1__isnull=True) & Q(order2__isnull=False),
-                    then=Case(
-                        When(order2=0, then=Value(False)),
-                        When(order2=1, then=Value(True)),
-                        default=Value(True),
-                        output_field=BooleanField(),
-                    ),
-                ),
-                When(
-                    Q(order1__isnull=False) & Q(order2__isnull=False),
-                    then=Case(
-                        When(order1=0, then=Value(True)),
-                        When(order1=1, then=Value(False)),
-                        When(order2=0, then=Value(False)),
-                        When(order2=1, then=Value(True)),
-                        default=Value(True),
-                        output_field=BooleanField(),
-                    ),
-                ),
+                # If signal1 is the first priority type, don't swap
+                When(signal1__analysis__analysis_type=first_priority, then=Value(True)),
+                # If signal2 is the first priority type, swap
+                When(signal2__analysis__analysis_type=first_priority, then=Value(False)),
+                # Otherwise, don't swap
                 default=Value(True),
                 output_field=BooleanField(),
             )
         )
+
+        # Apply filtering based on priority
+        if len(order_list) == 1:
+            queryset = queryset.filter(
+                Q(signal1__analysis__analysis_type=first_priority) |
+                Q(signal2__analysis__analysis_type=first_priority)
+            )
+        elif len(order_list) == 2:
+            second_priority = order_list[1]
+            queryset = queryset.filter(
+                (Q(signal1__analysis__analysis_type=first_priority) & 
+                 Q(signal2__analysis__analysis_type=second_priority)) |
+                (Q(signal1__analysis__analysis_type=second_priority) & 
+                 Q(signal2__analysis__analysis_type=first_priority))
+            )
     else:
         queryset = queryset.annotate(
             no_signal_swap=Value(True, output_field=BooleanField())

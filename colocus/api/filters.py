@@ -62,6 +62,30 @@ class BaseColocResultFilter(FilterSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.SIGNAL_ANNOTATIONS = {
+            "primary_signal_trait": ("signal1__analysis__trait__uuid", "signal2__analysis__trait__uuid"),
+            "secondary_signal_trait": ("signal2__analysis__trait__uuid", "signal1__analysis__trait__uuid"),
+            "primary_signal_chrom": ("signal1__lead_variant__chrom", "signal2__lead_variant__chrom"),
+            "secondary_signal_chrom": ("signal2__lead_variant__chrom", "signal1__lead_variant__chrom"),
+            "primary_signal_pos": ("signal1__lead_variant__pos", "signal2__lead_variant__pos"),
+            "secondary_signal_pos": ("signal2__lead_variant__pos", "signal1__lead_variant__pos"),
+            "primary_signal_logp": ("signal1__neg_log_p", "signal2__neg_log_p"),
+            "secondary_signal_logp": ("signal2__neg_log_p", "signal1__neg_log_p"),
+            "primary_signal_tissue": ("signal1__analysis__tissue", "signal2__analysis__tissue"),
+            "secondary_signal_tissue": ("signal2__analysis__tissue", "signal1__analysis__tissue"),
+            "primary_signal_cell_type": ("signal1__analysis__cell_type", "signal2__analysis__cell_type"),
+            "secondary_signal_cell_type": ("signal2__analysis__cell_type", "signal1__analysis__cell_type"),
+            "primary_signal_study": ("signal1__analysis__study__uuid", "signal2__analysis__study__uuid"),
+            "secondary_signal_study": ("signal2__analysis__study__uuid", "signal1__analysis__study__uuid"),
+            "primary_signal_gene_ens_id": ("signal1__analysis__trait__gene__ens_id", "signal2__analysis__trait__gene__ens_id"),
+            "secondary_signal_gene_ens_id": ("signal2__analysis__trait__gene__ens_id", "signal1__analysis__trait__gene__ens_id"),
+            "primary_signal_gene_symbol": ("signal1__analysis__trait__gene__symbol", "signal2__analysis__trait__gene__symbol"),
+            "secondary_signal_gene_symbol": ("signal2__analysis__trait__gene__symbol", "signal1__analysis__trait__gene__symbol"),
+            "primary_signal_exon_ens_id": ("signal1__analysis__trait__exon__ens_id", "signal2__analysis__trait__exon__ens_id"),
+            "secondary_signal_exon_ens_id": ("signal2__analysis__trait__exon__ens_id", "signal1__analysis__trait__exon__ens_id"),
+        }
+
+
         # Dynamically create min_logp_{analysis_type} filters
         for _, analysis_type_name in ANALYSIS_TYPES:
             filter_name = f"min_logp_{analysis_type_name.lower()}"  # filter name convention requires min_logp_*
@@ -77,6 +101,28 @@ class BaseColocResultFilter(FilterSet):
                         f"(only colocalizations with at least 1 {analysis_type_name} signal will be returned)"
                     ),
                 )
+
+    def _get_requested_ordering_fields(self):
+        """Extract the annotation fields needed based on the ordering parameter."""
+        ordering_param = self.data.get(self.order_by_field, "")
+        if not ordering_param:
+            return set()
+
+        requested = set()
+        for field in ordering_param.split(","):
+            field = field.lstrip("-").strip()
+            # Map public ordering names to internal annotation names
+            for internal_name, (_, _) in self.SIGNAL_ANNOTATIONS.items():
+                # Check against the ordering filter's field mapping
+                if field in ("signal1_trait", "signal2_trait", "signal1_chrom", "signal2_chrom",
+                            "signal1_pos", "signal2_pos", "signal1_logp", "signal2_logp",
+                            "signal1_tissue", "signal2_tissue", "signal1_cell_type", "signal2_cell_type",
+                            "signal1_study", "signal2_study", "signal1_gene_ens_id", "signal2_gene_ens_id",
+                            "signal1_gene_symbol", "signal2_gene_symbol", "signal1_exon_ens_id", "signal2_exon_ens_id"):
+                    # Convert public name to internal annotation name
+                    internal = field.replace("signal1_", "primary_signal_").replace("signal2_", "secondary_signal_")
+                    requested.add(internal)
+        return requested
 
     def filter_queryset(self, queryset):
         # Add some fields that are useful for filtering/sorting but not stored directly in the DB
@@ -115,106 +161,19 @@ class BaseColocResultFilter(FilterSet):
         # Add conditional annotations for ordering
         # These are necessary because on a per-row basis, signals may be swapped depending on user preference
         # (e.g. analysis_priority), so we need to create consistent "primary" and "secondary" signal fields
-        queryset = queryset.annotate(
-            primary_signal_trait=Case(
-                When(no_signal_swap=True, then=F("signal1__analysis__trait__uuid")),
-                default=F("signal2__analysis__trait__uuid"),
-            ),
-            secondary_signal_trait=Case(
-                When(no_signal_swap=True, then=F("signal2__analysis__trait__uuid")),
-                default=F("signal1__analysis__trait__uuid"),
-            ),
-            primary_signal_chrom=Case(
-                When(no_signal_swap=True, then=F("signal1__lead_variant__chrom")),
-                default=F("signal2__lead_variant__chrom"),
-            ),
-            secondary_signal_chrom=Case(
-                When(no_signal_swap=True, then=F("signal2__lead_variant__chrom")),
-                default=F("signal1__lead_variant__chrom"),
-            ),
-            primary_signal_pos=Case(
-                When(no_signal_swap=True, then=F("signal1__lead_variant__pos")),
-                default=F("signal2__lead_variant__pos"),
-            ),
-            secondary_signal_pos=Case(
-                When(no_signal_swap=True, then=F("signal2__lead_variant__pos")),
-                default=F("signal1__lead_variant__pos"),
-            ),
-            primary_signal_logp=Case(
-                When(no_signal_swap=True, then=F("signal1__neg_log_p")),
-                default=F("signal2__neg_log_p"),
-            ),
-            secondary_signal_logp=Case(
-                When(no_signal_swap=True, then=F("signal2__neg_log_p")),
-                default=F("signal1__neg_log_p"),
-            ),
-            primary_signal_tissue=Case(
-                When(no_signal_swap=True, then=F("signal1__analysis__tissue")),
-                default=F("signal2__analysis__tissue"),
-            ),
-            secondary_signal_tissue=Case(
-                When(no_signal_swap=True, then=F("signal2__analysis__tissue")),
-                default=F("signal1__analysis__tissue"),
-            ),
-            primary_signal_cell_type=Case(
-                When(no_signal_swap=True, then=F("signal1__analysis__cell_type")),
-                default=F("signal2__analysis__cell_type"),
-            ),
-            secondary_signal_cell_type=Case(
-                When(no_signal_swap=True, then=F("signal2__analysis__cell_type")),
-                default=F("signal1__analysis__cell_type"),
-            ),
-            primary_signal_study=Case(
-                When(no_signal_swap=True, then=F("signal1__analysis__study__uuid")),
-                default=F("signal2__analysis__study__uuid"),
-            ),
-            secondary_signal_study=Case(
-                When(no_signal_swap=True, then=F("signal2__analysis__study__uuid")),
-                default=F("signal1__analysis__study__uuid"),
-            ),
-            primary_signal_gene_ens_id=Case(
-                When(
-                    no_signal_swap=True,
-                    then=F("signal1__analysis__trait__gene__ens_id"),
-                ),
-                default=F("signal2__analysis__trait__gene__ens_id"),
-            ),
-            secondary_signal_gene_ens_id=Case(
-                When(
-                    no_signal_swap=True,
-                    then=F("signal2__analysis__trait__gene__ens_id"),
-                ),
-                default=F("signal1__analysis__trait__gene__ens_id"),
-            ),
-            primary_signal_gene_symbol=Case(
-                When(
-                    no_signal_swap=True,
-                    then=F("signal1__analysis__trait__gene__symbol"),
-                ),
-                default=F("signal2__analysis__trait__gene__symbol"),
-            ),
-            secondary_signal_gene_symbol=Case(
-                When(
-                    no_signal_swap=True,
-                    then=F("signal2__analysis__trait__gene__symbol"),
-                ),
-                default=F("signal1__analysis__trait__gene__symbol"),
-            ),
-            primary_signal_exon_ens_id=Case(
-                When(
-                    no_signal_swap=True,
-                    then=F("signal1__analysis__trait__exon__ens_id"),
-                ),
-                default=F("signal2__analysis__trait__exon__ens_id"),
-            ),
-            secondary_signal_exon_ens_id=Case(
-                When(
-                    no_signal_swap=True,
-                    then=F("signal2__analysis__trait__exon__ens_id"),
-                ),
-                default=F("signal1__analysis__trait__exon__ens_id"),
-            ),
-        )
+        # Only annotate the fields that are actually needed for ordering
+        requested_fields = self._get_requested_ordering_fields()
+
+        annotations = {}
+        for field_name, (swap_false_path, swap_true_path) in self.SIGNAL_ANNOTATIONS.items():
+            if field_name in requested_fields:
+                annotations[field_name] = Case(
+                    When(no_signal_swap=True, then=F(swap_false_path)),
+                    default=F(swap_true_path),
+                )
+
+        if annotations:
+            queryset = queryset.annotate(**annotations)
 
         return super().filter_queryset(queryset)
 

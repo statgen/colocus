@@ -65,6 +65,8 @@ class BaseColocResultFilter(FilterSet):
         self.SIGNAL_ANNOTATIONS = {
             "primary_signal_trait": ("signal1__analysis__trait__uuid", "signal2__analysis__trait__uuid"),
             "secondary_signal_trait": ("signal2__analysis__trait__uuid", "signal1__analysis__trait__uuid"),
+            "primary_signal_trait_label": ("signal1__analysis__trait__label", "signal2__analysis__trait__label"),
+            "secondary_signal_trait_label": ("signal2__analysis__trait__label", "signal1__analysis__trait__label"),
             "primary_signal_chrom": ("signal1__lead_variant__chrom", "signal2__lead_variant__chrom"),
             "secondary_signal_chrom": ("signal2__lead_variant__chrom", "signal1__lead_variant__chrom"),
             "primary_signal_pos": ("signal1__lead_variant__pos", "signal2__lead_variant__pos"),
@@ -114,7 +116,8 @@ class BaseColocResultFilter(FilterSet):
             # Map public ordering names to internal annotation names
             for internal_name, (_, _) in self.SIGNAL_ANNOTATIONS.items():
                 # Check against the ordering filter's field mapping
-                if field in ("signal1_trait", "signal2_trait", "signal1_chrom", "signal2_chrom",
+                if field in ("signal1_trait", "signal2_trait", "signal1_trait_label", "signal2_trait_label", 
+                            "signal1_chrom", "signal2_chrom",
                             "signal1_pos", "signal2_pos", "signal1_logp", "signal2_logp",
                             "signal1_tissue", "signal2_tissue", "signal1_cell_type", "signal2_cell_type",
                             "signal1_study", "signal2_study", "signal1_gene_ens_id", "signal2_gene_ens_id",
@@ -453,6 +456,8 @@ class BaseColocResultFilter(FilterSet):
             ("primary_signal_pos", "signal1_pos"),
             ("primary_signal_trait", "signal1_trait"),
             ("secondary_signal_trait", "signal2_trait"),
+            ("primary_signal_trait_label", "signal1_trait_label"),
+            ("secondary_signal_trait_label", "signal2_trait_label"),
             ("secondary_signal_chrom", "signal2_chrom"),
             ("secondary_signal_pos", "signal2_pos"),
             ("primary_signal_gene_ens_id", "signal1_gene_ens_id"),

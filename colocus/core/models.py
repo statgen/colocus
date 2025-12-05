@@ -432,6 +432,10 @@ class Trait(models.Model):
         help_text="Universally unique identifier",
     )
 
+    label = models.TextField(
+        help_text="Display label for tables in browser and for sorting"
+    )
+
     biomarker_type = models.TextField(
         help_text="Type of biomarker, e.g. phenotype or gene-expression exon-expression or methylation or atac-seq",
         null=False,

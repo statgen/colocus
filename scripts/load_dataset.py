@@ -513,17 +513,20 @@ def load_one_marginal(
                 # gene, created = Gene.objects.get_or_create(**gene)
                 gene = get_by_id_or_create(Gene, {"ens_id": gene["ens_id"]}, gene)
                 trait.gene = gene
+                trait.label = gene.symbol
 
             if exon:
                 exon["gene"] = gene
                 # exon, created = Exon.objects.get_or_create(**exon)
                 exon = get_by_id_or_create(Exon, {"ens_id": exon["ens_id"]}, exon)
                 trait.exon = exon
+                trait.label = gene.symbol
 
             if protein:
                 protein["gene"] = gene
                 protein = get_by_id_or_create(Protein, {"ens_id": v["uuid"]}, protein)
                 trait.protein = protein
+                trait.label = gene.symbol
 
             if pheno:
                 # pheno, created = Phenotype.objects.get_or_create(**pheno)
@@ -531,6 +534,7 @@ def load_one_marginal(
                     pheno["uuid"] = v["uuid"]
                 pheno = get_by_id_or_create(Phenotype, {"uuid": pheno["uuid"]}, pheno)
                 trait.phenotype = pheno
+                trait.label = pheno.uuid
 
             if metabolite:
                 if "uuid" not in metabolite:
@@ -539,6 +543,7 @@ def load_one_marginal(
                     Metabolite, {"uuid": metabolite["uuid"]}, metabolite
                 )
                 trait.metabolite = metabolite
+                trait.label = metabolite.uuid
 
             if methyl_probe:
                 if "uuid" not in methyl_probe:
@@ -547,6 +552,7 @@ def load_one_marginal(
                     MethylProbe, {"uuid": methyl_probe["uuid"]}, methyl_probe
                 )
                 trait.methyl_probe = methyl_probe
+                trait.label = methyl_probe.uuid
 
             trait.save()
             marginal.trait = trait

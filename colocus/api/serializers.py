@@ -159,6 +159,7 @@ class TraitSerializer(NonNullModelSerializer):
         model = models.Trait
         fields = (
             "uuid",
+            "label",
             "biomarker_type",
             "gene",
             "exon",

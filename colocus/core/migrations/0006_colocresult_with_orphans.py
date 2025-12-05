@@ -42,10 +42,10 @@ FROM (
   SELECT
     fs.uuid as uuid,
     NULL::jsonb as cross_signal,
-    0.0::float8 as coloc_h3,
-    0.0::float8 as coloc_h4,
-    0.0::float8 as r2,
-    0::integer as n_coloc_between_traits,
+    NULL::float8 as coloc_h3,
+    NULL::float8 as coloc_h4,
+    NULL::float8 as r2,
+    NULL::integer as n_coloc_between_traits,
     ma.data_submission_id as data_submission_id,
     fs.id as signal1_id,
     NULL::integer as signal2_id

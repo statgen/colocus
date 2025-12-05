@@ -26,6 +26,19 @@ def parse_region(region):
         return match.groups()
 
 
+class NumberFilterWithNulls(NumberFilter):
+    """NumberFilter that includes NULL values when filtering."""
+
+    def filter(self, qs, value):
+        if value is None:
+            return qs
+
+        lookup = f"{self.field_name}__{self.lookup_expr}"
+        return qs.filter(
+            Q(**{lookup: value}) | Q(**{f"{self.field_name}__isnull": True})
+        )
+
+
 class NullsLastOrderingFilter(OrderingFilter):
     """OrderingFilter that always puts NULL values last."""
 
@@ -432,10 +445,10 @@ class BaseColocResultFilter(FilterSet):
         label="Minimum -log10 p-value for signal 2",
     )
 
-    min_h4 = NumberFilter(
+    min_h4 = NumberFilterWithNulls(
         field_name="coloc_h4", lookup_expr="gte", label="Minimum PP(H4)"
     )
-    min_r2 = NumberFilter(
+    min_r2 = NumberFilterWithNulls(
         field_name="r2",
         lookup_expr="gte",
         label="Minimum r2 between the two signals' lead variants",

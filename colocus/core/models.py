@@ -546,7 +546,7 @@ class MarginalAnalysis(models.Model):
     analysis_type = models.TextField(
         choices=constants.ANALYSIS_TYPES,
         help_text="Type of association analysis - GWAS, eQTL, pQTL, ATAC-seq, methylation, etc.",
-        db_index=True
+        db_index=True,
     )
 
     genome_build = models.TextField(

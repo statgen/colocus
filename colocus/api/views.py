@@ -3,7 +3,7 @@ import typing as ty
 from typing import Union
 
 from django.conf import settings
-from django.db.models import BooleanField, Case, IntegerField, Q, Value, When
+from django.db.models import BooleanField, Case, Q, Value, When
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
@@ -97,7 +97,9 @@ def annotate_prioritized_signals(queryset, analysis_type_priority=None):
         order_list = [t.strip() for t in analysis_type_priority.split(",")[0:2]]
 
         if len(order_list) == 0:
-            return queryset.annotate(no_signal_swap=Value(True, output_field=BooleanField()))
+            return queryset.annotate(
+                no_signal_swap=Value(True, output_field=BooleanField())
+            )
 
         # Simplified: signal1 should be the first priority type
         # no_signal_swap=True means signal1 is already the preferred type
@@ -108,7 +110,9 @@ def annotate_prioritized_signals(queryset, analysis_type_priority=None):
                 # If signal1 is the first priority type, don't swap
                 When(signal1__analysis__analysis_type=first_priority, then=Value(True)),
                 # If signal2 is the first priority type, swap
-                When(signal2__analysis__analysis_type=first_priority, then=Value(False)),
+                When(
+                    signal2__analysis__analysis_type=first_priority, then=Value(False)
+                ),
                 # Otherwise, don't swap
                 default=Value(True),
                 output_field=BooleanField(),
@@ -118,16 +122,20 @@ def annotate_prioritized_signals(queryset, analysis_type_priority=None):
         # Apply filtering based on priority
         if len(order_list) == 1:
             queryset = queryset.filter(
-                Q(signal1__analysis__analysis_type=first_priority) |
-                Q(signal2__analysis__analysis_type=first_priority)
+                Q(signal1__analysis__analysis_type=first_priority)
+                | Q(signal2__analysis__analysis_type=first_priority)
             )
         elif len(order_list) == 2:
             second_priority = order_list[1]
             queryset = queryset.filter(
-                (Q(signal1__analysis__analysis_type=first_priority) & 
-                 Q(signal2__analysis__analysis_type=second_priority)) |
-                (Q(signal1__analysis__analysis_type=second_priority) & 
-                 Q(signal2__analysis__analysis_type=first_priority))
+                (
+                    Q(signal1__analysis__analysis_type=first_priority)
+                    & Q(signal2__analysis__analysis_type=second_priority)
+                )
+                | (
+                    Q(signal1__analysis__analysis_type=second_priority)
+                    & Q(signal2__analysis__analysis_type=first_priority)
+                )
             )
     else:
         queryset = queryset.annotate(
